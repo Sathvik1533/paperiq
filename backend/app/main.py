@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.logger import get_logger
-from app.api import health, colleges, scrape, papers, extract, questions, analysis, planner, profile
+from app.api import health, colleges, scrape, papers, extract, questions, analysis, planner, profile, admin
 
 log = get_logger(__name__)
 
@@ -34,6 +34,7 @@ app.include_router(questions.router,  prefix=PREFIX, tags=["Questions"])
 app.include_router(analysis.router,   prefix=PREFIX, tags=["Analysis"])
 app.include_router(planner.router,    prefix=PREFIX, tags=["Planner"])
 app.include_router(profile.router,    prefix=PREFIX, tags=["Profile"])
+app.include_router(admin.router,      prefix=PREFIX, tags=["Admin"])
 
 
 @app.on_event("startup")
@@ -43,6 +44,19 @@ async def startup():
     log.info(f"LLM provider order: {settings.llm_provider_order}")
     import os
     os.makedirs(settings.scraper_download_dir, exist_ok=True)
+    
+    # Auto-build knowledge base if not exists
+    from app.jobs.knowledge_base_builder import auto_build_mlrit_r22_knowledge_base
+    try:
+        log.info("[Startup] Checking knowledge base status")
+        result = await auto_build_mlrit_r22_knowledge_base()
+        if result.get("skipped"):
+            log.info("[Startup] Knowledge base already exists")
+        else:
+            log.info(f"[Startup] Knowledge base built: {result.get('message')}")
+    except Exception as e:
+        log.error(f"[Startup] Knowledge base auto-build failed: {e}")
+        log.error("[Startup] Continuing without knowledge base — use /admin/knowledge-base/build to retry")
 
 
 @app.on_event("shutdown")

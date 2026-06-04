@@ -36,6 +36,17 @@ class RunAnalysisRequest(BaseModel):
     exam_attempt: Optional[str] = None
 
 
+class SimplifiedAnalysisRequest(BaseModel):
+    """
+    Simplified analysis request for normal users.
+    Auto-infers context from user profile.
+    """
+    user_id: str
+    subject_id: str
+    exam_category: str  # "Mid-1" | "Mid-2" | "Semester"
+    exam_attempt: str = "Regular"  # "Regular" | "Supplementary"
+
+
 class RunAnalysisResponse(BaseModel):
     report_id: str
     status: str = "processing"
@@ -57,6 +68,9 @@ async def run_analysis(req: RunAnalysisRequest, background_tasks: BackgroundTask
     """
     Trigger an analysis job. Returns report_id immediately.
     The heavy work runs in background.
+    
+    Use this endpoint for manual/advanced analysis with full control.
+    For normal users, use POST /analysis/simple instead.
     """
     import uuid
     report_id = str(uuid.uuid4())
@@ -78,6 +92,76 @@ async def run_analysis(req: RunAnalysisRequest, background_tasks: BackgroundTask
             _job_store[report_id] = {"status": "ready", "report": report, "actual_id": actual_id}
         except Exception as e:
             log.error(f"Analysis job {report_id} failed: {e}")
+            _job_store[report_id] = {"status": "failed", "report": None, "error": str(e)}
+
+    background_tasks.add_task(_run)
+    return RunAnalysisResponse(report_id=report_id)
+
+
+@router.post("/analysis/simple", response_model=RunAnalysisResponse, status_code=202)
+async def run_simple_analysis(req: SimplifiedAnalysisRequest, background_tasks: BackgroundTasks):
+    """
+    Simplified analysis for normal users.
+    
+    Auto-infers from user profile:
+    - College, branch, regulation (from onboarding)
+    - Year range (last 5 years)
+    
+    User only provides:
+    - Subject ID (from dropdown)
+    - Exam category (Mid-1, Mid-2, Semester)
+    - Exam attempt (Regular/Supplementary)
+    
+    Everything else is automatic.
+    """
+    db = get_db()
+    
+    # Fetch user profile
+    try:
+        profile_result = db.table("user_profiles").select(
+            "college_id, branch_id, regulation"
+        ).eq("id", req.user_id).single().execute()
+        
+        if not profile_result.data:
+            raise HTTPException(404, "User profile not found — complete onboarding first")
+        
+        profile = profile_result.data
+        college_id = profile["college_id"]
+        branch_id = profile["branch_id"]
+        regulation = profile["regulation"]
+        
+    except Exception as e:
+        log.error(f"Failed to fetch user profile: {e}")
+        raise HTTPException(500, f"Failed to fetch profile: {e}")
+    
+    # Auto-set year range (last 5 years)
+    import datetime
+    current_year = datetime.datetime.now().year
+    year_from = current_year - 5
+    year_to = current_year
+    
+    log.info(f"[SimplifiedAnalysis] User {req.user_id}: {regulation} {req.subject_id} {req.exam_category} {req.exam_attempt}")
+    
+    # Trigger analysis job with inferred context
+    import uuid
+    report_id = str(uuid.uuid4())
+    _job_store[report_id] = {"status": "processing", "report": None, "error": None}
+
+    async def _run():
+        try:
+            report = await run_analysis_job(
+                subject_id=req.subject_id,
+                regulation=regulation,
+                branch_id=branch_id,
+                year_from=year_from,
+                year_to=year_to,
+                exam_category=req.exam_category,
+                exam_attempt=req.exam_attempt,
+            )
+            actual_id = report.get("id", report_id)
+            _job_store[report_id] = {"status": "ready", "report": report, "actual_id": actual_id}
+        except Exception as e:
+            log.error(f"Simple analysis job {report_id} failed: {e}")
             _job_store[report_id] = {"status": "failed", "report": None, "error": str(e)}
 
     background_tasks.add_task(_run)

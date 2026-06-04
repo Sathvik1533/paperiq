@@ -14,67 +14,136 @@ log = get_logger(__name__)
 
 class OnboardingRequest(BaseModel):
     """
-    Collect academic context only.
-    NO manual skill level selection — auto-detected.
+    Simplified onboarding — collect only essential data.
+    
+    For MLRIT R22 CSE students:
+    - College, branch, regulation inferred automatically
+    - Subject list auto-populated from knowledge base
+    - Skill level auto-detected from CGPA and backlogs
     """
     user_id: str
-    college_id: str
-    branch_id: str
-    regulation: str
-    current_year: int
-    current_semester: int
+    current_semester: int  # 2-1 → 3, 2-2 → 4
     current_cgpa: float
-    target_cgpa: float
+    backlogs_count: int
+    upcoming_exam_type: str  # "Mid-1" | "Mid-2" | "Semester"
     study_hours_per_day: float
 
 
 @router.post("/onboarding")
 async def complete_onboarding(req: OnboardingRequest):
     """
-    Store user academic context and compute initial learner profile.
+    Simplified onboarding for MLRIT R22 CSE students.
     
-    Returns:
-        {
-            "success": true,
-            "learner_profile": {
-                "detected_skill_level": "Intermediate",
-                "consistency_score": 50,
-                "learning_pace": "Medium",
-                ...
-            }
-        }
+    Automatic context resolution:
+    - College: MLRIT (fixed)
+    - Branch: CSE (fixed for now)
+    - Regulation: R22 (inferred from semester)
+    - Year: Inferred from semester (2-1/2-2 → Year 2)
+    
+    AI auto-detects:
+    - Skill level from CGPA and backlogs
+    - Academic risk level
+    - Study intensity needs
+    
+    Returns learner profile with inferred characteristics.
     """
     db = get_db()
+    
+    # Resolve college and branch
+    college_result = db.table("colleges").select("id").eq("name", "MLRIT").execute()
+    if not college_result.data:
+        raise HTTPException(500, "College not found — knowledge base not initialized")
+    college_id = college_result.data[0]["id"]
+    
+    branch_result = db.table("branches").select("id").eq(
+        "name", "CSE"
+    ).eq("college_id", college_id).execute()
+    if not branch_result.data:
+        raise HTTPException(500, "Branch not found — knowledge base not initialized")
+    branch_id = branch_result.data[0]["id"]
+    
+    # Infer year and regulation from semester
+    # 2-1 → semester 3, year 2
+    # 2-2 → semester 4, year 2
+    current_year = 2  # Fixed for MVP
+    regulation = "R22"  # Fixed for MVP
+    
+    # Auto-detect skill level based on CGPA and backlogs
+    if req.current_cgpa >= 8.0 and req.backlogs_count == 0:
+        detected_skill_level = "Advanced"
+    elif req.current_cgpa >= 6.5 or req.backlogs_count <= 2:
+        detected_skill_level = "Intermediate"
+    else:
+        detected_skill_level = "Beginner"
+    
+    # Auto-detect target CGPA (aim for +0.5 improvement or maintain if already high)
+    target_cgpa = min(10.0, req.current_cgpa + 0.5) if req.current_cgpa < 9.0 else req.current_cgpa
+    
+    log.info(f"[Onboarding] User {req.user_id}: CGPA={req.current_cgpa}, Backlogs={req.backlogs_count} → {detected_skill_level}")
     
     # Store user profile
     try:
         db.table("user_profiles").upsert({
             "id": req.user_id,
-            "college_id": req.college_id,
-            "branch_id": req.branch_id,
-            "regulation": req.regulation,
-            "current_year": req.current_year,
+            "college_id": college_id,
+            "branch_id": branch_id,
+            "regulation": regulation,
+            "current_year": current_year,
             "current_semester": req.current_semester,
             "current_cgpa": req.current_cgpa,
-            "target_cgpa": req.target_cgpa,
+            "target_cgpa": target_cgpa,
             "study_hours_per_day": req.study_hours_per_day,
         }).execute()
     except Exception as e:
         log.error(f"Failed to store user profile: {e}")
         raise HTTPException(500, f"Failed to store profile: {e}")
     
-    # Compute initial learner profile
+    # Store initial learner profile
+    try:
+        db.table("learner_profiles").upsert({
+            "user_id": req.user_id,
+            "college_id": college_id,
+            "branch_id": branch_id,
+            "regulation": regulation,
+            "current_year": current_year,
+            "current_semester": req.current_semester,
+            "current_cgpa": req.current_cgpa,
+            "target_cgpa": target_cgpa,
+            "study_hours_per_day": req.study_hours_per_day,
+            "detected_skill_level": detected_skill_level,
+            "consistency_score": 50.0,  # Neutral baseline
+            "learning_pace": "Medium",  # Default
+        }).execute()
+    except Exception as e:
+        log.error(f"Failed to store learner profile: {e}")
+        raise HTTPException(500, f"Failed to store profile: {e}")
+    
+    # Compute full learner profile
     try:
         profile = compute_learner_profile(req.user_id)
     except Exception as e:
         log.error(f"Failed to compute learner profile: {e}")
-        raise HTTPException(500, f"Failed to compute profile: {e}")
+        # Return basic profile if computation fails
+        profile = {
+            "detected_skill_level": detected_skill_level,
+            "current_cgpa": req.current_cgpa,
+            "target_cgpa": target_cgpa,
+            "backlogs_count": req.backlogs_count,
+            "upcoming_exam": req.upcoming_exam_type,
+        }
     
     return {
         "success": True,
         "data": {
             "message": "Onboarding complete",
             "learner_profile": profile,
+            "inferred_context": {
+                "college": "MLRIT",
+                "branch": "CSE",
+                "regulation": regulation,
+                "year": current_year,
+                "skill_level": detected_skill_level,
+            }
         }
     }
 
@@ -141,3 +210,52 @@ async def get_user_context(user_id: str):
     except Exception as e:
         log.error(f"Failed to fetch user context: {e}")
         raise HTTPException(500, f"Failed to fetch context: {e}")
+
+
+@router.get("/profile/{user_id}/subjects")
+async def get_user_subjects(user_id: str):
+    """
+    Get subjects available for user's semester.
+    Auto-filtered by regulation, branch, semester from onboarding.
+    
+    Returns list of subjects user can select from.
+    """
+    db = get_db()
+    
+    # Get user context
+    try:
+        profile_result = db.table("user_profiles").select(
+            "college_id, branch_id, regulation, current_semester"
+        ).eq("id", user_id).single().execute()
+        
+        if not profile_result.data:
+            raise HTTPException(404, "User profile not found")
+        
+        profile = profile_result.data
+        
+    except Exception as e:
+        log.error(f"Failed to fetch user profile: {e}")
+        raise HTTPException(500, f"Failed to fetch profile: {e}")
+    
+    # Fetch subjects for user's context
+    try:
+        subjects_result = db.table("subjects").select(
+            "id, code, name, semester, regulation"
+        ).eq("college_id", profile["college_id"]).eq(
+            "branch_id", profile["branch_id"]
+        ).eq("regulation", profile["regulation"]).eq(
+            "semester", profile["current_semester"]
+        ).order("code").execute()
+        
+        return {
+            "success": True,
+            "data": {
+                "subjects": subjects_result.data or [],
+                "semester": profile["current_semester"],
+                "regulation": profile["regulation"]
+            }
+        }
+    
+    except Exception as e:
+        log.error(f"Failed to fetch subjects: {e}")
+        raise HTTPException(500, f"Failed to fetch subjects: {e}")
