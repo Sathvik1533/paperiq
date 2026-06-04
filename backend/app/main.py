@@ -2,14 +2,14 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.logger import get_logger
-from app.api import health, colleges, scrape, papers
+from app.api import health, colleges, scrape, papers, extract
 
 log = get_logger(__name__)
 
 app = FastAPI(
     title="PaperIQ API",
     description="AI Exam Intelligence Platform — every feature helps students score better marks with less effort.",
-    version="0.1.0",
+    version="0.2.0",
     docs_url=f"/api/{settings.api_version}/docs",
     redoc_url=f"/api/{settings.api_version}/redoc",
     openapi_url=f"/api/{settings.api_version}/openapi.json",
@@ -29,6 +29,7 @@ app.include_router(health.router,   prefix=PREFIX, tags=["System"])
 app.include_router(colleges.router, prefix=PREFIX, tags=["Academic"])
 app.include_router(scrape.router,   prefix=PREFIX, tags=["Scraping"])
 app.include_router(papers.router,   prefix=PREFIX, tags=["Papers"])
+app.include_router(extract.router,  prefix=PREFIX, tags=["Extraction"])
 
 
 @app.on_event("startup")
