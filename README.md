@@ -25,8 +25,8 @@ PaperIQ is an **AI Exam Intelligence Platform**.
 
 | Layer | Technology |
 |---|---|
-| Frontend | React + Vite + TypeScript + Tailwind CSS |
-| Backend | FastAPI + Python |
+| Frontend | React 18 + Vite + TypeScript + Tailwind CSS |
+| Backend | FastAPI + Python 3.11 |
 | Database | Supabase PostgreSQL |
 | Auth | Supabase Auth + Google OAuth |
 | Storage | Supabase Storage |
@@ -34,28 +34,6 @@ PaperIQ is an **AI Exam Intelligence Platform**.
 | Document Processing | PyMuPDF + python-docx |
 | LLM (primary) | Groq (Llama / Qwen / DeepSeek) |
 | LLM (failover) | OpenRouter → Ollama |
-
-## Quick Start
-
-See [docs/SETUP.md](docs/SETUP.md) for full instructions.
-
-```bash
-# Clone
-git clone https://github.com/Sathvik1533/paperiq.git
-cd paperiq
-
-# Backend
-cd backend
-pip install -r requirements.txt
-cp .env.example .env    # fill in your keys
-uvicorn app.main:app --reload
-
-# Frontend
-cd ../frontend
-bun install
-cp .env.example .env
-bun dev
-```
 
 ## Milestones
 
@@ -66,54 +44,79 @@ bun dev
 | 3 | Question Parsing & Storage | ✅ Complete |
 | 4 | Pattern Analysis Engine | ✅ Complete |
 | 5 | Personalized Study Planner | ✅ Complete |
-| 6 | Dashboard & Repository | ✅ Complete |
-| 7 | Deployment & Polish | 🔄 In Progress |
+| 6 | Dashboard & Frontend | ✅ Complete |
+| 7 | Deployment & Polish | ✅ Complete |
 
-## Development
+## Quick Start
 
-### Running Locally
+See [docs/SETUP.md](docs/SETUP.md) for full instructions.
 
+### Backend
 ```bash
-# Backend
-cd backend
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env    # fill in SUPABASE_URL, SUPABASE_SERVICE_KEY, GROQ_API_KEY
-uvicorn app.main:app --reload --port 8000
+git clone https://github.com/Sathvik1533/paperiq.git
+cd paperiq
 
-# Frontend (new terminal)
+# Create venv with Python 3.11
+python3.11 -m venv .venv
+source .venv/bin/activate
+
+cd backend
+pip install -r requirements.txt
+playwright install chromium
+cp .env.example .env    # fill in SUPABASE_URL, SERVICE_KEY, GROQ_API_KEY
+uvicorn app.main:app --reload --port 8000
+```
+
+Health check: `curl http://localhost:8000/api/v1/health`
+
+### Frontend
+```bash
 cd frontend
 bun install
-cp .env.example .env    # set VITE_API_URL=http://localhost:8000
+cp .env.example .env    # fill in Supabase URL + anon key
 bun dev
 ```
 
-### Running Tests
+Open: http://localhost:5173
+
+### Deploy Frontend to Vercel
+```bash
+cd frontend
+vercel --prod
+```
+
+## API Endpoints
+
+| Group | Endpoints |
+|---|---|
+| System | `GET /health`, `GET /llm/health` |
+| Academic | `GET /colleges`, `GET /subjects` |
+| Scraping | `POST /scrape/trigger`, `GET /scrape/jobs/{id}` |
+| Papers | `GET /papers`, `GET /papers/{id}` |
+| Extraction | `POST /extract/run`, `POST /syllabus/upload` |
+| Questions | `POST /parse/run`, `GET /questions`, `GET /parse/preview` |
+| Analysis | `POST /analysis/run`, `GET /analysis/{id}` |
+| Planner | `POST /planner/generate`, `POST /readiness/calculate`, `POST /mock/generate` |
+
+Full API docs: `http://localhost:8000/api/v1/docs`
+
+## Test Suite
 
 ```bash
 cd backend
-pytest tests/ --cov=app -q
+pytest tests/ -v
+# 137 tests, 0 failures
 ```
-
-### Environment Variables
-
-| Variable | Required | Description |
-|---|---|---|
-| `SUPABASE_URL` | Yes | Supabase project URL |
-| `SUPABASE_SERVICE_KEY` | Yes | Supabase service role key |
-| `SECRET_KEY` | Yes | JWT signing secret |
-| `GROQ_API_KEY` | Yes | Groq LLM API key |
-| `ENVIRONMENT` | No | `development` / `production` / `test` |
 
 ## Documentation
 
 - [Architecture](docs/ARCHITECTURE.md)
+- [Regulation Architecture](docs/REGULATION_ARCHITECTURE.md)
 - [Database Schema](docs/DATABASE_SCHEMA.md)
 - [API Contract](docs/API_CONTRACT.md)
 - [Roadmap](docs/ROADMAP.md)
 - [Setup Guide](docs/SETUP.md)
 - [Contributing](docs/CONTRIBUTING.md)
-- [Regulation Architecture](docs/REGULATION_ARCHITECTURE.md)
 
 ## License
 
