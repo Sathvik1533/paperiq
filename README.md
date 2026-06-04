@@ -61,10 +61,10 @@ bun dev
 
 | # | Milestone | Status |
 |---|---|---|
-| 1 | MLRIT Scraper | 🔄 In Progress |
-| 2 | Document Extraction Engine | ⏳ Pending |
-| 3 | Question Parsing & Storage | ⏳ Pending |
-| 4 | Pattern Analysis Engine | ⏳ Pending |
+| 1 | MLRIT Scraper | ✅ Complete |
+| 2 | Document Extraction Engine | ✅ Complete |
+| 3 | Question Parsing & Storage | ✅ Complete |
+| 4 | Pattern Analysis Engine | 🔄 In Progress |
 | 5 | Personalized Study Planner | ⏳ Pending |
 | 6 | Dashboard & Repository | ⏳ Pending |
 | 7 | Deployment & Polish | ⏳ Pending |
@@ -77,6 +77,7 @@ bun dev
 - [Roadmap](docs/ROADMAP.md)
 - [Setup Guide](docs/SETUP.md)
 - [Contributing](docs/CONTRIBUTING.md)
+- [Regulation Architecture](docs/REGULATION_ARCHITECTURE.md)
 
 ## License
 
