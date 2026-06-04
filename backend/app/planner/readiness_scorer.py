@@ -266,6 +266,10 @@ class ReadinessScorer:
             return None
 
     def _fetch_syllabus_topics(self, subject_id: str, regulation: str) -> list:
+        """
+        Gap #2 fix: syllabus_topics now has regulation + subject_id columns,
+        so this query works directly without a join.
+        """
         try:
             result = (
                 self.db.table("syllabus_topics")

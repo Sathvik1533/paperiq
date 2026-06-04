@@ -5,7 +5,8 @@ POST /analysis/run          — trigger analysis, returns {report_id}
 GET  /analysis/{report_id}  — full report
 GET  /analysis/{report_id}/status
 GET  /analysis/cached       — look up cached report
-GET  /syllabus/{syllabus_id}/coverage  — placeholder for M4b
+GET  /syllabus/{syllabus_id}/coverage  — evidence-based coverage (Gap #6)
+POST /topics/map            — map questions→syllabus topics (Gap #7)
 """
 from typing import Optional
 from fastapi import APIRouter, HTTPException, BackgroundTasks, Query
@@ -14,6 +15,8 @@ from datetime import datetime, timezone
 
 from app.database import get_db
 from app.jobs.analysis_job import run_analysis_job
+from app.intelligence.coverage_analyzer import compute_coverage
+from app.intelligence.topic_mapper import map_questions_to_topics
 from app.logger import get_logger
 
 log = get_logger(__name__)
@@ -158,6 +161,44 @@ async def get_report(report_id: str):
 
 
 @router.get("/syllabus/{syllabus_id}/coverage")
-async def get_syllabus_coverage(syllabus_id: str):
-    """Placeholder for M4b — syllabus coverage analysis."""
-    return {"syllabus_id": syllabus_id, "coverage": {}}
+async def get_syllabus_coverage(
+    syllabus_id: str,
+    subject_id: str = Query(...),
+    regulation: str = Query(...),
+    branch_id: Optional[str] = Query(None),
+):
+    """
+    Gap #6: Evidence-based syllabus coverage analysis.
+    Maps questions with topic_tags to syllabus topics via fuzzy matching.
+    Returns per-unit and overall coverage percentages backed by real question evidence.
+    """
+    coverage = compute_coverage(
+        subject_id=subject_id,
+        regulation=regulation,
+        syllabus_id=syllabus_id,
+        branch_id=branch_id,
+    )
+    return {"success": True, "data": coverage}
+
+
+class MapTopicsRequest(BaseModel):
+    subject_id: str
+    regulation: str
+    branch_id: Optional[str] = None
+    syllabus_id: Optional[str] = None
+
+
+@router.post("/topics/map")
+async def map_topics(req: MapTopicsRequest):
+    """
+    Gap #7: Map questions → syllabus topics via fuzzy matching.
+    Populates question_topics junction table with confidence scores.
+    Idempotent — safe to re-run.
+    """
+    result = map_questions_to_topics(
+        subject_id=req.subject_id,
+        regulation=req.regulation,
+        branch_id=req.branch_id,
+        syllabus_id=req.syllabus_id,
+    )
+    return {"success": True, "data": result}
