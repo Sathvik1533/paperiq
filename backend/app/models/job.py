@@ -55,3 +55,13 @@ class ScrapeRequest(BaseModel):
     year_to: int = 2025
     force_refresh: bool = False
     btech_year: int = 2
+    # Fix B: exam category and attempt filters
+    regulation: Optional[str] = None
+    exam_categories: List[str] = Field(
+        default_factory=lambda: ["Semester", "Mid-1", "Mid-2"],
+        description="Filter: Semester | Mid-1 | Mid-2. Default = all."
+    )
+    exam_attempts: List[str] = Field(
+        default_factory=lambda: ["Regular", "Supplementary"],
+        description="Filter: Regular | Supplementary. Default = both."
+    )

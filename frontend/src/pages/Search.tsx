@@ -10,30 +10,35 @@ import { JobProgressBar } from '../components/ui/JobProgressBar'
 import { RegulationBadge } from '../components/ui/RegulationBadge'
 import type { College, Subject } from '../types'
 
-const REGULATIONS = ['R18', 'R22', 'R24']
+const REGULATIONS   = ['R18', 'R22', 'R24']
+const EXAM_CATEGORIES = ['Semester', 'Mid-1', 'Mid-2']
+const EXAM_ATTEMPTS   = ['Regular', 'Supplementary']
 
 export function Search() {
   const { user } = useAuthStore()
   const { regulation, setRegulation } = useAnalysisStore()
   const navigate = useNavigate()
 
-  const [colleges, setColleges]   = useState<College[]>([])
-  const [subjects, setSubjects]   = useState<Subject[]>([])
-  const [branches, setBranches]   = useState<{ id: string; name: string; short_name: string }[]>([])
+  const [colleges, setColleges] = useState<College[]>([])
+  const [subjects, setSubjects] = useState<Subject[]>([])
+  const [branches, setBranches] = useState<{ id: string; name: string; short_name: string }[]>([])
 
   const [form, setForm] = useState({
     college_id: '', branch_id: '', regulation,
     subject_id: '', year_from: '2021', year_to: '2025',
   })
 
-  const [status, setStatus]       = useState<'idle' | 'checking_cache' | 'scraping' | 'analyzing' | 'done' | 'error'>('idle')
+  // Multi-select state for exam category + attempt
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(['Semester'])
+  const [selectedAttempts, setSelectedAttempts]     = useState<string[]>(['Regular', 'Supplementary'])
+
+  const [status, setStatus]           = useState<'idle'|'checking_cache'|'scraping'|'analyzing'|'done'|'error'>('idle')
   const [jobProgress, setJobProgress] = useState(0)
-  const [jobStage, setJobStage]   = useState('')
-  const [error, setError]         = useState('')
+  const [jobStage, setJobStage]       = useState('')
+  const [error, setError]             = useState('')
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   useEffect(() => { getColleges().then(setColleges).catch(() => {}) }, [])
-
   useEffect(() => {
     if (form.college_id) {
       getSubjects(form.college_id).then(setSubjects).catch(() => {})
@@ -46,6 +51,18 @@ export function Search() {
     if (key === 'regulation') setRegulation(value)
   }
 
+  function toggleCategory(cat: string) {
+    setSelectedCategories(prev =>
+      prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat]
+    )
+  }
+
+  function toggleAttempt(att: string) {
+    setSelectedAttempts(prev =>
+      prev.includes(att) ? prev.filter(a => a !== att) : [...prev, att]
+    )
+  }
+
   function stopPoll() {
     if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null }
   }
@@ -54,20 +71,22 @@ export function Search() {
     if (!form.college_id || !form.subject_id) {
       setError('Select a college and subject.'); return
     }
+    if (selectedCategories.length === 0) {
+      setError('Select at least one exam category.'); return
+    }
     setError(''); setStatus('checking_cache'); setJobProgress(2); setJobStage('Checking cache')
 
-    // Check for existing cached analysis first
     const cached = await getCachedAnalysis(
       form.subject_id, form.regulation, form.branch_id || undefined,
       Number(form.year_from), Number(form.year_to)
     )
     if (cached) {
       const id = cached.id ?? (cached as any).report_id
-      navigate(`/dashboard?report=${id}`)
+      navigate(`/dashboard?report=${id}&subject_id=${form.subject_id}`)
       return
     }
 
-    setStatus('scraping'); setJobProgress(5); setJobStage('Downloading papers')
+    setStatus('scraping'); setJobProgress(5); setJobStage('Discovering syllabus & papers')
 
     try {
       const job = await triggerScrape(
@@ -75,6 +94,9 @@ export function Search() {
         form.subject_id,
         Number(form.year_from),
         Number(form.year_to),
+        form.regulation,
+        selectedCategories,
+        selectedAttempts,
       )
 
       pollRef.current = setInterval(async () => {
@@ -82,12 +104,11 @@ export function Search() {
           const updated = await getJobStatus(job.job_id)
           const pct = updated.progress_pct ?? updated.progress ?? 50
           setJobStage(updated.stage ?? 'Processing')
-          setJobProgress(Math.min(75, pct * 0.75))
+          setJobProgress(Math.min(75, Number(pct) * 0.75))
 
           if (updated.status === 'completed') {
             stopPoll()
-            setStatus('analyzing'); setJobStage('Analyzing'); setJobProgress(80)
-
+            setStatus('analyzing'); setJobStage('Generating analysis'); setJobProgress(80)
             const { report_id } = await runAnalysis(
               form.subject_id, form.regulation,
               form.branch_id || undefined,
@@ -115,13 +136,18 @@ export function Search() {
   const labelCls = 'block text-gray-300 text-sm mb-1'
   const isRunning = status === 'scraping' || status === 'analyzing' || status === 'checking_cache'
 
+  const chipCls = (active: boolean) =>
+    `px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer select-none transition-colors ${
+      active ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-400 hover:bg-gray-600'
+    }`
+
   return (
     <div className="min-h-screen bg-gray-900 px-4 py-8">
       <div className="max-w-2xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-2xl font-bold text-white">Analyze Papers</h1>
-            <p className="text-gray-400 text-sm mt-1">Select a subject and year range to run AI analysis</p>
+            <p className="text-gray-400 text-sm mt-1">Select subject, regulation and exam type to run AI analysis</p>
           </div>
           <div className="flex items-center gap-2">
             <RegulationBadge regulation={form.regulation} />
@@ -129,7 +155,7 @@ export function Search() {
           </div>
         </div>
 
-        <div className="bg-gray-800 rounded-xl p-6 space-y-4">
+        <div className="bg-gray-800 rounded-xl p-6 space-y-5">
           {/* College + Branch */}
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -179,10 +205,45 @@ export function Search() {
             </div>
           </div>
 
+          {/* Exam Category — new Fix B field */}
+          <div>
+            <label className={labelCls}>Exam Category</label>
+            <div className="flex gap-2 flex-wrap">
+              {EXAM_CATEGORIES.map(cat => (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => toggleCategory(cat)}
+                  className={chipCls(selectedCategories.includes(cat))}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+            <p className="text-gray-500 text-xs mt-1">Select which exams to analyze</p>
+          </div>
+
+          {/* Exam Attempt — new Fix B field */}
+          <div>
+            <label className={labelCls}>Exam Attempt</label>
+            <div className="flex gap-2">
+              {EXAM_ATTEMPTS.map(att => (
+                <button
+                  key={att}
+                  type="button"
+                  onClick={() => toggleAttempt(att)}
+                  className={chipCls(selectedAttempts.includes(att))}
+                >
+                  {att}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {error && <p className="text-red-400 text-sm">{error}</p>}
 
           {isRunning && (
-            <div className="pt-2">
+            <div className="pt-1">
               <JobProgressBar stage={jobStage} progress={jobProgress} message={jobStage} />
             </div>
           )}
@@ -199,7 +260,8 @@ export function Search() {
           </button>
 
           <p className="text-gray-500 text-xs text-center">
-            First run: downloads &amp; processes papers (~2–5 min). Subsequent runs use cache.
+            PaperIQ automatically discovers the syllabus, downloads papers, parses questions, and generates insights.
+            First run takes ~2–5 minutes. Subsequent runs use cache.
           </p>
         </div>
       </div>

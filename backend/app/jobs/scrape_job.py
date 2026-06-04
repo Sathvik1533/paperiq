@@ -1,6 +1,10 @@
 """
-Scrape Job — B1 fix: now auto-triggers extraction and parsing after download.
-Full pipeline: Discover → Download → Dedup → Store → Extract → Parse
+Scrape Job — Full auto pipeline:
+  Auto-discover syllabus → Discover papers → Download → Extract → Parse → Map topics
+
+Fix A: auto-discovers/downloads syllabus before scraping papers.
+Fix B: passes exam_categories + exam_attempts filters to scraper.
+Fix C (in parse_job): auto-triggers topic mapping after parsing.
 """
 import asyncio
 import os
@@ -30,15 +34,45 @@ async def run_scrape_job(
     year_from: int,
     year_to: int,
     force_refresh: bool = False,
+    exam_categories: list[str] | None = None,
+    exam_attempts: list[str] | None = None,
+    regulation: str | None = None,
 ) -> None:
     """
-    Full pipeline: Discover → Download → Extract → Parse
-    B1 fix: extraction and parsing now run automatically after download.
+    Full auto pipeline:
+    1. Auto-discover & download syllabus (Fix A — fallback: manual upload)
+    2. Discover matching paper archives
+    3. Download archives
+    4. Extract text from archives
+    5. Parse questions
+    6. Map questions to syllabus topics (via parse_job Fix C)
     """
     update_job(job_id, status=JobStatus.RUNNING, started_at=datetime.utcnow())
 
     try:
-        # ── Stage 1: Discover ────────────────────────────────────────────
+        # ── Stage 0: Auto-discover syllabus (Fix A) ──────────────────────
+        if subject_id and regulation:
+            advance_stage(job_id, JobStage.DISCOVERING, 2)
+            update_job(job_id, stage=JobStage.DISCOVERING)
+            log.info(f"[ScrapeJob:{job_id}] Auto-discovering syllabus...")
+            try:
+                db = get_db()
+                college_row = db.table("colleges").select("short_name").eq("id", college_id).single().execute()
+                college_short = college_row.data.get("short_name", "") if college_row.data else ""
+                from app.intelligence.syllabus_discoverer import discover_and_ingest_syllabus
+                syllabus_id = await discover_and_ingest_syllabus(
+                    subject_id=subject_id,
+                    regulation=regulation,
+                    college_short_name=college_short,
+                )
+                if syllabus_id:
+                    log.info(f"[ScrapeJob:{job_id}] Syllabus ready: {syllabus_id}")
+                else:
+                    log.info(f"[ScrapeJob:{job_id}] No auto-syllabus found — manual upload needed")
+            except Exception as e:
+                log.warning(f"[ScrapeJob:{job_id}] Syllabus discovery failed (non-fatal): {e}")
+
+        # ── Stage 1: Discover papers ─────────────────────────────────────
         advance_stage(job_id, JobStage.DISCOVERING, 5)
         scraper, strategy = await ScraperFactory.get_scraper(scraper_type)
         update_job(job_id, scraper_used=strategy)
@@ -48,6 +82,8 @@ async def run_scrape_job(
             btech_year=btech_year,
             year_from=year_from,
             year_to=year_to,
+            exam_categories=exam_categories,
+            exam_attempts=exam_attempts,
         )
         update_job(job_id, total_files=len(papers))
         advance_stage(job_id, JobStage.DISCOVERING, 15)
@@ -162,6 +198,7 @@ def _store_paper_meta(
             "file_type": ext,
             "file_size_bytes": file_size,
             "file_hash": file_hash,
+            "exam_category": paper.exam_category,
             "extraction_status": "pending",
         }).execute()
         log.info(f"[ScrapeJob] Stored paper: {paper.file_name}")

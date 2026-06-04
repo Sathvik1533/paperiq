@@ -51,6 +51,9 @@ async def trigger_scrape(
         year_from=req.year_from,
         year_to=req.year_to,
         force_refresh=req.force_refresh,
+        exam_categories=req.exam_categories,
+        exam_attempts=req.exam_attempts,
+        regulation=req.regulation,
     )
 
     log.info(f"[API] Scrape job queued: {job.id}")

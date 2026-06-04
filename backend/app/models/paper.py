@@ -10,12 +10,11 @@ class PaperMeta(BaseModel):
     file_name: str
     exam_year: int
     exam_month: str
-    exam_type: str          # Regular | Supplementary
-    exam_category: str      # Mid-1 | Mid-2 | Semester
+    exam_type: str                   # Regular | Supplementary
+    exam_category: str = "Semester"  # Semester | Mid-1 | Mid-2
     btech_year: int
-    regulation: str         # R22 | R20 | R18 etc.
-    label: str              # Human-readable label from portal
-    archive_type: str = "rar"  # rar | zip
+    label: str
+    archive_type: str = "rar"
 
 
 class Paper(BaseModel):

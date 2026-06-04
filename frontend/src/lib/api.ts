@@ -45,10 +45,21 @@ export async function triggerScrape(
   subjectId: string | undefined,
   yearFrom: number,
   yearTo: number,
+  regulation?: string,
+  examCategories?: string[],
+  examAttempts?: string[],
 ): Promise<{ job_id: string }> {
   return fetchWithAuth('/scrape/trigger', {
     method: 'POST',
-    body: JSON.stringify({ college_id: collegeId, subject_id: subjectId, year_from: yearFrom, year_to: yearTo }),
+    body: JSON.stringify({
+      college_id: collegeId,
+      subject_id: subjectId,
+      year_from: yearFrom,
+      year_to: yearTo,
+      regulation,
+      exam_categories: examCategories,
+      exam_attempts: examAttempts,
+    }),
   })
 }
 
