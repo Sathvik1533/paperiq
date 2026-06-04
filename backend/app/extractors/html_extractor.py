@@ -23,6 +23,7 @@ class HtmlExtractor(BaseExtractor):
             enc = detected.get("encoding") or "utf-8"
             html = raw_bytes.decode(enc, errors="ignore")
             soup = BeautifulSoup(html, "html.parser")
+            # Remove scripts/styles
             for tag in soup(["script", "style"]):
                 tag.decompose()
             raw_text = soup.get_text(separator="\n").strip()

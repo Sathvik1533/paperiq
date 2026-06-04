@@ -124,12 +124,13 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_topic_subject_reg_name
   ON topics(subject_id, regulation, name)
   WHERE regulation IS NOT NULL;
 
--- 12. PAPERS — indexes on existing columns
+-- 12. PAPERS — add indexes (columns already exist)
 CREATE INDEX IF NOT EXISTS idx_papers_regulation ON papers(regulation);
 CREATE INDEX IF NOT EXISTS idx_papers_branch     ON papers(branch_id);
 CREATE INDEX IF NOT EXISTS idx_papers_semester   ON papers(semester);
 
 -- 13. CROSS-REGULATION GUARD VIEW
+-- Always filter by paper_regulation = $1 when querying this view.
 CREATE OR REPLACE VIEW v_questions_regulated AS
 SELECT
   q.*,

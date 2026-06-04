@@ -23,14 +23,17 @@ class DocxExtractor(BaseExtractor):
             doc = Document(file_path)
             parts = []
 
+            # Paragraphs
             for para in doc.paragraphs:
                 t = para.text.strip()
                 if t:
                     parts.append(t)
 
+            # Tables — question papers store questions in table rows
             for table in doc.tables:
                 for row in table.rows:
                     row_cells = [cell.text.strip() for cell in row.cells if cell.text.strip()]
+                    # Deduplicate merged cells (python-docx repeats merged cells)
                     seen = []
                     for c in row_cells:
                         if c not in seen:

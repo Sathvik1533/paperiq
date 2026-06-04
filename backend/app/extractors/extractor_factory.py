@@ -9,6 +9,7 @@ from app.logger import get_logger
 
 log = get_logger(__name__)
 
+# Ordered list — first match wins
 _EXTRACTORS: list[BaseExtractor] = [
     PDFExtractor(),
     DocxExtractor(),
@@ -31,24 +32,39 @@ def is_archive(file_path: str) -> bool:
 
 
 def extract(file_path: str, normalize_text: bool = True) -> ExtractedDocument:
+    """
+    Detect file type and run the appropriate extractor.
+    Normalizes text by default.
+    Raises ExtractionError if no extractor handles the file.
+    """
     for extractor in _EXTRACTORS:
         if extractor.can_handle(file_path):
             doc = extractor.extract(file_path)
             if normalize_text:
                 doc.raw_text = normalize(doc.raw_text)
             return doc
+
     ext = os.path.splitext(file_path)[1].lower()
-    raise ExtractionError(f"No extractor for type '{ext}': {os.path.basename(file_path)}")
+    raise ExtractionError(
+        f"No extractor available for file type '{ext}': {os.path.basename(file_path)}"
+    )
 
 
 def extract_archive_and_process(archive_path: str, dest_dir: str) -> list[ExtractedDocument]:
+    """
+    Extract archive → find academic files → run extractor on each.
+    Returns list of ExtractedDocuments (skips unsupported files silently).
+    """
     from app.extractors.archive_extractor import ArchiveExtractor
+
     archive_ext = ArchiveExtractor()
     files = archive_ext.extract_to_dir(archive_path, dest_dir)
     log.info(f"[ExtractorFactory] Archive yielded {len(files)} files")
+
     results: list[ExtractedDocument] = []
     for file_path in files:
         if not is_academic_file(file_path):
+            log.debug(f"[ExtractorFactory] Skipping non-academic: {os.path.basename(file_path)}")
             continue
         try:
             doc = extract(file_path)
@@ -56,5 +72,6 @@ def extract_archive_and_process(archive_path: str, dest_dir: str) -> list[Extrac
             log.info(f"[ExtractorFactory] Extracted: {doc.file_name} ({doc.file_type}, {len(doc.raw_text)} chars)")
         except ExtractionError as e:
             log.warning(f"[ExtractorFactory] Failed: {os.path.basename(file_path)} — {e}")
+
     log.info(f"[ExtractorFactory] Processed {len(results)}/{len(files)} academic files")
     return results

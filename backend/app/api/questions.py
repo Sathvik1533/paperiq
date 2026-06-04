@@ -12,27 +12,52 @@ _parser = QuestionParser()
 
 
 @router.post("/parse/trigger")
-async def trigger_parsing(background_tasks: BackgroundTasks, paper_id: Optional[str] = None):
+async def trigger_parsing(
+    background_tasks: BackgroundTasks,
+    paper_id: Optional[str] = None,
+):
+    """Queue question parsing for one paper or all extracted papers."""
     background_tasks.add_task(run_parse_job, paper_id)
-    return {"success": True, "data": {"message": f"Parsing queued for {'paper ' + paper_id if paper_id else 'all extracted papers'}"}}
+    return {
+        "success": True,
+        "data": {
+            "message": f"Parsing queued for {'paper ' + paper_id if paper_id else 'all extracted papers'}"
+        }
+    }
 
 
 @router.post("/parse/run")
 async def run_parsing_sync(paper_id: Optional[str] = None):
+    """Synchronous parse — waits for result (use for testing)."""
     result = await run_parse_job(paper_id)
     return {"success": True, "data": result}
 
 
 @router.get("/parse/preview")
 async def preview_parse(paper_id: str):
+    """
+    Parse a paper in memory and return structured questions WITHOUT storing.
+    Useful for verifying parse quality before committing to DB.
+    """
     db = get_db()
-    paper = db.table("papers").select("id, subject_id, raw_text, title").eq("id", paper_id).single().execute()
+    paper = db.table("papers") \
+        .select("id, subject_id, raw_text, title") \
+        .eq("id", paper_id) \
+        .single().execute()
+
     if not paper.data:
         raise HTTPException(404, f"Paper {paper_id} not found")
+
     raw_text = paper.data.get("raw_text") or ""
     if not raw_text:
         raise HTTPException(400, "Paper has no extracted text. Run extraction first.")
-    result = _parser.parse(raw_text=raw_text, paper_id=paper_id, subject_id=paper.data.get("subject_id"))
+
+    result = _parser.parse(
+        raw_text=raw_text,
+        paper_id=paper_id,
+        subject_id=paper.data.get("subject_id"),
+    )
+
     return {
         "success": True,
         "data": {
@@ -49,37 +74,60 @@ async def preview_parse(paper_id: str):
 
 @router.get("/questions")
 async def list_questions(
-    subject_id: Optional[str] = None, paper_id: Optional[str] = None,
-    question_type: Optional[str] = None, marks: Optional[int] = None,
+    subject_id: Optional[str] = None,
+    paper_id: Optional[str] = None,
+    question_type: Optional[str] = None,
+    marks: Optional[int] = None,
     section: Optional[str] = None,
 ):
+    """List questions with filters. Returns evidence trail (paper_id on each)."""
     if paper_id:
         data = get_questions_for_paper(paper_id)
     elif subject_id:
-        data = get_questions_for_subject(subject_id, question_type, marks, section)
+        data = get_questions_for_subject(
+            subject_id=subject_id,
+            question_type=question_type,
+            marks=marks,
+            section=section,
+        )
     else:
         raise HTTPException(400, "Provide subject_id or paper_id")
-    return {"success": True, "data": data, "meta": {"total": len(data)}}
+
+    return {
+        "success": True,
+        "data": data,
+        "meta": {"total": len(data)}
+    }
 
 
 @router.get("/questions/{question_id}")
 async def get_question(question_id: str):
+    """
+    Single question with full evidence trail:
+    question -> paper -> original_url
+    """
     db = get_db()
     q_result = db.table("questions").select("*").eq("id", question_id).single().execute()
     if not q_result.data:
         raise HTTPException(404, "Question not found")
+
     q = q_result.data
-    paper = db.table("papers").select("id, title, exam_year, exam_month, exam_type, original_url, regulation").eq("id", q["paper_id"]).single().execute()
+    # Attach paper context for evidence trail
+    paper = db.table("papers") \
+        .select("id, title, exam_year, exam_month, exam_type, original_url, regulation") \
+        .eq("id", q["paper_id"]) \
+        .single().execute()
+
     return {
         "success": True,
         "data": {
             **q,
             "evidence": {
-                "paper_id":    q["paper_id"],
+                "paper_id"   : q["paper_id"],
                 "paper_title": paper.data.get("title") if paper.data else None,
-                "exam_year":   paper.data.get("exam_year") if paper.data else None,
-                "exam_month":  paper.data.get("exam_month") if paper.data else None,
-                "exam_type":   paper.data.get("exam_type") if paper.data else None,
+                "exam_year"  : paper.data.get("exam_year") if paper.data else None,
+                "exam_month" : paper.data.get("exam_month") if paper.data else None,
+                "exam_type"  : paper.data.get("exam_type") if paper.data else None,
                 "original_url": paper.data.get("original_url") if paper.data else None,
             }
         }
@@ -88,11 +136,16 @@ async def get_question(question_id: str):
 
 @router.get("/parse/stats")
 async def parse_stats():
+    """Returns question counts by type, section, marks."""
     db = get_db()
-    questions = db.table("questions").select("question_type, part, marks").execute().data
+    questions = db.table("questions").select(
+        "question_type, part, marks"
+    ).execute().data
+
     by_type: dict = {}
     by_section: dict = {}
     by_marks: dict = {}
+
     for q in questions:
         t = q.get("question_type") or "unknown"
         s = q.get("part") or "Unknown"
@@ -100,4 +153,13 @@ async def parse_stats():
         by_type[t]    = by_type.get(t, 0) + 1
         by_section[s] = by_section.get(s, 0) + 1
         by_marks[m]   = by_marks.get(m, 0) + 1
-    return {"success": True, "data": {"total": len(questions), "by_type": by_type, "by_section": by_section, "by_marks": by_marks}}
+
+    return {
+        "success": True,
+        "data": {
+            "total": len(questions),
+            "by_type": by_type,
+            "by_section": by_section,
+            "by_marks": by_marks,
+        }
+    }
