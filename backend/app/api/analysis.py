@@ -32,6 +32,8 @@ class RunAnalysisRequest(BaseModel):
     branch_id: Optional[str] = None
     year_from: Optional[int] = None
     year_to: Optional[int] = None
+    exam_category: Optional[str] = None
+    exam_attempt: Optional[str] = None
 
 
 class RunAnalysisResponse(BaseModel):
@@ -68,6 +70,8 @@ async def run_analysis(req: RunAnalysisRequest, background_tasks: BackgroundTask
                 branch_id=req.branch_id,
                 year_from=req.year_from,
                 year_to=req.year_to,
+                exam_category=req.exam_category,
+                exam_attempt=req.exam_attempt,
             )
             # Use the DB-assigned report id
             actual_id = report.get("id", report_id)
@@ -87,6 +91,8 @@ async def get_cached_report(
     branch_id: Optional[str] = Query(None),
     year_from: Optional[int] = Query(None),
     year_to: Optional[int] = Query(None),
+    exam_category: Optional[str] = Query(None),
+    exam_attempt: Optional[str] = Query(None),
 ):
     """
     Returns the most recent non-expired cached report matching the params.
@@ -110,6 +116,10 @@ async def get_cached_report(
         query = query.eq("year_from", year_from)
     if year_to:
         query = query.eq("year_to", year_to)
+    if exam_category:
+        query = query.eq("exam_category", exam_category)
+    if exam_attempt:
+        query = query.eq("exam_attempt", exam_attempt)
 
     result = query.execute()
     rows = result.data or []

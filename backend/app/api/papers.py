@@ -15,6 +15,7 @@ async def list_papers(
     subject_id: Optional[str] = None,
     year: Optional[int] = None,
     exam_type: Optional[str] = None,
+    exam_category: Optional[str] = None,
     regulation: Optional[str] = None,
     college_id: Optional[str] = None,
 ):
@@ -24,7 +25,7 @@ async def list_papers(
     """
     db = get_db()
     q = db.table("papers").select(
-        "id, title, exam_year, exam_month, exam_type, regulation, "
+        "id, title, exam_year, exam_month, exam_type, exam_category, regulation, "
         "max_marks, btech_year, file_type, extraction_status, subject_id, created_at"
     )
     if subject_id:
@@ -33,6 +34,8 @@ async def list_papers(
         q = q.eq("exam_year", year)
     if exam_type:
         q = q.eq("exam_type", exam_type)
+    if exam_category:
+        q = q.eq("exam_category", exam_category)
     if regulation:
         q = q.eq("regulation", regulation)
     if college_id:

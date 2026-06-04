@@ -1,8 +1,9 @@
 import os
-from typing import List
+from typing import List, Optional
 from app.scrapers.requests_scraper import RequestsScraper
 from app.scrapers.base import ScraperError, ScraperUnavailableError
 from app.models.paper import PaperMeta
+from app.utils.exam_classifier import classify_paper_from_label
 from app.config import settings
 from app.logger import get_logger
 
@@ -35,6 +36,9 @@ class PlaywrightScraper(RequestsScraper):
         btech_year: int = 2,
         year_from: int = 2021,
         year_to: int = 2025,
+        regulation: Optional[str] = None,
+        exam_category: Optional[str] = None,
+        exam_attempt: Optional[str] = None,
     ) -> List[PaperMeta]:
         """
         Use Playwright to render portal, extract HTML, then delegate
@@ -88,21 +92,33 @@ class PlaywrightScraper(RequestsScraper):
             exam_year = int(year_match.group(1))
             if not (year_from <= exam_year <= year_to):
                 continue
+            
             month_match = re.search(
                 r'(January|February|March|April|May|June|July|August|September|October|November|December)',
                 label, re.I
             )
             exam_month = month_match.group(1).capitalize() if month_match else "Unknown"
-            exam_type = "Supplementary" if any(
-                w in label.lower() for w in ["supply", "supple", "supplementary"]
-            ) else "Regular"
+            
+            # Classify using exam_classifier utility
+            classification = classify_paper_from_label(label)
+            
+            # Apply filters if provided
+            if regulation and classification["regulation"] != regulation:
+                continue
+            if exam_category and classification["exam_category"] != exam_category:
+                continue
+            if exam_attempt and classification["exam_type"] != exam_attempt:
+                continue
+            
             full_url = urljoin(base_path + "/", href)
             papers.append(PaperMeta(
                 url=full_url,
                 file_name=href.split("/")[-1],
                 exam_year=exam_year,
                 exam_month=exam_month,
-                exam_type=exam_type,
+                exam_type=classification["exam_type"],
+                exam_category=classification["exam_category"],
+                regulation=classification["regulation"] or "Unknown",
                 btech_year=btech_year,
                 label=label,
             ))

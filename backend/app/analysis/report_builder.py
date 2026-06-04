@@ -33,12 +33,15 @@ class ReportBuilder:
         branch_id: Optional[str],
         year_from: Optional[int],
         year_to: Optional[int],
+        exam_category: Optional[str] = None,
+        exam_attempt: Optional[str] = None,
     ) -> dict:
         """
         Builds and stores a full AnalysisReport. Returns the report dict.
         """
         log.info(f"Building report: subject={subject_id} reg={regulation} "
-                 f"branch={branch_id} years={year_from}-{year_to}")
+                 f"branch={branch_id} years={year_from}-{year_to} "
+                 f"category={exam_category} attempt={exam_attempt}")
 
         # 1. Backfill unit/topic tags for this subject+regulation
         try:
@@ -47,7 +50,10 @@ class ReportBuilder:
             log.warning(f"backfill_questions failed (non-fatal): {e}")
 
         # 2. Fetch questions from v_questions_regulated view
-        questions = self._fetch_questions(subject_id, regulation, branch_id, year_from, year_to)
+        questions = self._fetch_questions(
+            subject_id, regulation, branch_id, year_from, year_to,
+            exam_category, exam_attempt
+        )
         log.info(f"Fetched {len(questions)} questions for analysis")
 
         if not questions:
@@ -83,6 +89,8 @@ class ReportBuilder:
             "branch_id": branch_id,
             "year_from": year_from,
             "year_to": year_to,
+            "exam_category": exam_category,
+            "exam_attempt": exam_attempt,
             "generated_at": now.isoformat(),
             "expires_at": (now + timedelta(days=CACHE_TTL_DAYS)).isoformat(),
             "status": "ready",
@@ -112,10 +120,13 @@ class ReportBuilder:
         branch_id: Optional[str],
         year_from: Optional[int],
         year_to: Optional[int],
+        exam_category: Optional[str] = None,
+        exam_attempt: Optional[str] = None,
     ) -> list[dict]:
         """
         Always uses v_questions_regulated with WHERE paper_regulation = regulation.
         Never mixes regulations.
+        Now supports exam_category and exam_attempt filtering.
         """
         query = (
             self.db.table("v_questions_regulated")
@@ -129,6 +140,10 @@ class ReportBuilder:
             query = query.gte("exam_year", year_from)
         if year_to:
             query = query.lte("exam_year", year_to)
+        if exam_category:
+            query = query.eq("exam_category", exam_category)
+        if exam_attempt:
+            query = query.eq("exam_type", exam_attempt)
 
         result = query.execute()
         rows = result.data or []

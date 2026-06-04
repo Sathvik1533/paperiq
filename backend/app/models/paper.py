@@ -11,7 +11,9 @@ class PaperMeta(BaseModel):
     exam_year: int
     exam_month: str
     exam_type: str          # Regular | Supplementary
+    exam_category: str      # Mid-1 | Mid-2 | Semester
     btech_year: int
+    regulation: str         # R22 | R20 | R18 etc.
     label: str              # Human-readable label from portal
     archive_type: str = "rar"  # rar | zip
 
@@ -25,6 +27,7 @@ class Paper(BaseModel):
 
     title: str
     exam_type: Optional[str] = None
+    exam_category: Optional[str] = None
     exam_month: Optional[str] = None
     exam_year: Optional[int] = None
     semester: Optional[int] = None
