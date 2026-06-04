@@ -13,8 +13,8 @@ from app.logger import get_logger
 
 log = get_logger(__name__)
 
-_MID1_KEYWORDS   = ["mid-1", "mid1", "midterm-1", "midterm1", "unit test 1", "ct1", "t1"]
-_MID2_KEYWORDS   = ["mid-2", "mid2", "midterm-2", "midterm2", "unit test 2", "ct2", "t2"]
+_MID1_KEYWORDS   = ["mid-1", "mid1", "mid-i ", "mid-i-", "midterm-1", "midterm1", "unit test 1", "ct1"]
+_MID2_KEYWORDS   = ["mid-2", "mid2", "mid-ii", "mid ii", "midterm-2", "midterm2", "unit test 2", "ct2"]
 _SUPPLE_KEYWORDS = ["supply", "supple", "supplementary"]
 
 
