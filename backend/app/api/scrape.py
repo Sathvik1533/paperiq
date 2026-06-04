@@ -1,10 +1,11 @@
 import asyncio
-from fastapi import APIRouter, HTTPException, BackgroundTasks
+from fastapi import APIRouter, HTTPException, BackgroundTasks, Depends
 from app.models.job import ScrapeRequest
 from app.jobs.job_manager import create_job, get_job
 from app.jobs.scrape_job import run_scrape_job
 from app.database import get_db
 from app.logger import get_logger
+from app.middleware.rate_limit import rate_limit_scrape
 
 router = APIRouter()
 log = get_logger(__name__)
@@ -16,6 +17,7 @@ MLRIT_PORTAL = "https://exams.mlrinstitutions.ac.in/Old_Qp/Old_QP.html"
 async def trigger_scrape(
     req: ScrapeRequest,
     background_tasks: BackgroundTasks,
+    _: None = Depends(rate_limit_scrape),
 ):
     # Resolve college details
     db = get_db()

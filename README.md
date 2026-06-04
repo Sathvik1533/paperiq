@@ -64,10 +64,46 @@ bun dev
 | 1 | MLRIT Scraper | ✅ Complete |
 | 2 | Document Extraction Engine | ✅ Complete |
 | 3 | Question Parsing & Storage | ✅ Complete |
-| 4 | Pattern Analysis Engine | 🔄 In Progress |
-| 5 | Personalized Study Planner | ⏳ Pending |
-| 6 | Dashboard & Repository | ⏳ Pending |
-| 7 | Deployment & Polish | ⏳ Pending |
+| 4 | Pattern Analysis Engine | ✅ Complete |
+| 5 | Personalized Study Planner | ✅ Complete |
+| 6 | Dashboard & Repository | ✅ Complete |
+| 7 | Deployment & Polish | 🔄 In Progress |
+
+## Development
+
+### Running Locally
+
+```bash
+# Backend
+cd backend
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env    # fill in SUPABASE_URL, SUPABASE_SERVICE_KEY, GROQ_API_KEY
+uvicorn app.main:app --reload --port 8000
+
+# Frontend (new terminal)
+cd frontend
+bun install
+cp .env.example .env    # set VITE_API_URL=http://localhost:8000
+bun dev
+```
+
+### Running Tests
+
+```bash
+cd backend
+pytest tests/ --cov=app -q
+```
+
+### Environment Variables
+
+| Variable | Required | Description |
+|---|---|---|
+| `SUPABASE_URL` | Yes | Supabase project URL |
+| `SUPABASE_SERVICE_KEY` | Yes | Supabase service role key |
+| `SECRET_KEY` | Yes | JWT signing secret |
+| `GROQ_API_KEY` | Yes | Groq LLM API key |
+| `ENVIRONMENT` | No | `development` / `production` / `test` |
 
 ## Documentation
 

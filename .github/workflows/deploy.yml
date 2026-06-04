@@ -1,0 +1,55 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy-backend:
+    name: Deploy Backend
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image
+        working-directory: backend
+        run: |
+          docker build -t paperiq-backend:latest .
+
+      - name: Deploy backend
+        run: |
+          echo "Deploy backend to your server"
+          echo "Example: docker push ghcr.io/your-org/paperiq-backend:latest"
+          echo "Then SSH into server and docker pull + docker-compose up -d"
+
+  deploy-frontend:
+    name: Deploy Frontend
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: bun install
+
+      - name: Build frontend
+        working-directory: frontend
+        run: bun run build
+
+      - name: Deploy to Vercel
+        run: |
+          echo "Deploy frontend dist/ to Vercel — run: vercel --prod"
+          echo "Or install vercel CLI and run from frontend/:"
+          echo "  cd frontend && vercel --prod --token \$VERCEL_TOKEN"
