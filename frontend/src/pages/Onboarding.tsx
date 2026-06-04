@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { useAnalysisStore } from '../store/analysisStore'
-import { getColleges, getSubjects, upsertUserProfile } from '../lib/api'
+import { upsertUserProfile } from '../lib/api'
+import { supabase } from '../lib/supabase'
 import type { College, Subject } from '../types'
 
 const REGULATIONS = ['R18', 'R22', 'R24']
@@ -15,6 +16,7 @@ export function Onboarding() {
   const [step, setStep] = useState(1)
   const [colleges, setColleges] = useState<College[]>([])
   const [subjects, setSubjects] = useState<Subject[]>([])
+  const [loadingColleges, setLoadingColleges] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
@@ -25,20 +27,43 @@ export function Onboarding() {
     hours_per_day: '4', preparation_level: 'intermediate',
   })
 
-  useEffect(() => { getColleges().then(setColleges).catch(() => {}) }, [])
+  // Load colleges directly from Supabase (public read — no backend dependency)
   useEffect(() => {
-    if (form.college_id) getSubjects(form.college_id).then(setSubjects).catch(() => {})
+    supabase
+      .from('colleges')
+      .select('id, name, short_name')
+      .eq('is_active', true)
+      .then(({ data, error: err }) => {
+        if (err) {
+          setError(`Could not load colleges: ${err.message}`)
+        } else {
+          setColleges((data as College[]) ?? [])
+        }
+        setLoadingColleges(false)
+      })
+  }, [])
+
+  useEffect(() => {
+    if (!form.college_id) return
+    supabase
+      .from('subjects')
+      .select('id, name, code, regulation')
+      .eq('college_id', form.college_id)
+      .then(({ data }) => setSubjects((data as Subject[]) ?? []))
   }, [form.college_id])
 
   function set(key: string, value: string) { setForm(f => ({ ...f, [key]: value })) }
 
   async function handleSubmit() {
-    if (!user) return
-    setSaving(true); setError('')
+    if (!user) {
+      setError('Not logged in. Please sign in first.')
+      return
+    }
+    setSaving(true)
+    setError('')
     try {
-      // B4 fix: use `id` field (PK FK to auth.users), not `user_id`
       await upsertUserProfile(user.id, {
-        full_name: user.user_metadata?.full_name,
+        full_name: user.user_metadata?.full_name ?? user.email ?? '',
         college_id: form.college_id || undefined,
         regulation: form.regulation,
         current_year: Number(form.current_year),
@@ -47,12 +72,14 @@ export function Onboarding() {
         target_marks: Number(form.target_marks),
         hours_per_day: Number(form.hours_per_day),
         preparation_level: form.preparation_level,
-        onboarding_complete: true,   // B8 fix: marks onboarding done so gate doesn't re-trigger
+        onboarding_complete: true,
       })
       setRegulation(form.regulation)
       navigate('/search', { replace: true })
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to save profile.')
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e)
+      // Surface the actual Supabase error so we can debug
+      setError(`Failed to save profile: ${msg}`)
     } finally {
       setSaving(false)
     }
@@ -70,7 +97,9 @@ export function Onboarding() {
           {[1, 2].map(s => (
             <div key={s} className="flex items-center gap-2">
               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                s === step ? 'bg-blue-600 text-white' : s < step ? 'bg-green-600 text-white' : 'bg-gray-700 text-gray-400'
+                s === step ? 'bg-blue-600 text-white'
+                : s < step  ? 'bg-green-600 text-white'
+                : 'bg-gray-700 text-gray-400'
               }`}>{s < step ? '✓' : s}</div>
               {s < 2 && <div className={`h-0.5 w-12 ${s < step ? 'bg-green-600' : 'bg-gray-700'}`} />}
             </div>
@@ -86,10 +115,20 @@ export function Onboarding() {
           <div className="space-y-4">
             <div>
               <label className={labelCls}>College</label>
-              <select className={inputCls} value={form.college_id} onChange={e => set('college_id', e.target.value)}>
-                <option value="">Select college</option>
-                {colleges.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
+              {loadingColleges ? (
+                <div className="w-full bg-gray-700 rounded-lg px-3 py-2 text-sm text-gray-400 border border-gray-600">
+                  Loading colleges...
+                </div>
+              ) : colleges.length === 0 ? (
+                <div className="w-full bg-gray-700 rounded-lg px-3 py-2 text-sm text-yellow-400 border border-yellow-700">
+                  No colleges found — make sure the backend is running
+                </div>
+              ) : (
+                <select className={inputCls} value={form.college_id} onChange={e => set('college_id', e.target.value)}>
+                  <option value="">Select college</option>
+                  {colleges.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+              )}
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -151,7 +190,11 @@ export function Onboarding() {
           </div>
         )}
 
-        {error && <p className="text-red-400 text-sm mt-4">{error}</p>}
+        {error && (
+          <div className="mt-4 bg-red-900/30 border border-red-700 rounded-lg p-3">
+            <p className="text-red-400 text-sm">{error}</p>
+          </div>
+        )}
 
         <div className="flex justify-between mt-8">
           <button onClick={() => setStep(s => s - 1)} disabled={step === 1}
