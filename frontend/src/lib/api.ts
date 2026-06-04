@@ -1,104 +1,115 @@
 import { supabase } from './supabase'
 import type {
-  College,
-  Subject,
-  AnalysisReport,
-  StudyPlan,
-  ReadinessScore,
-  MockExam,
-  ScrapeJob,
-  Paper,
+  College, Subject, AnalysisReport, StudyPlan, ReadinessScore,
+  MockExam, ScrapeJob, Paper, Syllabus, SyllabusTopic, CoverageReport,
 } from '../types'
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL as string
 
-async function fetchWithAuth<T>(
-  path: string,
-  options: RequestInit = {}
-): Promise<T> {
+async function fetchWithAuth<T>(path: string, options: RequestInit = {}): Promise<T> {
   const { data: { session } } = await supabase.auth.getSession()
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(options.headers as Record<string, string> ?? {}),
   }
-  if (session?.access_token) {
-    headers['Authorization'] = `Bearer ${session.access_token}`
-  }
+  if (session?.access_token) headers['Authorization'] = `Bearer ${session.access_token}`
   const res = await fetch(`${BASE_URL}${path}`, { ...options, headers })
   if (!res.ok) {
     const text = await res.text()
-    throw new Error(`API error ${res.status}: ${text}`)
+    throw new Error(`API ${res.status}: ${text}`)
   }
-  return res.json() as Promise<T>
+  return res.json()
 }
+
+// ── Academic ──────────────────────────────────────────────────────────────
 
 export async function getColleges(): Promise<College[]> {
-  return fetchWithAuth<College[]>('/colleges')
+  const res = await fetchWithAuth<{ data: College[] } | College[]>('/colleges')
+  return (res as any).data ?? (res as College[])
 }
 
-export async function getSubjects(collegeId: number): Promise<Subject[]> {
-  return fetchWithAuth<Subject[]>(`/subjects?college_id=${collegeId}`)
+export async function getSubjects(collegeId: string): Promise<Subject[]> {
+  const res = await fetchWithAuth<{ data: Subject[] } | Subject[]>(`/subjects?college=${collegeId}`)
+  return (res as any).data ?? (res as Subject[])
 }
+
+export async function getBranches(collegeId: string): Promise<{ id: string; name: string; short_name: string }[]> {
+  const res = await fetchWithAuth<{ data: any[] } | any[]>(`/colleges/${collegeId}/branches`)
+  return (res as any).data ?? (res as any[])
+}
+
+// ── Scraping ──────────────────────────────────────────────────────────────
 
 export async function triggerScrape(
-  collegeId: number,
-  subjectId: number | undefined,
+  collegeId: string,
+  subjectId: string | undefined,
   yearFrom: number,
-  yearTo: number
-): Promise<ScrapeJob> {
-  return fetchWithAuth<ScrapeJob>('/scrape/trigger', {
+  yearTo: number,
+): Promise<{ job_id: string }> {
+  return fetchWithAuth('/scrape/trigger', {
     method: 'POST',
     body: JSON.stringify({ college_id: collegeId, subject_id: subjectId, year_from: yearFrom, year_to: yearTo }),
   })
 }
 
 export async function getJobStatus(jobId: string): Promise<ScrapeJob> {
-  return fetchWithAuth<ScrapeJob>(`/scrape/jobs/${jobId}`)
+  return fetchWithAuth(`/scrape/jobs/${jobId}`)
 }
 
+// ── Analysis ──────────────────────────────────────────────────────────────
+
 export async function runAnalysis(
-  subjectId: number,
+  subjectId: string,
   regulation: string,
-  branchId: number | undefined,
+  branchId: string | undefined,
   yearFrom: number,
-  yearTo: number
+  yearTo: number,
 ): Promise<{ report_id: string }> {
-  return fetchWithAuth<{ report_id: string }>('/analysis/run', {
+  return fetchWithAuth('/analysis/run', {
     method: 'POST',
-    body: JSON.stringify({
-      subject_id: subjectId,
-      regulation,
-      branch_id: branchId,
-      year_from: yearFrom,
-      year_to: yearTo,
-    }),
+    body: JSON.stringify({ subject_id: subjectId, regulation, branch_id: branchId, year_from: yearFrom, year_to: yearTo }),
   })
 }
 
 export async function getAnalysis(reportId: string): Promise<AnalysisReport> {
-  return fetchWithAuth<AnalysisReport>(`/analysis/${reportId}`)
+  const res = await fetchWithAuth<any>(`/analysis/${reportId}`)
+  const report: AnalysisReport = res.data ?? res
+  // B3 fix: normalise field name aliases
+  if (!report.total_questions && (report as any).question_count) {
+    report.total_questions = (report as any).question_count
+  }
+  return report
+}
+
+export async function getAnalysisStatus(reportId: string): Promise<{ status: string }> {
+  return fetchWithAuth(`/analysis/${reportId}/status`)
 }
 
 export async function getCachedAnalysis(
-  subjectId: number,
+  subjectId: string,
   regulation: string,
-  branchId: number | undefined,
-  yearFrom: number,
-  yearTo: number
+  branchId?: string,
+  yearFrom?: number,
+  yearTo?: number,
 ): Promise<AnalysisReport | null> {
-  const params = new URLSearchParams({
-    subject_id: String(subjectId),
-    regulation,
-    year_from: String(yearFrom),
-    year_to: String(yearTo),
-  })
-  if (branchId !== undefined) params.set('branch_id', String(branchId))
-  try {
-    return await fetchWithAuth<AnalysisReport>(`/analysis/cached?${params}`)
-  } catch {
-    return null
-  }
+  const params = new URLSearchParams({ subject_id: subjectId, regulation })
+  if (branchId) params.set('branch_id', branchId)
+  if (yearFrom) params.set('year_from', String(yearFrom))
+  if (yearTo) params.set('year_to', String(yearTo))
+  try { return await fetchWithAuth<AnalysisReport>(`/analysis/cached?${params}`) }
+  catch { return null }
 }
+
+// ── Papers ────────────────────────────────────────────────────────────────
+
+export async function getPapers(subjectId: string, regulation: string): Promise<Paper[]> {
+  const res = await fetchWithAuth<{ data: Paper[] } | Paper[]>(
+    `/papers?subject_id=${subjectId}&regulation=${regulation}`
+  )
+  return (res as any).data ?? (res as Paper[])
+}
+
+// ── Planner ───────────────────────────────────────────────────────────────
 
 export async function generatePlan(
   reportId: string,
@@ -106,46 +117,127 @@ export async function generatePlan(
   hoursPerDay: number,
   targetGrade: string,
   regulation: string,
-  syllabusId: number | undefined,
-  subjectId: number
+  syllabusId: string | undefined,
+  subjectId: string,
+  preparationLevel: string = 'intermediate',
 ): Promise<StudyPlan> {
-  return fetchWithAuth<StudyPlan>('/planner/generate', {
-    method: 'POST',
-    body: JSON.stringify({
-      report_id: reportId,
-      exam_date: examDate,
-      hours_per_day: hoursPerDay,
-      target_grade: targetGrade,
-      regulation,
-      syllabus_id: syllabusId,
-      subject_id: subjectId,
-    }),
-  })
+  const body: Record<string, unknown> = {
+    report_id: reportId,
+    exam_date: examDate,
+    hours_per_day: hoursPerDay,
+    target_grade: targetGrade,
+    regulation,
+    subject_id: subjectId,
+    preparation_level: preparationLevel,
+  }
+  if (syllabusId) body.syllabus_id = syllabusId  // B5 fix: only send if defined
+  return fetchWithAuth('/planner/generate', { method: 'POST', body: JSON.stringify(body) })
 }
 
 export async function calculateReadiness(
   userId: string,
-  subjectId: number,
+  subjectId: string,
   regulation: string,
-  planId?: string
+  planId?: string,
 ): Promise<ReadinessScore> {
-  return fetchWithAuth<ReadinessScore>('/planner/readiness', {
+  return fetchWithAuth('/readiness/calculate', {
     method: 'POST',
-    body: JSON.stringify({ user_id: userId, subject_id: subjectId, regulation, plan_id: planId }),
+    body: JSON.stringify({ user_id: userId, subject_id: subjectId, regulation, study_plan_id: planId }),
   })
 }
 
 export async function generateMock(
   reportId: string,
   regulation: string,
-  subjectId: number
+  subjectId: string,
 ): Promise<MockExam> {
-  return fetchWithAuth<MockExam>('/mock/generate', {
+  return fetchWithAuth('/mock/generate', {
     method: 'POST',
     body: JSON.stringify({ report_id: reportId, regulation, subject_id: subjectId }),
   })
 }
 
-export async function getPapers(subjectId: number, regulation: string): Promise<Paper[]> {
-  return fetchWithAuth<Paper[]>(`/papers?subject_id=${subjectId}&regulation=${regulation}`)
+// ── Syllabus ──────────────────────────────────────────────────────────────
+
+export async function uploadSyllabus(
+  file: File,
+  subjectId: string,
+  regulation: string,
+  branchId?: string,
+  semester?: number,
+): Promise<{ syllabus_id: string; units_found: number; total_topics: number; units: any[] }> {
+  const { data: { session } } = await supabase.auth.getSession()
+  const form = new FormData()
+  form.append('file', file)
+  form.append('subject_id', subjectId)
+  form.append('regulation', regulation)
+  if (branchId) form.append('branch_id', branchId)
+  if (semester) form.append('semester', String(semester))
+  const res = await fetch(`${BASE_URL}/syllabus/upload`, {
+    method: 'POST',
+    headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {},
+    body: form,
+  })
+  if (!res.ok) throw new Error(`Upload failed: ${await res.text()}`)
+  const json = await res.json()
+  return json.data ?? json
+}
+
+export async function getSyllabi(subjectId: string, regulation: string): Promise<Syllabus[]> {
+  const res = await fetchWithAuth<{ data: Syllabus[] }>(`/syllabus?subject_id=${subjectId}&regulation=${regulation}`)
+  return res.data ?? []
+}
+
+export async function getSyllabusTopics(syllabusId: string): Promise<SyllabusTopic[]> {
+  const res = await fetchWithAuth<{ data: SyllabusTopic[] }>(`/syllabus/${syllabusId}/topics`)
+  return res.data ?? []
+}
+
+export async function getSyllabusCoverage(
+  syllabusId: string,
+  subjectId: string,
+  regulation: string,
+): Promise<CoverageReport> {
+  const params = new URLSearchParams({ subject_id: subjectId, regulation })
+  const res = await fetchWithAuth<{ data: CoverageReport } | CoverageReport>(`/syllabus/${syllabusId}/coverage?${params}`)
+  return (res as any).data ?? (res as CoverageReport)
+}
+
+export async function mapTopics(
+  subjectId: string,
+  regulation: string,
+  syllabusId?: string,
+): Promise<{ mapped: number; skipped_already_mapped: number; no_syllabus_match: number }> {
+  return fetchWithAuth('/topics/map', {
+    method: 'POST',
+    body: JSON.stringify({ subject_id: subjectId, regulation, syllabus_id: syllabusId }),
+  })
+}
+
+// ── Activity ──────────────────────────────────────────────────────────────
+
+export async function logActivity(
+  userId: string,
+  activityType: string,
+  subjectId: string,
+  regulation: string,
+  referenceId?: string,
+  metadata?: Record<string, unknown>,
+): Promise<void> {
+  await fetchWithAuth('/activity', {
+    method: 'POST',
+    body: JSON.stringify({ user_id: userId, activity_type: activityType, subject_id: subjectId, regulation, reference_id: referenceId, metadata }),
+  })
+}
+
+// ── Profile (B4 fix) ──────────────────────────────────────────────────────
+
+export async function getUserProfile(userId: string) {
+  const { data } = await supabase.from('user_profiles').select('*').eq('id', userId).single()
+  return data
+}
+
+export async function upsertUserProfile(userId: string, profile: Record<string, unknown>) {
+  const { error } = await supabase.from('user_profiles').upsert({ ...profile, id: userId })
+  if (error) throw error
 }

@@ -1,3 +1,7 @@
+"""
+Scrape Job — B1 fix: now auto-triggers extraction and parsing after download.
+Full pipeline: Discover → Download → Dedup → Store → Extract → Parse
+"""
 import asyncio
 import os
 from datetime import datetime
@@ -28,14 +32,13 @@ async def run_scrape_job(
     force_refresh: bool = False,
 ) -> None:
     """
-    Full scraping pipeline for one job:
-    Discover → Download → Dedup → Store metadata
-    Extraction and parsing happen in Milestone 2/3.
+    Full pipeline: Discover → Download → Extract → Parse
+    B1 fix: extraction and parsing now run automatically after download.
     """
     update_job(job_id, status=JobStatus.RUNNING, started_at=datetime.utcnow())
 
     try:
-        # ── Stage 1: Discover ───────────────────────────────────────────
+        # ── Stage 1: Discover ────────────────────────────────────────────
         advance_stage(job_id, JobStage.DISCOVERING, 5)
         scraper, strategy = await ScraperFactory.get_scraper(scraper_type)
         update_job(job_id, scraper_used=strategy)
@@ -54,29 +57,31 @@ async def run_scrape_job(
             complete_job(job_id, 0, 0, 0)
             return
 
-        # ── Stage 2: Download ──────────────────────────────────────────
+        # ── Stage 2: Download ────────────────────────────────────────────
         advance_stage(job_id, JobStage.DOWNLOADING, 20)
         dest = os.path.join(download_dir(), job_id)
         os.makedirs(dest, exist_ok=True)
 
         papers_new = 0
         papers_cached = 0
-        downloaded_paths: list[tuple[PaperMeta, str]] = []
+        new_paper_ids: list[str] = []
 
         for i, paper in enumerate(papers, 1):
             try:
                 local_path = await scraper.download(paper, dest)
                 file_hash = sha256_file(local_path)
 
-                # Dedup check
                 if not force_refresh and _paper_exists(file_hash):
                     papers_cached += 1
                     log.info(f"[ScrapeJob] Cached: {paper.file_name}")
                 else:
                     papers_new += 1
-                    _store_paper_meta(paper, local_path, file_hash,
-                                      college_id, subject_id, source_id)
-                    downloaded_paths.append((paper, local_path))
+                    paper_id = _store_paper_meta(
+                        paper, local_path, file_hash,
+                        college_id, subject_id, source_id
+                    )
+                    if paper_id:
+                        new_paper_ids.append(paper_id)
 
             except Exception as e:
                 job = get_job(job_id)
@@ -85,8 +90,29 @@ async def run_scrape_job(
                     job.error_log.append({"file": paper.file_name, "error": str(e)})
                 log.warning(f"[ScrapeJob] Failed {paper.file_name}: {e}")
 
-            pct = 20 + int((i / len(papers)) * 60)
+            pct = 20 + int((i / len(papers)) * 35)
             update_job(job_id, processed_files=i, progress_pct=pct)
+
+        # ── Stage 3: Extract (B1 fix) ────────────────────────────────────
+        if new_paper_ids:
+            advance_stage(job_id, JobStage.EXTRACTING, 60)
+            log.info(f"[ScrapeJob:{job_id}] Extracting {len(new_paper_ids)} new papers")
+            try:
+                from app.jobs.extract_job import run_extract_job
+                extract_result = await run_extract_job(paper_id=None)
+                log.info(f"[ScrapeJob:{job_id}] Extraction: {extract_result}")
+            except Exception as e:
+                log.warning(f"[ScrapeJob:{job_id}] Extraction failed (non-fatal): {e}")
+
+        # ── Stage 4: Parse (B1 fix) ──────────────────────────────────────
+            advance_stage(job_id, JobStage.PARSING, 80)
+            log.info(f"[ScrapeJob:{job_id}] Parsing questions")
+            try:
+                from app.jobs.parse_job import run_parse_job
+                parse_result = await run_parse_job(paper_id=None)
+                log.info(f"[ScrapeJob:{job_id}] Parsing: {parse_result}")
+            except Exception as e:
+                log.warning(f"[ScrapeJob:{job_id}] Parsing failed (non-fatal): {e}")
 
         complete_job(
             job_id,
@@ -116,12 +142,13 @@ def _store_paper_meta(
     college_id: str,
     subject_id: str | None,
     source_id: str | None,
-) -> None:
+) -> str | None:
+    """Returns the new paper_id, or None on failure."""
     try:
         file_size = os.path.getsize(local_path)
         ext = local_path.rsplit(".", 1)[-1].lower()
         db = get_db()
-        db.table("papers").insert({
+        result = db.table("papers").insert({
             "college_id": college_id,
             "subject_id": subject_id,
             "source_id": source_id,
@@ -138,5 +165,7 @@ def _store_paper_meta(
             "extraction_status": "pending",
         }).execute()
         log.info(f"[ScrapeJob] Stored paper: {paper.file_name}")
+        return result.data[0]["id"] if result.data else None
     except Exception as e:
         log.error(f"[ScrapeJob] DB store failed: {e}")
+        return None

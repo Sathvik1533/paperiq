@@ -1,4 +1,7 @@
-from fastapi import APIRouter, HTTPException, UploadFile, File, Form
+"""
+Papers API — B7 fix: GET /papers now includes parsed questions per paper.
+"""
+from fastapi import APIRouter, HTTPException
 from typing import Optional
 from app.database import get_db
 from app.logger import get_logger
@@ -15,10 +18,14 @@ async def list_papers(
     regulation: Optional[str] = None,
     college_id: Optional[str] = None,
 ):
+    """
+    Returns papers with their parsed questions included.
+    B7 fix: joins questions so the Paper Viewer can display them.
+    """
     db = get_db()
     q = db.table("papers").select(
         "id, title, exam_year, exam_month, exam_type, regulation, "
-        "max_marks, btech_year, file_type, extraction_status, created_at"
+        "max_marks, btech_year, file_type, extraction_status, subject_id, created_at"
     )
     if subject_id:
         q = q.eq("subject_id", subject_id)
@@ -30,11 +37,33 @@ async def list_papers(
         q = q.eq("regulation", regulation)
     if college_id:
         q = q.eq("college_id", college_id)
+
     result = q.order("exam_year", desc=True).execute()
+    papers = result.data or []
+
+    # Attach parsed questions for each paper (B7 fix)
+    if papers:
+        paper_ids = [p["id"] for p in papers]
+        try:
+            q_result = db.table("questions").select(
+                "id, paper_id, question_number, part, question_text, "
+                "question_type, marks, unit_number, co, is_or_question"
+            ).in_("paper_id", paper_ids).execute()
+            questions_by_paper: dict[str, list] = {}
+            for q in (q_result.data or []):
+                pid = q["paper_id"]
+                questions_by_paper.setdefault(pid, []).append(q)
+            for paper in papers:
+                paper["parsed_questions"] = questions_by_paper.get(paper["id"], [])
+        except Exception as e:
+            log.warning(f"Could not fetch questions for papers: {e}")
+            for paper in papers:
+                paper["parsed_questions"] = []
+
     return {
         "success": True,
-        "data": result.data,
-        "meta": {"total": len(result.data)}
+        "data": papers,
+        "meta": {"total": len(papers)}
     }
 
 

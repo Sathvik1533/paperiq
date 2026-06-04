@@ -2,7 +2,7 @@ import { useState } from 'react'
 
 interface Props {
   years: number[]
-  paperIds?: number[]
+  paperIds?: string[]
   evidenceCount?: number
 }
 
