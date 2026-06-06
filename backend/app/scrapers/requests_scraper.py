@@ -1,24 +1,40 @@
 import os
 import re
 import httpx
-from typing import List, Optional
+from typing import List
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
 
 from app.scrapers.base import PaperScraper, ScraperError, ScraperTimeoutError
 from app.models.paper import PaperMeta
 from app.utils.file_utils import ensure_dir
-from app.utils.exam_classifier import classify_paper_from_label
 from app.config import settings
 from app.logger import get_logger
 
 log = get_logger(__name__)
 
+_MID1_KEYWORDS   = ["mid-1", "mid1", "mid-i ", "mid-i-", "midterm-1", "midterm1", "unit test 1", "ct1"]
+_MID2_KEYWORDS   = ["mid-2", "mid2", "mid-ii", "mid ii", "midterm-2", "midterm2", "unit test 2", "ct2"]
+_SUPPLE_KEYWORDS = ["supply", "supple", "supplementary"]
+
+
+def _detect_exam_category(label: str) -> str:
+    lower = label.lower()
+    if any(k in lower for k in _MID1_KEYWORDS):
+        return "Mid-1"
+    if any(k in lower for k in _MID2_KEYWORDS):
+        return "Mid-2"
+    return "Semester"
+
+
+def _detect_exam_type(label: str) -> str:
+    return "Supplementary" if any(w in label.lower() for w in _SUPPLE_KEYWORDS) else "Regular"
+
 
 class RequestsScraper(PaperScraper):
     """
     HTTP-based scraper using httpx. Fallback when Playwright is unavailable.
-    Works for static HTML portals like MLRIT.
+    list_papers() accepts exam_categories and exam_attempts filters.
     """
     name = "requests"
 
@@ -42,11 +58,16 @@ class RequestsScraper(PaperScraper):
         btech_year: int = 2,
         year_from: int = 2021,
         year_to: int = 2025,
-        regulation: Optional[str] = None,
-        exam_category: Optional[str] = None,
-        exam_attempt: Optional[str] = None,
+        exam_categories: list[str] | None = None,
+        exam_attempts: list[str] | None = None,
     ) -> List[PaperMeta]:
-        log.info(f"[RequestsScraper] Fetching portal: {portal_url}")
+        categories = set(exam_categories) if exam_categories else {"Semester", "Mid-1", "Mid-2"}
+        attempts   = set(exam_attempts)   if exam_attempts   else {"Regular", "Supplementary"}
+
+        log.info(
+            f"[RequestsScraper] Fetching portal: {portal_url} "
+            f"categories={categories} attempts={attempts}"
+        )
         try:
             resp = await self._client.get(portal_url)
             resp.raise_for_status()
@@ -56,30 +77,29 @@ class RequestsScraper(PaperScraper):
             raise ScraperError(f"Failed to fetch portal: {e}") from e
 
         soup = BeautifulSoup(resp.text, "html.parser")
-        base = "{uri.scheme}://{uri.netloc}".format(uri=urlparse(portal_url))
         base_path = portal_url.rsplit("/", 1)[0]
+        roman = {1: "I", 2: "II", 3: "III", 4: "IV"}.get(btech_year, "II")
 
         papers: List[PaperMeta] = []
         for a in soup.find_all("a", href=True):
-            href: str = a["href"]
+            href: str  = a["href"]
             label: str = a.get_text(strip=True)
 
             if not href.lower().endswith((".rar", ".zip")):
                 continue
 
-            # Filter by B.Tech year prefix in label
-            year_prefix = f"II-B.Tech" if btech_year == 2 else f"{btech_year}-B.Tech"
-            roman = {1: "I", 2: "II", 3: "III", 4: "IV"}.get(btech_year, "II")
             if not any([
                 label.upper().startswith(f"{roman}-B.TECH"),
                 label.upper().startswith(f"{roman} B.TECH"),
                 label.upper().startswith(f"{roman}-BTECH"),
-                # Some labels are generic (e.g. June2022) — include all for generic labels
-                re.search(r'^(January|February|March|April|May|June|July|August|September|October|November|December)\d{4}$', label.replace(' ', ''), re.I)
+                re.search(
+                    r'^(January|February|March|April|May|June|July|'
+                    r'August|September|October|November|December)\d{4}$',
+                    label.replace(' ', ''), re.I
+                )
             ]):
                 continue
 
-            # Extract year from label
             year_match = re.search(r'(202[0-9]|201[0-9])', label)
             if not year_match:
                 continue
@@ -87,35 +107,30 @@ class RequestsScraper(PaperScraper):
             if not (year_from <= exam_year <= year_to):
                 continue
 
-            # Extract month
+            exam_type     = _detect_exam_type(label)
+            exam_category = _detect_exam_category(label)
+
+            if exam_type not in attempts:
+                continue
+            if exam_category not in categories:
+                continue
+
             month_match = re.search(
-                r'(January|February|March|April|May|June|July|August|September|October|November|December)',
+                r'(January|February|March|April|May|June|July|'
+                r'August|September|October|November|December)',
                 label, re.I
             )
             exam_month = month_match.group(1).capitalize() if month_match else "Unknown"
-
-            # Classify using exam_classifier utility
-            classification = classify_paper_from_label(label)
-            
-            # Apply filters if provided
-            if regulation and classification["regulation"] != regulation:
-                continue
-            if exam_category and classification["exam_category"] != exam_category:
-                continue
-            if exam_attempt and classification["exam_type"] != exam_attempt:
-                continue
-
-            full_url = urljoin(base_path + "/", href)
-            file_name = href.split("/")[-1]
+            full_url   = urljoin(base_path + "/", href)
+            file_name  = href.split("/")[-1]
 
             papers.append(PaperMeta(
                 url=full_url,
                 file_name=file_name,
                 exam_year=exam_year,
                 exam_month=exam_month,
-                exam_type=classification["exam_type"],
-                exam_category=classification["exam_category"],
-                regulation=classification["regulation"] or "Unknown",
+                exam_type=exam_type,
+                exam_category=exam_category,
                 btech_year=btech_year,
                 label=label,
             ))

@@ -1,205 +1,256 @@
+/**
+ * Search page — R22 2-2 focused.
+ * User picks a subject. PaperIQ does everything automatically:
+ *   crawl → extract → parse → analyze → show dashboard.
+ * No file uploads. No manual pipeline steps.
+ */
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { useAnalysisStore } from '../store/analysisStore'
-import {
-  getColleges, getSubjects, getBranches,
-  triggerScrape, getJobStatus, runAnalysis, getCachedAnalysis,
-} from '../lib/api'
 import { JobProgressBar } from '../components/ui/JobProgressBar'
 import { RegulationBadge } from '../components/ui/RegulationBadge'
-import type { College, Subject } from '../types'
 
-const REGULATIONS = ['R18', 'R22', 'R24']
+const BASE_URL = import.meta.env.VITE_API_BASE_URL as string
+
+interface R22Subject {
+  code: string
+  name: string
+  branch: string
+  short: string
+}
+
+interface JobStatus {
+  status: string
+  stage?: string
+  progress_pct?: number
+  papers_found?: number
+  papers_new?: number
+  report_id?: string
+}
+
+const BRANCH_LABELS: Record<string, string> = {
+  CSE: 'Computer Science',
+  IT:  'Information Technology',
+  ECE: 'Electronics & Communication',
+  EEE: 'Electrical & Electronics',
+  MECH:'Mechanical',
+  AI:  'Artificial Intelligence',
+  DS:  'Data Science',
+  CY:  'Cyber Security',
+  ALL: 'Common',
+}
+
+const STAGE_LABELS: Record<string, string> = {
+  discovering: 'Finding papers...',
+  downloading: 'Downloading archives...',
+  extracting:  'Extracting documents...',
+  parsing:     'Parsing questions...',
+  analysing:   'Running analysis...',
+  done:        'Complete',
+  running:     'Processing...',
+}
 
 export function Search() {
   const { user } = useAuthStore()
-  const { regulation, setRegulation } = useAnalysisStore()
+  const { setRegulation } = useAnalysisStore()
   const navigate = useNavigate()
 
-  const [colleges, setColleges]   = useState<College[]>([])
-  const [subjects, setSubjects]   = useState<Subject[]>([])
-  const [branches, setBranches]   = useState<{ id: string; name: string; short_name: string }[]>([])
-
-  const [form, setForm] = useState({
-    college_id: '', branch_id: '', regulation,
-    subject_id: '', year_from: '2021', year_to: '2025',
-  })
-
-  const [status, setStatus]       = useState<'idle' | 'checking_cache' | 'scraping' | 'analyzing' | 'done' | 'error'>('idle')
-  const [jobProgress, setJobProgress] = useState(0)
-  const [jobStage, setJobStage]   = useState('')
-  const [error, setError]         = useState('')
+  const [subjects, setSubjects]     = useState<R22Subject[]>([])
+  const [branch, setBranch]         = useState<string>('CSE')
+  const [selected, setSelected]     = useState<string>('')
+  const [status, setStatus]         = useState<'idle'|'running'|'done'|'error'>('idle')
+  const [jobStatus, setJobStatus]   = useState<JobStatus | null>(null)
+  const [error, setError]           = useState('')
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  useEffect(() => { getColleges().then(setColleges).catch(() => {}) }, [])
-
+  // Load R22 subjects from backend
   useEffect(() => {
-    if (form.college_id) {
-      getSubjects(form.college_id).then(setSubjects).catch(() => {})
-      getBranches(form.college_id).then(setBranches).catch(() => {})
-    }
-  }, [form.college_id])
+    fetch(`${BASE_URL}/r22/subjects`)
+      .then(r => r.json())
+      .then(j => setSubjects(j.data ?? []))
+      .catch(() => setError('Cannot connect to backend. Is it running on port 8000?'))
+  }, [])
 
-  function set(key: string, value: string) {
-    setForm(f => ({ ...f, [key]: value }))
-    if (key === 'regulation') setRegulation(value)
-  }
+  // Filtered subjects for selected branch
+  const filtered = subjects.filter(s =>
+    s.branch === branch || s.branch === 'ALL'
+  )
 
   function stopPoll() {
     if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null }
   }
 
   async function handleAnalyze() {
-    if (!form.college_id || !form.subject_id) {
-      setError('Select a college and subject.'); return
-    }
-    setError(''); setStatus('checking_cache'); setJobProgress(2); setJobStage('Checking cache')
-
-    // Check for existing cached analysis first
-    const cached = await getCachedAnalysis(
-      form.subject_id, form.regulation, form.branch_id || undefined,
-      Number(form.year_from), Number(form.year_to)
-    )
-    if (cached) {
-      const id = cached.id ?? (cached as any).report_id
-      navigate(`/dashboard?report=${id}`)
-      return
-    }
-
-    setStatus('scraping'); setJobProgress(5); setJobStage('Downloading papers')
+    if (!selected) { setError('Select a subject first.'); return }
+    setError(''); setStatus('running')
+    setRegulation('R22')
 
     try {
-      const job = await triggerScrape(
-        form.college_id,
-        form.subject_id,
-        Number(form.year_from),
-        Number(form.year_to),
-      )
+      const res = await fetch(`${BASE_URL}/r22/analyze`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subject_code: selected, year_from: 2021, year_to: 2025 }),
+      })
+      const j = await res.json()
+      if (!res.ok) throw new Error(j.detail ?? 'Failed to start analysis')
 
+      const jobId = j.data?.job_id
+      if (!jobId) throw new Error('No job ID returned')
+
+      // Poll until complete
       pollRef.current = setInterval(async () => {
         try {
-          const updated = await getJobStatus(job.job_id)
-          const pct = updated.progress_pct ?? updated.progress ?? 50
-          setJobStage(updated.stage ?? 'Processing')
-          setJobProgress(Math.min(75, pct * 0.75))
+          const statusRes = await fetch(`${BASE_URL}/r22/job/${jobId}`)
+          const statusJson = await statusRes.json()
+          const data: JobStatus = statusJson.data ?? {}
+          setJobStatus(data)
 
-          if (updated.status === 'completed') {
-            stopPoll()
-            setStatus('analyzing'); setJobStage('Analyzing'); setJobProgress(80)
-
-            const { report_id } = await runAnalysis(
-              form.subject_id, form.regulation,
-              form.branch_id || undefined,
-              Number(form.year_from), Number(form.year_to),
-            )
-            setJobProgress(100); setStatus('done')
-            navigate(`/dashboard?report=${report_id}&subject_id=${form.subject_id}`)
-          } else if (updated.status === 'failed') {
+          if (data.status === 'completed') {
+            stopPoll(); setStatus('done')
+            if (data.report_id) {
+              navigate(`/dashboard?report=${data.report_id}&subject_id=${selected}`)
+            }
+          } else if (data.status === 'failed') {
             stopPoll(); setStatus('error')
-            setError('Scraping failed. Check Settings → Pipeline Status.')
+            setError('Analysis failed. Check Settings → Pipeline Status for details.')
           }
         } catch {
           stopPoll(); setStatus('error'); setError('Lost connection to backend.')
         }
       }, 2000)
+
     } catch (e) {
       setStatus('error')
-      setError(e instanceof Error ? e.message : 'Failed to start scraping.')
+      setError(e instanceof Error ? e.message : 'Failed to start.')
     }
   }
 
   useEffect(() => () => stopPoll(), [])
 
-  const inputCls = 'w-full bg-gray-700 text-white rounded-lg px-3 py-2 text-sm border border-gray-600 focus:outline-none focus:border-blue-500'
-  const labelCls = 'block text-gray-300 text-sm mb-1'
-  const isRunning = status === 'scraping' || status === 'analyzing' || status === 'checking_cache'
+  const selectedSubject = subjects.find(s => s.code === selected)
+  const branches = [...new Set(subjects.map(s => s.branch).filter(b => b !== 'ALL'))]
 
   return (
     <div className="min-h-screen bg-gray-900 px-4 py-8">
       <div className="max-w-2xl mx-auto">
+
+        {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-white">Analyze Papers</h1>
-            <p className="text-gray-400 text-sm mt-1">Select a subject and year range to run AI analysis</p>
+            <h1 className="text-2xl font-bold text-white">Analyze Subject</h1>
+            <p className="text-gray-400 text-sm mt-1">
+              MLRIT · 2nd Year 2nd Semester · R22
+            </p>
           </div>
           <div className="flex items-center gap-2">
-            <RegulationBadge regulation={form.regulation} />
-            {user && <span className="text-gray-500 text-xs">{user.email}</span>}
+            <RegulationBadge regulation="R22" />
+            {user && <span className="text-gray-500 text-xs truncate max-w-32">{user.email}</span>}
           </div>
         </div>
 
-        <div className="bg-gray-800 rounded-xl p-6 space-y-4">
-          {/* College + Branch */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className={labelCls}>College</label>
-              <select className={inputCls} value={form.college_id} onChange={e => set('college_id', e.target.value)}>
-                <option value="">Select college</option>
-                {colleges.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className={labelCls}>Branch</label>
-              <select className={inputCls} value={form.branch_id} onChange={e => set('branch_id', e.target.value)}>
-                <option value="">All branches</option>
-                {branches.map(b => <option key={b.id} value={b.id}>{b.short_name}</option>)}
-              </select>
+        <div className="bg-gray-800 rounded-xl p-6 space-y-5">
+
+          {/* Branch filter */}
+          <div>
+            <label className="block text-gray-300 text-sm mb-2">Branch</label>
+            <div className="flex flex-wrap gap-2">
+              {branches.map(b => (
+                <button
+                  key={b}
+                  type="button"
+                  onClick={() => { setBranch(b); setSelected('') }}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                    branch === b
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-700 text-gray-400 hover:bg-gray-600'
+                  }`}
+                >
+                  {BRANCH_LABELS[b] ?? b}
+                </button>
+              ))}
             </div>
           </div>
 
-          {/* Regulation + Subject */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className={labelCls}>Regulation</label>
-              <select className={inputCls} value={form.regulation} onChange={e => set('regulation', e.target.value)}>
-                {REGULATIONS.map(r => <option key={r} value={r}>{r}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className={labelCls}>Subject</label>
-              <select className={inputCls} value={form.subject_id} onChange={e => set('subject_id', e.target.value)}>
-                <option value="">Select subject</option>
-                {subjects.map(s => <option key={s.id} value={s.id}>{s.name} ({s.code})</option>)}
-              </select>
-            </div>
+          {/* Subject selector */}
+          <div>
+            <label className="block text-gray-300 text-sm mb-2">Subject</label>
+            {filtered.length === 0 ? (
+              <div className="text-gray-500 text-sm py-2">
+                {subjects.length === 0 ? 'Loading subjects...' : 'No subjects for this branch'}
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                {filtered.map(s => (
+                  <button
+                    key={s.code}
+                    type="button"
+                    onClick={() => setSelected(s.code)}
+                    className={`w-full text-left px-4 py-3 rounded-lg border transition-colors ${
+                      selected === s.code
+                        ? 'border-blue-500 bg-blue-900/20 text-white'
+                        : 'border-gray-700 hover:border-gray-500 text-gray-300'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-sm">{s.name}</span>
+                      <span className="text-gray-500 text-xs font-mono">{s.code}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
-          {/* Year range */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className={labelCls}>Year From</label>
-              <input type="number" min="2015" max="2025" className={inputCls}
-                value={form.year_from} onChange={e => set('year_from', e.target.value)} />
-            </div>
-            <div>
-              <label className={labelCls}>Year To</label>
-              <input type="number" min="2015" max="2025" className={inputCls}
-                value={form.year_to} onChange={e => set('year_to', e.target.value)} />
-            </div>
-          </div>
-
-          {error && <p className="text-red-400 text-sm">{error}</p>}
-
-          {isRunning && (
-            <div className="pt-2">
-              <JobProgressBar stage={jobStage} progress={jobProgress} message={jobStage} />
+          {/* Selected subject summary */}
+          {selectedSubject && (
+            <div className="bg-gray-700/50 rounded-lg px-4 py-3 text-sm text-gray-300">
+              <span className="text-white font-medium">{selectedSubject.name}</span>
+              <span className="text-gray-500 ml-2">·</span>
+              <span className="text-gray-400 ml-2">{selectedSubject.code}</span>
+              <span className="text-gray-500 ml-2">·</span>
+              <span className="text-gray-400 ml-2">R22 · Sem 2-2</span>
             </div>
           )}
 
+          {/* Progress */}
+          {status === 'running' && jobStatus && (
+            <div className="space-y-1">
+              <JobProgressBar
+                stage={STAGE_LABELS[jobStatus.stage ?? 'running'] ?? 'Processing...'}
+                progress={jobStatus.progress_pct ?? 30}
+                message={STAGE_LABELS[jobStatus.stage ?? 'running'] ?? 'Processing...'}
+              />
+              {jobStatus.papers_found != null && (
+                <p className="text-gray-500 text-xs">
+                  {jobStatus.papers_new ?? 0} new papers · {jobStatus.papers_found} total found
+                </p>
+              )}
+            </div>
+          )}
+
+          {error && (
+            <div className="bg-red-900/30 border border-red-700 rounded-lg px-4 py-3">
+              <p className="text-red-400 text-sm">{error}</p>
+            </div>
+          )}
+
+          {/* Analyze button */}
           <button
             onClick={handleAnalyze}
-            disabled={isRunning}
+            disabled={!selected || status === 'running'}
             className="w-full bg-blue-600 text-white font-semibold py-3 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {status === 'checking_cache' ? 'Checking cache...' :
-             status === 'scraping'       ? 'Scraping papers...' :
-             status === 'analyzing'      ? 'Running analysis...' :
-             'Analyze Papers'}
+            {status === 'running'
+              ? 'Analyzing — this may take 1–3 minutes...'
+              : selected
+                ? `Analyze ${selectedSubject?.name ?? selected}`
+                : 'Select a subject above'}
           </button>
 
-          <p className="text-gray-500 text-xs text-center">
-            First run: downloads &amp; processes papers (~2–5 min). Subsequent runs use cache.
+          <p className="text-gray-600 text-xs text-center">
+            PaperIQ automatically downloads papers from 2021–2025, extracts questions, and generates insights.
+            No uploads required.
           </p>
         </div>
       </div>

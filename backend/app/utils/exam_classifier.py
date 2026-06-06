@@ -13,13 +13,13 @@ def detect_exam_category(label: str) -> str:
     Returns: "Mid-1" | "Mid-2" | "Semester" | "Unknown"
     """
     label_lower = label.lower()
-    
-    # Mid-2 patterns — check BEFORE Mid-1 to prevent 'mid-i' matching inside 'mid-ii'
-    if any(p in label_lower for p in ['mid-2', 'mid 2', 'mid-ii', 'mid ii', 'second mid']):
+
+    # Mid-2 must be checked BEFORE Mid-1 — "mid-ii" contains "mid-i" as substring
+    if any(p in label_lower for p in ['mid-2', 'mid 2', 'mid-ii', 'mid ii', 'second mid', 'midterm-2', 'midterm2']):
         return 'Mid-2'
 
     # Mid-1 patterns
-    if any(p in label_lower for p in ['mid-1', 'mid 1', 'mid i ', 'first mid']) or re.search(r'mid[-\s]i(?!i)\b', label_lower):
+    if any(p in label_lower for p in ['mid-1', 'mid 1', 'mid-i', 'mid i ', 'first mid', 'midterm-1', 'midterm1']):
         return 'Mid-1'
     
     # Semester patterns
