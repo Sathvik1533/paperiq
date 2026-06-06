@@ -8,6 +8,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { NavBar } from '../components/NavBar'
 import { Footer } from '../components/Footer'
+import LoadingState, { CardSkeleton } from '../components/LoadingState'
 import { useAuthStore } from '../store/authStore'
 import { getUserProfile, getSubjectsForSemester } from '../lib/api'
 import { supabase } from '../lib/supabase'
@@ -158,6 +159,15 @@ export function Papers() {
     const year = p.exam_year ? ` ${p.exam_year}` : ''
     // If we have nothing meaningful, show "Past Paper"
     return (cat || year) ? `${cat}${month}${year}`.trim() : 'Past Paper'
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <NavBar activeTab="papers" />
+        <LoadingState message="Loading question papers..." fullScreen />
+      </div>
+    )
   }
 
   return (

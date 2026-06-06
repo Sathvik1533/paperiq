@@ -5,6 +5,7 @@ import { usePrefsStore } from '../store/prefsStore'
 import { getUserProfile, getSubjectsForSemester, generateAnalysis } from '../lib/api'
 import { NavBar } from '../components/NavBar'
 import { Footer } from '../components/Footer'
+import { AnalysisLoading } from '../components/LoadingState'
 import type { Subject } from '../types'
 
 interface AnalysisReport {
@@ -108,14 +109,11 @@ export function BetaAnalysis() {
   const selectedSubjectName = subjects.find(s => s.id === selectedSubject)?.name || ''
 
   if (profileLoading) {
-    return (
-      <div className="min-h-screen bg-background">
-        <NavBar activeTab="analysis" />
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-        </div>
-      </div>
-    )
+    return <AnalysisLoading step="Loading your profile" />
+  }
+
+  if (loading && !analysis) {
+    return <AnalysisLoading step="Analyzing papers" />
   }
 
   if (!profile?.current_semester) {

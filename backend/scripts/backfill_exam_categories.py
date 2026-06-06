@@ -17,7 +17,7 @@ from pathlib import Path
 # Add parent directory to path to import app modules
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from app.database import get_supabase_client
+from app.database import get_db
 from app.utils.exam_classifier import classify_paper_from_label
 
 
@@ -27,7 +27,7 @@ async def backfill_papers():
     print("🔄 Starting exam_category backfill...")
     
     # Get Supabase client
-    db = get_supabase_client()
+    db = get_db()
     
     # Fetch papers with NULL exam_category
     print("📥 Fetching papers without exam_category...")
@@ -83,7 +83,7 @@ async def verify_backfill():
     
     print("\n📊 Verifying backfill results...")
     
-    db = get_supabase_client()
+    db = get_db()
     
     # Count papers by exam_category
     response = db.table("papers").select("exam_category", count="exact").execute()

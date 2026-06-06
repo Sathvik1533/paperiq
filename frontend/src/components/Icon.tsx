@@ -22,6 +22,7 @@ export type IconName =
   | 'chevron_left'
   | 'home'
   | 'rocket'
+  | 'rocket_launch'
   
   // Analysis & Data
   | 'trending_up'
@@ -112,6 +113,11 @@ export type IconName =
   | 'cloud'
   | 'cloud_upload'
   | 'cloud_download'
+  | 'code'
+  | 'database'
+  | 'psychology'
+  | 'science'
+  | 'lightbulb'
   
   // Performance & Achievement
   | 'speed'

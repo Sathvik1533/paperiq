@@ -14,7 +14,7 @@ import { Profile } from './pages/Profile'
 import { Settings } from './pages/Settings'
 import { NotFound } from './pages/NotFound'
 import { OfflinePage } from './pages/OfflinePage'
-import { ErrorBoundary } from './components/ErrorBoundary'
+import ErrorBoundary from './components/ErrorBoundary'
 import { getUserProfile } from './lib/api'
 
 // Checks onboarding_complete and redirects new users

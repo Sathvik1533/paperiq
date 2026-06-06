@@ -1,9 +1,9 @@
 """
 Exam Classification Utilities
-Detects exam category (Mid-1, Mid-2, Semester) and regulation from paper labels.
+Detects exam category (Mid-1, Mid-2, Semester), regulation, and exam dates from paper labels.
 """
 import re
-from typing import Optional
+from typing import Optional, Tuple
 
 
 def detect_exam_category(label: str) -> str:
@@ -65,6 +65,52 @@ def detect_exam_type(label: str) -> str:
     return "Regular"
 
 
+def detect_exam_year_month(label: str) -> Tuple[Optional[int], Optional[str]]:
+    """
+    Extract exam year and month from label.
+    
+    Patterns:
+    - "May 2024" → (2024, "May")
+    - "2024 May" → (2024, "May")
+    - "Dec-2023" → (2023, "December")
+    - "2024" → (2024, None)
+    
+    Returns: (year, month) tuple where both can be None
+    """
+    # Month names mapping
+    months = {
+        'jan': 'January', 'january': 'January',
+        'feb': 'February', 'february': 'February',
+        'mar': 'March', 'march': 'March',
+        'apr': 'April', 'april': 'April',
+        'may': 'May',
+        'jun': 'June', 'june': 'June',
+        'jul': 'July', 'july': 'July',
+        'aug': 'August', 'august': 'August',
+        'sep': 'September', 'september': 'September', 'sept': 'September',
+        'oct': 'October', 'october': 'October',
+        'nov': 'November', 'november': 'November',
+        'dec': 'December', 'december': 'December',
+    }
+    
+    year = None
+    month = None
+    
+    # Extract year (2020-2029)
+    year_match = re.search(r'\b(202[0-9])\b', label)
+    if year_match:
+        year = int(year_match.group(1))
+    
+    # Extract month
+    label_lower = label.lower()
+    for month_pattern, month_name in months.items():
+        if re.search(r'\b' + month_pattern + r'\b', label_lower):
+            month = month_name
+            break
+    
+    return year, month
+
+
 def classify_paper_from_label(label: str) -> dict:
     """
     Extract all classification metadata from a paper label.
@@ -73,11 +119,17 @@ def classify_paper_from_label(label: str) -> dict:
         {
             "exam_category": "Mid-1" | "Mid-2" | "Semester" | "Unknown",
             "exam_type": "Regular" | "Supplementary",
-            "regulation": "R22" | None
+            "regulation": "R22" | None,
+            "exam_year": 2024 | None,
+            "exam_month": "May" | None
         }
     """
+    year, month = detect_exam_year_month(label)
+    
     return {
         "exam_category": detect_exam_category(label),
         "exam_type": detect_exam_type(label),
         "regulation": detect_regulation(label),
+        "exam_year": year,
+        "exam_month": month,
     }
