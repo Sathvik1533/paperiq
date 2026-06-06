@@ -12,6 +12,7 @@ import { useAuthStore } from '../store/authStore'
 import { getUserProfile, getSubjectsForSemester, generateAnalysis } from '../lib/api'
 import { NavBar } from '../components/NavBar'
 import { Footer } from '../components/Footer'
+import { MarksBreakdown } from '../components/MarksBreakdown'
 import { FeedbackWidget } from '../components/FeedbackWidget'
 import { CustomSelect } from '../components/CustomSelect'
 import type { Subject, UserProfile } from '../types'
@@ -416,6 +417,9 @@ export function Analysis() {
                 </div>
               </section>
             )}
+
+            {/* Marks Distribution Breakdown - NEW FEATURE */}
+            {analysis.id && <MarksBreakdown analysisId={analysis.id} />}
 
             {/* ── Study Priority Order (Screen 13) ─────────────────── */}
             {(analysis.study_priority_order || []).length > 0 && (

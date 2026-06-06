@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.logger import get_logger
-from app.api import health, colleges, scrape, papers, extract, questions, analysis, planner, profile, admin, onboarding
+from app.api import health, colleges, scrape, papers, extract, questions, analysis, planner, profile, admin, onboarding, marks_analysis
 
 log = get_logger(__name__)
 
@@ -32,6 +32,7 @@ app.include_router(papers.router,     prefix=PREFIX, tags=["Papers"])
 app.include_router(extract.router,    prefix=PREFIX, tags=["Extraction"])
 app.include_router(questions.router,  prefix=PREFIX, tags=["Questions"])
 app.include_router(analysis.router,   prefix=PREFIX, tags=["Analysis"])
+app.include_router(marks_analysis.router, prefix=PREFIX, tags=["Analysis"])
 app.include_router(planner.router,    prefix=PREFIX, tags=["Planner"])
 app.include_router(profile.router,    prefix=PREFIX, tags=["Profile"])
 app.include_router(onboarding.router, prefix=f"{PREFIX}/onboarding", tags=["Onboarding"])
