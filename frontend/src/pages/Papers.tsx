@@ -377,7 +377,18 @@ export function Papers() {
                         </div>
                       )}
                     </div>
-                    <div className="mt-lg pt-base border-t border-outline-variant flex justify-end">
+                    <div className="mt-lg pt-base border-t border-outline-variant flex justify-between items-center">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1'
+                          window.open(`${apiBaseUrl}/papers/${paper.id}/download`, '_blank')
+                        }}
+                        className="text-on-surface-variant hover:text-primary-container font-bold text-body-sm flex items-center gap-xs transition-colors"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">download</span>
+                        Download PDF
+                      </button>
                       <span className="text-primary-container font-bold text-body-sm flex items-center gap-xs group-hover:gap-sm transition-all" aria-hidden="true">
                         View Paper <span className="material-symbols-outlined text-[18px]">arrow_right_alt</span>
                       </span>

@@ -141,7 +141,7 @@ export function NavBar({ activeTab }: NavBarProps) {
             onClick={() => navigate('/analysis?reset=1')}
             className="hidden md:flex items-center gap-sm bg-primary-container text-on-primary-container font-bold px-base py-2 rounded-xl text-body-sm hover:brightness-110 transition-all active:scale-95 glow-orange"
           >
-            <Icon name="add_circle" size={18} />
+            <Icon name="add" size={18} />
             Run New Analysis
           </button>
 

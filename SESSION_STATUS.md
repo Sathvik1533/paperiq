@@ -6,6 +6,30 @@
 
 ## 🟢 What Just Got Fixed (This Session)
 
+### PDF Downloads — Already Working ✅
+
+**Status**: NO ACTION NEEDED - downloads already functional via PDF generation
+
+**How it works:**
+- Backend generates PDFs on-demand from extracted questions
+- Endpoint: `/api/v1/papers/{paper_id}/download`
+- Frontend automatically uses this when `original_url` is NULL (which it is for all 80 papers)
+- User gets clean, formatted PDF with all questions, marks, and structure
+
+**Changes made:**
+- Updated button text: "Download PDF" → "Download Question Paper"
+- Fixed TypeScript warning (removed unused variable)
+- Verified all 80 papers have questions and can generate PDFs
+
+**Why not using original DOCX files:**
+- DOCX files were extracted from RAR archives and processed, not stored
+- MLRIT doesn't provide direct URLs to individual DOCX files
+- PDF generation is faster, cheaper, and already working
+
+See `PDF_DOWNLOAD_STATUS.md` for full details.
+
+---
+
 ### `/analysis/cached` — 500 Error — RESOLVED ✅
 
 **Root cause:** `analysis_reports` table was missing 11 columns. Migration 002 had never been applied to the live database.

@@ -341,7 +341,7 @@ export function Dashboard() {
               onClick={() => setShowTour(true)}
               className="shrink-0 flex items-center gap-xs px-md py-sm bg-surface border border-outline-variant rounded-xl text-body-sm text-on-surface-variant hover:border-primary/40 hover:text-primary transition-all"
             >
-              <Icon name="explore" size={16} />
+              <Icon name="search" size={16} />
               <span className="hidden sm:inline">Platform Tour</span>
             </button>
           </div>
@@ -426,7 +426,7 @@ export function Dashboard() {
                 {sortedSubjects.length > 0 && (
                   <div className="mt-lg pt-lg border-t border-outline-variant/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-base">
                     <div className="flex items-center gap-sm text-on-surface-variant text-body-sm">
-                      <Icon name="south" size={18} color="text-primary" filled />
+                      <Icon name="arrow_right" size={18} color="text-primary" filled />
                       Start with <strong className="text-on-surface">{sortedSubjects[0].name}</strong> — scroll down and click the card
                     </div>
                     <button
@@ -613,7 +613,7 @@ export function Dashboard() {
             {topSubject && (
               <div className="bg-surface border border-primary/20 rounded-2xl overflow-hidden" data-tour="tour-today-focus">
                 <div className="p-lg border-b border-outline-variant flex items-center gap-sm bg-primary/5">
-                  <Icon name="local_fire_department" size={20} color="text-primary" filled />
+                  <Icon name="bolt" size={20} color="text-primary" filled />
                   <h3 className="font-headline text-[18px] text-on-surface">Today's Focus</h3>
                 </div>
                 <div className="p-lg">

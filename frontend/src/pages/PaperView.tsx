@@ -54,7 +54,6 @@ export function PaperView() {
   // Adjacent paper IDs for Prev/Next navigation — matches Stitch bottom bar
   const [prevPaperId, setPrevPaperId] = useState<string | null>(null)
   const [nextPaperId, setNextPaperId] = useState<string | null>(null)
-  const [downloadToast, setDownloadToast] = useState<{ show: boolean; type: 'info' | 'error' }>({ show: false, type: 'info' })
 
   useEffect(() => { if (paperId) loadPaper() }, [paperId])
 
@@ -118,22 +117,22 @@ export function PaperView() {
 
   // Helper to convert storage_path to public URL
   function getStorageUrl(path: string): string {
-    const { data } = supabase.storage.from('papers').getPublicUrl(path)
+    const { data } = supabase.storage.from('paper').getPublicUrl(path)
     return data?.publicUrl || ''
   }
 
   function downloadPaper() {
     if (!paper) return
-    // Use original_url (direct link) first, then fall back to Supabase storage
-    const url = paper.original_url
-      || (paper.storage_path ? getStorageUrl(paper.storage_path) : '')
-    if (url) {
-      window.open(url, '_blank')
-    } else {
-      // Show an elegant in-page toast instead of a browser alert
-      setDownloadToast({ show: true, type: 'info' })
-      setTimeout(() => setDownloadToast({ show: false, type: 'info' }), 4000)
-    }
+    
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1'
+    
+    // If paper has original_url (DOCX from MLRIT), use that
+    // Otherwise, generate PDF from questions
+    const downloadUrl = paper.original_url 
+      ? paper.original_url 
+      : `${apiBaseUrl}/papers/${paperId}/download`
+    
+    window.open(downloadUrl, '_blank')
   }
 
   const filteredQ = questions.filter(q => {
@@ -199,27 +198,6 @@ export function PaperView() {
     <div className="min-h-screen bg-background">
       <NavBar activeTab="papers" />
 
-      {/* PDF Unavailable Toast */}
-      {downloadToast.show && (
-        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[300] animate-in slide-in-from-top-4 fade-in duration-300">
-          <div className="flex items-center gap-sm bg-surface-container border border-outline-variant rounded-2xl px-lg py-md shadow-xl backdrop-blur-xl max-w-sm">
-            <div className="w-8 h-8 rounded-full bg-primary-container/20 flex items-center justify-center shrink-0">
-              <span className="material-symbols-outlined text-primary-container text-[18px]">hourglass_top</span>
-            </div>
-            <div>
-              <p className="text-body-sm font-bold text-on-surface">PDF coming soon</p>
-              <p className="text-[11px] text-on-surface-variant mt-[1px]">Questions are fully available above. PDF upload in progress.</p>
-            </div>
-            <button
-              onClick={() => setDownloadToast({ show: false, type: 'info' })}
-              className="ml-auto text-on-surface-variant hover:text-on-surface"
-            >
-              <span className="material-symbols-outlined text-[16px]">close</span>
-            </button>
-          </div>
-        </div>
-      )}
-
       <main className="max-w-[1200px] mx-auto px-lg py-xl pt-32 pb-huge">
         {/* Breadcrumb */}
         <nav className="flex items-center gap-xs text-body-sm mb-lg">
@@ -253,16 +231,10 @@ export function PaperView() {
           <div className="flex gap-base">
             <button
               onClick={downloadPaper}
-              className={`px-base py-sm border rounded-xl transition-all flex items-center gap-sm font-body-md ${
-                (paper.original_url || paper.storage_path)
-                  ? 'border-outline-variant text-on-surface hover:bg-surface-container-high'
-                  : 'border-outline-variant/50 text-on-surface-variant/60 cursor-default'
-              }`}
+              className="px-base py-sm border border-outline-variant text-on-surface hover:bg-surface-container-high rounded-xl transition-all flex items-center gap-sm font-body-md"
             >
-              <span className="material-symbols-outlined text-[20px]">
-                {(paper.original_url || paper.storage_path) ? 'download' : 'hourglass_top'}
-              </span>
-              {(paper.original_url || paper.storage_path) ? 'Download PDF' : 'PDF Coming Soon'}
+              <span className="material-symbols-outlined text-[20px]">download</span>
+              Download Question Paper
             </button>
             <button
               onClick={() => navigate('/papers')}
@@ -350,7 +322,7 @@ export function PaperView() {
             {/* Questions list */}
             {filteredQ.length > 0 ? (
               <div className="space-y-base">
-                {filteredQ.map((q, i) => {
+                {filteredQ.map((q) => {
                   const isPartB = q.part === 'B'
                   return (
                     <div
@@ -402,7 +374,7 @@ export function PaperView() {
           <aside className="hidden lg:block lg:col-span-4 sticky top-[100px] h-[calc(100vh-140px)]">
             <div className="glass-card rounded-xl h-full flex flex-col">
               <div className="p-base border-b border-outline-variant flex justify-between items-center">
-                <h3 className="font-headline text-body-md font-bold">View Original PDF</h3>
+                <h3 className="font-headline text-body-md font-bold">View Original Paper</h3>
                 <button onClick={downloadPaper} className="material-symbols-outlined text-on-surface-variant hover:text-on-surface text-[20px]">download</button>
               </div>
               <div className="flex-grow p-base overflow-y-auto">
@@ -414,16 +386,10 @@ export function PaperView() {
                   <p className="text-body-sm text-on-surface-variant z-10 mt-xs">{paper.regulation}</p>
                   <button
                     onClick={downloadPaper}
-                    className={`mt-lg px-base py-xs rounded-lg text-body-sm font-bold z-10 transition-all flex items-center gap-sm ${
-                      (paper.original_url || paper.storage_path)
-                        ? 'bg-primary-container text-on-primary-container hover:brightness-110'
-                        : 'bg-surface-container-highest text-on-surface-variant border border-outline-variant cursor-default'
-                    }`}
+                    className="mt-lg px-base py-xs rounded-lg text-body-sm font-bold z-10 transition-all flex items-center gap-sm bg-primary-container text-on-primary-container hover:brightness-110"
                   >
-                    <span className="material-symbols-outlined text-[18px]">
-                      {(paper.original_url || paper.storage_path) ? 'download' : 'hourglass_top'}
-                    </span>
-                    {(paper.original_url || paper.storage_path) ? 'Download PDF' : 'PDF Coming Soon'}
+                    <span className="material-symbols-outlined text-[18px]">download</span>
+                    Download Question Paper
                   </button>
                 </div>
               </div>
