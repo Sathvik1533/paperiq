@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import type { User, Session } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
+import { usePrefsStore } from './prefsStore'
 
 interface AuthState {
   user: User | null
@@ -20,15 +21,42 @@ export const useAuthStore = create<AuthState>((set) => ({
     const { data: { session } } = await supabase.auth.getSession()
     set({ session, user: session?.user ?? null, loading: false })
 
-    supabase.auth.onAuthStateChange((_event, session) => {
+    // Load prefs from Supabase profile on initial session restore
+    if (session?.user) {
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('preferences')
+        .eq('id', session.user.id)
+        .single()
+      if (profile?.preferences) {
+        usePrefsStore.getState().loadFromProfile(profile.preferences)
+      }
+    }
+
+    // Store the subscription so we can unsubscribe later (prevents memory leak)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       set({ session, user: session?.user ?? null })
+
+      // Load prefs whenever a user signs in
+      if (session?.user) {
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('preferences')
+          .eq('id', session.user.id)
+          .single()
+        if (profile?.preferences) {
+          usePrefsStore.getState().loadFromProfile(profile.preferences)
+        }
+      }
     })
+    // Expose cleanup for StrictMode double-mount scenarios
+    ;(window as any).__paperiq_auth_unsub = () => subscription.unsubscribe()
   },
 
   signInWithGoogle: async () => {
     await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/search` },
+      options: { redirectTo: `${window.location.origin}/dashboard` },
     })
   },
 

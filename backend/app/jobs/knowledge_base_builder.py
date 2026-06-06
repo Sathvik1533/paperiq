@@ -7,7 +7,6 @@ This job:
 3. Creates subject registry in database
 4. Triggers paper discovery for all subjects
 5. Runs automatically on system startup if knowledge base is empty
-
 NO manual intervention required for MLRIT R22 CSE students.
 """
 import os
@@ -21,7 +20,6 @@ from app.extractors.syllabus_ingester import ingest_syllabus, parse_syllabus_tex
 from app.extractors.extractor_factory import extract
 from app.extractors.text_normalizer import normalize
 from app.scrapers.colleges.mlrit import MLRITScraper
-from app.jobs.scrape_job import enqueue_paper_scrape
 from app.logger import get_logger
 
 log = get_logger(__name__)
@@ -151,26 +149,30 @@ async def build_subject_registry(
     """
     db = get_db()
     
-    # Step 1: Ensure college exists
+    # Step 1: Ensure college exists — query by short_name (the unique constraint column)
+    # Previously queried by name which could mismatch, causing duplicate key on insert
     log.info(f"[KnowledgeBaseBuilder] Ensuring college: {college_name}")
-    college_result = db.table("colleges").select("id").eq("name", college_name).execute()
+    college_result = db.table("colleges").select("id").eq("short_name", "MLRIT").execute()
     
     if not college_result.data:
         college_result = db.table("colleges").insert({
             "name": college_name,
-            "location": "Hyderabad"  # MLRIT default
+            "short_name": "MLRIT",
+            "portal_url": "https://mlrit.ac.in",
+            "scraper_type": "mlrit"
         }).execute()
     
     college_id = college_result.data[0]["id"]
     log.info(f"[KnowledgeBaseBuilder] College ID: {college_id}")
     
-    # Step 2: Ensure branch exists
+    # Step 2: Ensure branch exists — query by short_name + college_id
     log.info(f"[KnowledgeBaseBuilder] Ensuring branch: {branch_name}")
-    branch_result = db.table("branches").select("id").eq("name", branch_name).eq("college_id", college_id).execute()
+    branch_result = db.table("branches").select("id").eq("short_name", "CSE").eq("college_id", college_id).execute()
     
     if not branch_result.data:
         branch_result = db.table("branches").insert({
             "name": branch_name,
+            "short_name": "CSE",
             "college_id": college_id
         }).execute()
     

@@ -1,0 +1,499 @@
+<!DOCTYPE html><html class="dark" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Screen 20 — Settings | PaperIQ</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Geist:wght@100;300;400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<!-- Integration of Design System Tokens -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                "secondary-fixed-dim": "#c8c6c5",
+                "surface-container-lowest": "#0c0f0f",
+                "secondary-fixed": "#e5e2e1",
+                "secondary": "#c8c6c5",
+                "on-tertiary": "#303037",
+                "on-tertiary-fixed-variant": "#47464e",
+                "on-secondary-fixed": "#1c1b1b",
+                "inverse-surface": "#e2e2e2",
+                "surface-variant": "#333535",
+                "surface-container-high": "#282a2b",
+                "secondary-container": "#4a4949",
+                "error-container": "#93000a",
+                "surface-bright": "#37393a",
+                "on-error-container": "#ffdad6",
+                "primary-container": "#f97316",
+                "on-primary-fixed-variant": "#783200",
+                "tertiary": "#c8c5cf",
+                "surface": "#121414",
+                "on-surface-variant": "#e0c0b1",
+                "surface-dim": "#121414",
+                "primary": "#ffb690",
+                "on-primary-container": "#582200",
+                "primary-fixed-dim": "#ffb690",
+                "tertiary-fixed": "#e4e1eb",
+                "primary-fixed": "#ffdbca",
+                "surface-tint": "#ffb690",
+                "inverse-primary": "#9d4300",
+                "surface-container": "#1e2020",
+                "surface-container-highest": "#333535",
+                "on-error": "#690005",
+                "tertiary-container": "#9b99a2",
+                "background": "#07070d", /* Overridden per user request */
+                "on-surface": "#e2e2e2",
+                "on-secondary-fixed-variant": "#474646",
+                "error": "#ffb4ab",
+                "on-secondary": "#313030",
+                "on-primary-fixed": "#341100",
+                "on-tertiary-container": "#323139",
+                "on-secondary-container": "#bab8b7",
+                "tertiary-fixed-dim": "#c8c5cf",
+                "surface-container-low": "#1a1c1c",
+                "on-tertiary-fixed": "#1b1b22",
+                "on-primary": "#552100",
+                "on-background": "#e2e2e2",
+                "outline-variant": "#584237",
+                "inverse-on-surface": "#2f3131",
+                "outline": "#a78b7d"
+            },
+            "borderRadius": {
+                "DEFAULT": "0.25rem",
+                "lg": "0.5rem",
+                "xl": "0.75rem",
+                "full": "9999px"
+            },
+            "spacing": {
+                "xl": "32px",
+                "lg": "24px",
+                "xxl": "48px",
+                "xs": "4px",
+                "sm": "8px",
+                "md": "12px",
+                "huge": "64px",
+                "section": "96px",
+                "base": "16px"
+            },
+            "fontFamily": {
+                "body-sm": ["Geist"],
+                "body-lg": ["Geist"],
+                "body-md": ["Geist"],
+                "headline-lg": ["Space Grotesk"],
+                "display-hero": ["Space Grotesk"],
+                "headline-md": ["Space Grotesk"],
+                "data-value": ["JetBrains Mono"],
+                "data-label": ["JetBrains Mono"]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+      body {
+        background-color: #07070d;
+        color: #e2e2e2;
+        -webkit-font-smoothing: antialiased;
+      }
+      .glass-card {
+        background: rgba(15, 15, 15, 0.7);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 16px;
+        transition: all 0.3s ease;
+      }
+      .glass-card:hover {
+        border-color: rgba(249, 115, 22, 0.3);
+      }
+      .custom-toggle:checked {
+        background-color: #f97316;
+        border-color: #f97316;
+      }
+      .custom-toggle:checked + span {
+        transform: translateX(1.25rem);
+      }
+      .glow-primary {
+        box-shadow: 0 0 20px rgba(249, 115, 22, 0.15);
+      }
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+    </style>
+</head>
+<body class="font-body-md text-body-md selection:bg-primary-container selection:text-white">
+<!-- Top Navigation Bar -->
+<header class="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-surface-variant">
+<div class="flex justify-between items-center w-full px-lg max-w-[1200px] mx-auto h-16">
+<div class="font-headline-md text-headline-md font-bold text-primary-container">PaperIQ</div>
+<nav class="hidden md:flex items-center gap-xl">
+<a class="text-on-surface-variant hover:text-primary transition-colors font-body-md" href="#">Dashboard</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors font-body-md" href="#">Library</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors font-body-md" href="#">Studies</a>
+</nav>
+<div class="flex items-center gap-base">
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-colors" data-icon="notifications">notifications</span>
+<span class="material-symbols-outlined text-primary font-bold border-b-2 border-primary pb-1 cursor-pointer" data-icon="settings">settings</span>
+<div class="w-8 h-8 rounded-full bg-surface-container-highest overflow-hidden border border-outline">
+<img alt="User profile avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCyAoHCwc7YdnAwgFnCsWx0wWblCZpYQ_VpMeCKxfn5zslbLVbwW4rR1TS6TAjzaVQOoClwJXeEIoFbmAtjzC_Kb9zeWi5zTYCEHNjePmw_fcZ4ukmt1AOYo31HJsMVV0hTKhR1nshuJT3nVyBa0kBpzrocDo87Fxy2fNGURirJZinVYOhqPFsQ7N346vc5WmE7dC-Urz9jApCNhT_jq_a-Cd4rxH4cR_aqEXDMw-WE68SDn3AorGFsi3aRG7hwIMBxe33zsDe8imU">
+</div>
+</div>
+</div>
+</header>
+<div class="flex max-w-[1200px] mx-auto pt-24 pb-xxl px-lg">
+<!-- Side Navigation Shell -->
+<aside class="hidden lg:flex flex-col h-[calc(100vh-120px)] w-64 fixed left-[calc(50%-600px)] top-24 pr-base">
+<div class="flex flex-col h-full bg-surface-container-low border border-surface-variant rounded-xl p-base gap-md overflow-hidden">
+<div class="mb-base">
+<h2 class="font-headline-md text-headline-md text-primary-container">Settings</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Academic Workspace</p>
+</div>
+<div class="flex flex-col gap-xs flex-1">
+<button class="flex items-center gap-sm px-sm py-md text-on-surface-variant hover:bg-surface-container-highest transition-all rounded-lg group">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+<span class="font-body-md">Notifications</span>
+</button>
+<button class="flex items-center gap-sm px-sm py-md text-primary font-bold bg-surface-container-high rounded-lg group">
+<span class="material-symbols-outlined" data-icon="psychology">psychology</span>
+<span class="font-body-md">Intelligence</span>
+</button>
+<button class="flex items-center gap-sm px-sm py-md text-on-surface-variant hover:bg-surface-container-highest transition-all rounded-lg group">
+<span class="material-symbols-outlined" data-icon="lock">lock</span>
+<span class="font-body-md">Privacy</span>
+</button>
+<button class="flex items-center gap-sm px-sm py-md text-on-surface-variant hover:bg-surface-container-highest transition-all rounded-lg group">
+<span class="material-symbols-outlined" data-icon="palette">palette</span>
+<span class="font-body-md">Display</span>
+</button>
+<button class="flex items-center gap-sm px-sm py-md text-on-surface-variant hover:bg-surface-container-highest transition-all rounded-lg group">
+<span class="material-symbols-outlined" data-icon="science">science</span>
+<span class="font-body-md">Experimental</span>
+</button>
+</div>
+<div class="mt-auto pt-base border-t border-surface-variant">
+<button class="w-full mb-md bg-primary-container text-on-primary-fixed-variant font-bold py-sm rounded-lg hover:brightness-110 transition-all glow-primary">Upgrade Pro</button>
+<div class="flex flex-col gap-xs">
+<button class="flex items-center gap-sm px-sm py-sm text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[18px]" data-icon="help">help</span>
+<span class="text-body-sm">Support</span>
+</button>
+<button class="flex items-center gap-sm px-sm py-sm text-on-surface-variant hover:text-error transition-colors">
+<span class="material-symbols-outlined text-[18px]" data-icon="logout">logout</span>
+<span class="text-body-sm">Logout</span>
+</button>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="w-full lg:pl-[280px]">
+<header class="mb-xl">
+<h1 class="font-headline-lg text-headline-lg text-on-surface mb-xs">Settings</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant">Manage your preferences and application behavior.</p>
+</header>
+<div class="grid grid-cols-1 md:grid-cols-12 gap-lg">
+<!-- Intelligence Preferences (Bento Large) -->
+<section class="md:col-span-8 glass-card p-lg">
+<div class="flex items-center gap-sm mb-lg">
+<span class="material-symbols-outlined text-primary-container" data-icon="psychology">psychology</span>
+<h2 class="font-headline-md text-headline-md text-on-surface">Intelligence Preferences</h2>
+</div>
+<div class="space-y-xl">
+<div>
+<div class="flex justify-between mb-sm">
+<label class="font-body-md text-on-surface">Topic Prediction Sensitivity</label>
+<span class="font-data-value text-data-value text-primary-container">70%</span>
+</div>
+<input class="w-full h-1.5 bg-surface-container-highest rounded-full appearance-none cursor-pointer accent-primary-container" max="95" min="50" type="range" value="70">
+<div class="flex justify-between mt-xs">
+<span class="text-data-label text-on-surface-variant">50%</span>
+<span class="text-data-label text-on-surface-variant">95%</span>
+</div>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-lg">
+<div class="space-y-sm">
+<label class="font-body-sm text-on-surface-variant block">Confidence Display</label>
+<select class="w-full bg-surface-container border border-surface-variant rounded-xl px-md py-sm text-body-md outline-none focus:border-primary-container transition-all">
+<option>Minimal</option>
+<option selected="">Standard</option>
+<option>Detailed</option>
+</select>
+</div>
+<div class="space-y-sm">
+<label class="font-body-sm text-on-surface-variant block">Recommendation Style</label>
+<select class="w-full bg-surface-container border border-surface-variant rounded-xl px-md py-sm text-body-md outline-none focus:border-primary-container transition-all">
+<option>Conservative</option>
+<option selected="">Balanced</option>
+<option>Aggressive</option>
+</select>
+</div>
+</div>
+<div class="flex items-center justify-between p-md bg-white/5 rounded-xl border border-white/5">
+<div class="flex flex-col">
+<span class="font-body-md text-on-surface">Priority Score Visibility</span>
+<span class="text-body-sm text-on-surface-variant">Highlight urgent study topics automatically.</span>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox">
+<div class="w-11 h-6 bg-surface-container-highest rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-container"></div>
+</label>
+</div>
+<div class="flex items-center justify-between">
+<span class="font-body-md text-on-surface">Topic Revision Reminders</span>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox">
+<div class="w-11 h-6 bg-surface-container-highest rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-container"></div>
+</label>
+</div>
+</div>
+</section>
+<!-- Notifications (Bento Small) -->
+<section class="md:col-span-4 glass-card p-lg">
+<div class="flex items-center gap-sm mb-lg">
+<span class="material-symbols-outlined text-primary-container" data-icon="notifications">notifications</span>
+<h2 class="font-headline-md text-headline-md text-on-surface">Notifications</h2>
+</div>
+<div class="space-y-lg">
+<div class="flex items-center justify-between">
+<span class="font-body-md text-on-surface">Analysis Complete</span>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox">
+<div class="w-11 h-6 bg-surface-container-highest rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-container"></div>
+</label>
+</div>
+<div class="flex items-center justify-between">
+<span class="font-body-md text-on-surface">Exam Reminders</span>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox">
+<div class="w-11 h-6 bg-surface-container-highest rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-container"></div>
+</label>
+</div>
+<div class="flex items-center justify-between">
+<span class="font-body-md text-on-surface">Study Plan Updates</span>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox">
+<div class="w-11 h-6 bg-surface-container-highest rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-container"></div>
+</label>
+</div>
+</div>
+</section>
+<!-- Analysis Control -->
+<section class="md:col-span-6 glass-card p-lg">
+<div class="flex items-center gap-sm mb-lg">
+<span class="material-symbols-outlined text-primary-container" data-icon="analytics">analytics</span>
+<h2 class="font-headline-md text-headline-md text-on-surface">Analysis</h2>
+</div>
+<div class="space-y-lg">
+<div class="flex items-center justify-between">
+<span class="font-body-md text-on-surface">Auto-Analysis</span>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox">
+<div class="w-11 h-6 bg-surface-container-highest rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-container"></div>
+</label>
+</div>
+<div class="space-y-sm">
+<label class="font-body-sm text-on-surface-variant block">Default Exam Filter</label>
+<select class="w-full bg-surface-container border border-surface-variant rounded-xl px-md py-sm text-body-md outline-none focus:border-primary-container transition-all">
+<option>All</option>
+<option>Mid-1</option>
+<option>Mid-2</option>
+<option selected="">Semester</option>
+</select>
+</div>
+<div>
+<div class="flex justify-between mb-sm">
+<label class="font-body-md text-on-surface">Minimum Confidence</label>
+<span class="font-data-value text-data-value text-primary-container">80%</span>
+</div>
+<input class="w-full h-1.5 bg-surface-container-highest rounded-full appearance-none cursor-pointer accent-primary-container" max="90" min="50" type="range" value="80">
+</div>
+</div>
+</section>
+<!-- Data & Privacy -->
+<section class="md:col-span-6 glass-card p-lg">
+<div class="flex items-center gap-sm mb-lg">
+<span class="material-symbols-outlined text-primary-container" data-icon="lock">lock</span>
+<h2 class="font-headline-md text-headline-md text-on-surface">Data &amp; Privacy</h2>
+</div>
+<div class="space-y-lg">
+<div class="flex items-center justify-between">
+<span class="font-body-md text-on-surface">Anonymous Usage Analytics</span>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox">
+<div class="w-11 h-6 bg-surface-container-highest rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-container"></div>
+</label>
+</div>
+<div class="flex items-center justify-between">
+<span class="font-body-md text-on-surface">Cache Analysis Results</span>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox">
+<div class="w-11 h-6 bg-surface-container-highest rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-container"></div>
+</label>
+</div>
+<div class="pt-base border-t border-surface-variant">
+<button class="text-error font-body-md hover:underline flex items-center gap-xs">
+<span class="material-symbols-outlined text-[18px]" data-icon="delete">delete</span>
+                  Clear Cache
+                </button>
+</div>
+</div>
+</section>
+<!-- Display & Experimental Grid -->
+<div class="md:col-span-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-lg">
+<!-- Display -->
+<section class="glass-card p-lg">
+<div class="flex items-center gap-sm mb-lg">
+<span class="material-symbols-outlined text-primary-container" data-icon="palette">palette</span>
+<h2 class="font-headline-md text-headline-md text-on-surface">Display</h2>
+</div>
+<div class="space-y-lg">
+<div class="flex items-center justify-between text-on-surface-variant">
+<span class="font-body-md">Theme: Dark</span>
+<span class="material-symbols-outlined text-[18px]" data-icon="lock">lock</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="font-body-md text-on-surface">Compact Mode</span>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox">
+<div class="w-11 h-6 bg-surface-container-highest rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-container"></div>
+</label>
+</div>
+<div class="flex items-center justify-between">
+<span class="font-body-md text-on-surface">Reduce Motion</span>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox">
+<div class="w-11 h-6 bg-surface-container-highest rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-container"></div>
+</label>
+</div>
+</div>
+</section>
+<!-- Advanced -->
+<section class="glass-card p-lg">
+<div class="flex items-center gap-sm mb-lg">
+<span class="material-symbols-outlined text-primary-container" data-icon="settings_suggest">settings_suggest</span>
+<h2 class="font-headline-md text-headline-md text-on-surface">Advanced</h2>
+</div>
+<div class="space-y-lg">
+<div class="flex items-center justify-between">
+<span class="font-body-md text-on-surface">Developer Mode</span>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox">
+<div class="w-11 h-6 bg-surface-container-highest rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-container"></div>
+</label>
+</div>
+<button class="w-full border border-surface-variant text-on-surface font-body-md py-sm rounded-lg hover:bg-white/5 transition-all">Export My Data</button>
+<button class="w-full text-primary-container font-body-sm hover:underline">View API Logs</button>
+</div>
+</section>
+<!-- Experimental -->
+<section class="glass-card p-lg border-primary-container/20">
+<div class="flex items-center gap-sm mb-lg">
+<span class="material-symbols-outlined text-primary-container" data-icon="science">science</span>
+<h2 class="font-headline-md text-headline-md text-on-surface">Experimental</h2>
+</div>
+<div class="space-y-md">
+<div class="flex items-center justify-between">
+<span class="font-body-sm text-on-surface">New Dashboard</span>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox">
+<div class="w-9 h-5 bg-surface-container-highest rounded-full peer peer-checked:after:translate-x-4 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary-container"></div>
+</label>
+</div>
+<div class="flex items-center justify-between">
+<span class="font-body-sm text-on-surface">Advanced Analysis</span>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox">
+<div class="w-9 h-5 bg-surface-container-highest rounded-full peer peer-checked:after:translate-x-4 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary-container"></div>
+</label>
+</div>
+<div class="flex items-center justify-between">
+<span class="font-body-sm text-on-surface">Early Features</span>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox">
+<div class="w-9 h-5 bg-surface-container-highest rounded-full peer peer-checked:after:translate-x-4 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary-container"></div>
+</label>
+</div>
+</div>
+</section>
+</div>
+<!-- About Section -->
+<section class="md:col-span-12 glass-card p-lg">
+<div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-lg">
+<div class="space-y-xs">
+<h2 class="font-headline-md text-headline-md text-on-surface">About PaperIQ</h2>
+<p class="font-data-label text-data-label text-on-surface-variant">Version 1.0.0-beta • Academic Enterprise Edition</p>
+</div>
+<div class="flex flex-wrap gap-lg items-center">
+<div class="flex items-center gap-xs">
+<div class="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]"></div>
+<span class="text-body-sm text-on-surface-variant">Backend API Status: Healthy</span>
+</div>
+<div class="text-body-sm text-on-surface-variant">Last Updated: Oct 24, 2024</div>
+<div class="flex gap-md">
+<a class="text-primary-container text-body-sm hover:underline" href="#">Terms</a>
+<a class="text-primary-container text-body-sm hover:underline" href="#">Privacy</a>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+</div>
+<!-- Page Footer Shell -->
+<footer class="mt-huge border-t border-surface-variant bg-surface-container-lowest py-xl">
+<div class="flex flex-col md:flex-row justify-between items-center w-full px-lg max-w-[1200px] mx-auto gap-base">
+<div class="font-data-label text-data-label text-on-surface-variant">
+          © 2026 PaperIQ. Precision Research Tools.
+        </div>
+<div class="flex gap-lg">
+<a class="font-data-label text-data-label text-on-surface-variant hover:text-primary transition-colors" href="#">Terms of Service</a>
+<a class="font-data-label text-data-label text-on-surface-variant hover:text-primary transition-colors" href="#">Privacy Policy</a>
+<a class="font-data-label text-data-label text-on-surface-variant hover:text-primary transition-colors" href="#">Contact Support</a>
+</div>
+</div>
+</footer>
+<!-- Bottom Nav for Mobile -->
+<div class="md:hidden fixed bottom-0 left-0 right-0 bg-surface-container-lowest border-t border-surface-variant z-50 flex justify-around items-center h-16 px-base">
+<button class="flex flex-col items-center text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="text-[10px] font-data-label">Dashboard</span>
+</button>
+<button class="flex flex-col items-center text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="library_books">library_books</span>
+<span class="text-[10px] font-data-label">Library</span>
+</button>
+<button class="flex flex-col items-center text-primary">
+<span class="material-symbols-outlined" data-icon="settings" style="font-variation-settings: 'FILL' 1;">settings</span>
+<span class="text-[10px] font-data-label">Settings</span>
+</button>
+</div>
+<script>
+        // Micro-interaction for sliders
+        document.querySelectorAll('input[type="range"]').forEach(slider => {
+            slider.addEventListener('input', (e) => {
+                const valueSpan = e.target.previousElementSibling.querySelector('.text-primary-container');
+                if (valueSpan) {
+                    valueSpan.textContent = e.target.value + '%';
+                }
+            });
+        });
+
+        // Hover effect enhancement for glass cards
+        document.querySelectorAll('.glass-card').forEach(card => {
+            card.addEventListener('mousemove', (e) => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                card.style.setProperty('--mouse-x', `${x}px`);
+                card.style.setProperty('--mouse-y', `${y}px`);
+            });
+        });
+    </script>
+
+
+</body></html>

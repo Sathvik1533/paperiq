@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>PaperIQ - Extracting Intelligence</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&amp;family=Geist:wght@100..900&amp;family=JetBrains+Mono:wght@100..800&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&amp;family=Space+Grotesk:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                "surface-container-lowest": "#0c0f0f",
+                "on-surface-variant": "#e0c0b1",
+                "on-primary-container": "#582200",
+                "error-container": "#93000a",
+                "outline-variant": "#584237",
+                "secondary-fixed-dim": "#c8c6c5",
+                "on-tertiary-container": "#323139",
+                "surface-container-low": "#1a1c1c",
+                "on-secondary": "#313030",
+                "inverse-on-surface": "#2f3131",
+                "outline": "#a78b7d",
+                "on-tertiary": "#303037",
+                "error": "#ffb4ab",
+                "on-secondary-container": "#bab8b7",
+                "surface-variant": "#333535",
+                "inverse-primary": "#9d4300",
+                "tertiary-fixed-dim": "#c8c5cf",
+                "surface-container": "#1e2020",
+                "tertiary-container": "#9b99a2",
+                "on-surface": "#e2e2e2",
+                "tertiary-fixed": "#e4e1eb",
+                "on-background": "#e2e2e2",
+                "secondary": "#c8c6c5",
+                "background": "#121414",
+                "secondary-container": "#4a4949",
+                "on-tertiary-fixed-variant": "#47464e",
+                "on-primary": "#552100",
+                "secondary-fixed": "#e5e2e1",
+                "on-tertiary-fixed": "#1b1b22",
+                "primary-fixed": "#ffdbca",
+                "on-error": "#690005",
+                "primary-container": "#f97316",
+                "primary-fixed-dim": "#ffb690",
+                "surface-tint": "#ffb690",
+                "on-error-container": "#ffdad6",
+                "on-secondary-fixed": "#1c1b1b",
+                "on-primary-fixed-variant": "#783200",
+                "surface": "#121414",
+                "on-secondary-fixed-variant": "#474646",
+                "surface-container-high": "#282a2b",
+                "primary": "#ffb690",
+                "tertiary": "#c8c5cf",
+                "on-primary-fixed": "#341100",
+                "inverse-surface": "#e2e2e2",
+                "surface-dim": "#121414",
+                "surface-bright": "#37393a",
+                "surface-container-highest": "#333535"
+            },
+            "borderRadius": {
+                "DEFAULT": "0.25rem",
+                "lg": "0.5rem",
+                "xl": "0.75rem",
+                "full": "9999px"
+            },
+            "spacing": {
+                "sm": "8px",
+                "section": "96px",
+                "lg": "24px",
+                "xl": "32px",
+                "xxl": "48px",
+                "base": "16px",
+                "xs": "4px",
+                "md": "12px",
+                "huge": "64px"
+            },
+            "fontFamily": {
+                "headline-lg": ["Space Grotesk"],
+                "headline-md": ["Space Grotesk"],
+                "body-md": ["Geist"],
+                "body-lg": ["Geist"],
+                "data-value": ["JetBrains Mono"],
+                "display-hero-mobile": ["Space Grotesk"],
+                "body-sm": ["Geist"],
+                "data-label": ["JetBrains Mono"],
+                "display-hero": ["Space Grotesk"]
+            },
+            "fontSize": {
+                "headline-lg": ["32px", {"lineHeight": "1.3", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                "headline-md": ["24px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                "body-md": ["15px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                "data-value": ["14px", {"lineHeight": "1.4", "fontWeight": "500"}],
+                "display-hero-mobile": ["36px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                "body-sm": ["13px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                "data-label": ["12px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                "display-hero": ["56px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        body {
+            background-color: #07070d;
+            color: #e2e2e2;
+            overflow: hidden;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        @keyframes scan {
+            0% { transform: translateY(-100%); opacity: 0; }
+            50% { opacity: 1; }
+            100% { transform: translateY(100%); opacity: 0; }
+        }
+        .scan-line {
+            animation: scan 3s linear infinite;
+            background: linear-gradient(to bottom, transparent, #f97316, transparent);
+        }
+        .progress-ring-circle {
+            transition: stroke-dashoffset 0.35s;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+        .data-stream-particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background-color: #f97316;
+            border-radius: 50%;
+            pointer-events: none;
+        }
+        .glow-pulse {
+            animation: glow-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes glow-pulse {
+            0%, 100% { opacity: 0.3; filter: blur(8px); }
+            50% { opacity: 0.7; filter: blur(12px); }
+        }
+    </style>
+</head>
+<body class="font-body-md text-body-md flex items-center justify-center min-h-screen relative overflow-hidden">
+<!-- Atmospheric Background Elements -->
+<div class="absolute inset-0 z-0">
+<div class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary-container/5 rounded-full blur-[120px]"></div>
+<div class="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary-container/5 rounded-full blur-[120px]"></div>
+</div>
+<!-- Main Content Canvas -->
+<main class="relative z-10 w-full max-w-[1200px] px-base md:px-xl flex flex-col items-center justify-center">
+<!-- Processing Visualization Container -->
+<div class="relative w-64 h-64 md:w-80 md:h-80 mb-xxl flex items-center justify-center">
+<!-- Outer Glow -->
+<div class="absolute inset-0 bg-primary-container/10 rounded-full blur-3xl glow-pulse"></div>
+<!-- Progress Ring -->
+<svg class="w-full h-full" viewbox="0 0 100 100">
+<!-- Background Circle -->
+<circle class="text-surface-container-highest stroke-current" cx="50" cy="50" fill="transparent" r="45" stroke-width="2"></circle>
+<!-- Animated Progress -->
+<circle class="text-primary-container stroke-current progress-ring-circle" cx="50" cy="50" fill="transparent" id="progress-circle" r="45" stroke-linecap="round" stroke-width="2" style="stroke-dasharray: 282.7; stroke-dashoffset: 282.7;"></circle>
+</svg>
+<!-- Center Content: Icon and Scanning Effect -->
+<div class="absolute inset-0 flex items-center justify-center">
+<div class="relative w-32 h-44 border border-outline-variant bg-surface-container-low rounded-lg overflow-hidden flex flex-col p-4 shadow-2xl">
+<!-- Scanning Line -->
+<div class="scan-line absolute inset-x-0 h-16 z-20"></div>
+<!-- Placeholder Hall Ticket Content -->
+<div class="w-full h-2 bg-outline-variant/30 rounded-full mb-3"></div>
+<div class="w-3/4 h-2 bg-outline-variant/20 rounded-full mb-6"></div>
+<div class="space-y-3">
+<div class="flex gap-2">
+<div class="w-4 h-4 rounded bg-primary-container/20"></div>
+<div class="flex-1 h-2 bg-outline-variant/20 rounded-full mt-1"></div>
+</div>
+<div class="flex gap-2">
+<div class="w-4 h-4 rounded bg-primary-container/20"></div>
+<div class="flex-1 h-2 bg-outline-variant/20 rounded-full mt-1"></div>
+</div>
+<div class="flex gap-2">
+<div class="w-4 h-4 rounded bg-primary-container/20"></div>
+<div class="flex-1 h-2 bg-outline-variant/20 rounded-full mt-1"></div>
+</div>
+</div>
+<!-- Subject Chips appearing in visualization -->
+<div class="mt-auto flex flex-wrap gap-1">
+<div class="px-2 py-1 rounded-full bg-primary-container/10 text-[8px] text-primary border border-primary-container/20 font-data-label">MATHS</div>
+<div class="px-2 py-1 rounded-full bg-primary-container/10 text-[8px] text-primary border border-primary-container/20 font-data-label">PHYS</div>
+</div>
+</div>
+</div>
+<!-- Orbiting Nodes (Decorative) -->
+<div class="absolute inset-0 animate-[spin_10s_linear_infinite]">
+<div class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 bg-primary-container rounded-full shadow-[0_0_15px_rgba(249,115,22,0.8)]"></div>
+</div>
+<div class="absolute inset-0 animate-[spin_15s_linear_infinite_reverse]">
+<div class="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-2 h-2 bg-outline rounded-full"></div>
+</div>
+</div>
+<!-- Textual Feedback -->
+<div class="text-center max-w-lg">
+<h1 class="font-headline-lg text-headline-lg md:font-headline-lg md:text-headline-lg text-on-surface mb-base tracking-tight">
+                Extracting Intelligence...
+            </h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant leading-relaxed mb-xl opacity-80">
+                Our AI is parsing your hall ticket to map your subjects and exam schedule. This usually takes 15-30 seconds.
+            </p>
+<!-- Dynamic Status Log -->
+<div class="bg-surface-container-low border border-outline-variant rounded-xl p-base h-24 overflow-hidden relative" id="status-container">
+<div class="flex flex-col gap-2 transition-transform duration-500" id="status-log">
+<div class="flex items-center gap-3 text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px] text-primary">check_circle</span>
+<span class="font-data-label text-data-label">OCR Engine Initialized</span>
+</div>
+<div class="flex items-center gap-3 text-on-surface">
+<span class="w-1.5 h-1.5 rounded-full bg-primary-container animate-pulse"></span>
+<span class="font-data-label text-data-label">Identifying Subject Codes...</span>
+</div>
+</div>
+<!-- Fade out bottom for log feel -->
+<div class="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-surface-container-low to-transparent pointer-events-none"></div>
+</div>
+</div>
+<!-- Footer Meta -->
+<div class="mt-huge flex items-center gap-base">
+<div class="flex -space-x-2">
+<img class="w-6 h-6 rounded-full border border-background" data-alt="A close-up professional headshot of a young student with a focused expression, set against a dark, minimalist academic background. The lighting is soft and directional, highlighting the contours of the face while maintaining a deep-focus atmosphere consistent with a premium educational tool palette." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCM7TwmRmVr0n7lfo0FYIjiN14qmsdJynUx5cDCCnPcO38PGXoLpOAOSrO-_JyGIr_Fka_83CjS7M5R5FkrGIbkz-kAyRATu6mxfH6-4IX7hR7iWEvOetlADjVEkMdDgmICFum15kzVuBeZMI44TsIc40WGBy4bubfKsFT8hQORV6gA0_9Ih2h6UkO6hVLsLRgbmeUbWzxvnPJ9DaBR3oI_rZg7f9J4C1vVH6crY_joAr_dELaSKvQqYDcaCwQ-LtHtE-a9z40gEWg"/>
+<img class="w-6 h-6 rounded-full border border-background" data-alt="A high-quality portrait of a high-achieving student in a modern digital learning environment. The image uses a cool, dark color scheme with subtle orange highlights that match the PaperIQ brand identity, creating a professional and intellectually empowering mood." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDHozRu5jcU_BY3EFmOrde-eoSpnYSjIdrK_jf_4yxWXxsF-T_0E2vBVrukCN_7_eICX5tBspa4_DGP-GidHjBWZEw_UjzD1W8Caa6Bd3fBg1i7dHDVONQoN-O00jVhi5WwjPnh5HcMjRlY8_YvyOfgCoJigexyUfbgpzK9Lgup5gAEgNWLj1KWiRFLeU33EadEuV-Ie5QdQidfQH5pXMoKWzEgZ_oIxXfC2TJ3mbZiqm48_EZwNH2h9yLc4plT14YrVyeEZYW7Nxc"/>
+</div>
+<p class="font-data-label text-data-label text-on-secondary-fixed-variant">
+                Joined by 12,000+ scholars this semester
+            </p>
+</div>
+</main>
+<script>
+        // Progress Ring Animation Logic
+        const circle = document.getElementById('progress-circle');
+        const radius = circle.r.baseVal.value;
+        const circumference = radius * 2 * Math.PI;
+        circle.style.strokeDasharray = `${circumference} ${circumference}`;
+
+        function setProgress(percent) {
+            const offset = circumference - (percent / 100 * circumference);
+            circle.style.strokeDashoffset = offset;
+        }
+
+        let progress = 0;
+        const interval = setInterval(() => {
+            progress += Math.random() * 5;
+            if (progress >= 95) {
+                progress = 95; // Wait at 95 until server would complete
+                clearInterval(interval);
+            }
+            setProgress(progress);
+        }, 1000);
+
+        // Status Log Rotation
+        const log = document.getElementById('status-log');
+        const statuses = [
+            "Identifying Subject Codes...",
+            "Mapping Exam Dates from PDF...",
+            "Validating Academic Calendar...",
+            "Generating AI Study Pathways...",
+            "Cross-referencing Syllabus...",
+            "Optimizing Focus Schedule..."
+        ];
+        let currentStatusIndex = 0;
+
+        function updateStatus() {
+            if (currentStatusIndex >= statuses.length) return;
+            
+            const prevItem = log.querySelector('div:last-child');
+            if (prevItem) {
+                const icon = prevItem.querySelector('span:first-child');
+                icon.className = "material-symbols-outlined text-[18px] text-primary";
+                icon.innerHTML = "check_circle";
+                icon.classList.remove('animate-pulse', 'bg-primary-container', 'w-1.5', 'h-1.5', 'rounded-full');
+            }
+
+            const newItem = document.createElement('div');
+            newItem.className = "flex items-center gap-3 text-on-surface opacity-0 transition-opacity duration-500";
+            newItem.innerHTML = `
+                <span class="w-1.5 h-1.5 rounded-full bg-primary-container animate-pulse"></span>
+                <span class="font-data-label text-data-label">${statuses[currentStatusIndex]}</span>
+            `;
+            
+            log.appendChild(newItem);
+            setTimeout(() => newItem.classList.remove('opacity-0'), 100);
+
+            // Scroll effect
+            if (log.children.length > 3) {
+                log.style.transform = `translateY(-${(log.children.length - 3) * 32}px)`;
+            }
+
+            currentStatusIndex++;
+            setTimeout(updateStatus, 3000 + Math.random() * 2000);
+        }
+
+        setTimeout(updateStatus, 2000);
+
+        // Particle Stream Micro-interaction
+        function createParticle() {
+            const particle = document.createElement('div');
+            particle.className = 'data-stream-particle';
+            const container = document.querySelector('main');
+            container.appendChild(particle);
+
+            const startX = window.innerWidth / 2 + (Math.random() - 0.5) * 400;
+            const startY = window.innerHeight + 10;
+            const duration = 2000 + Math.random() * 3000;
+
+            particle.style.left = startX + 'px';
+            particle.style.top = startY + 'px';
+
+            particle.animate([
+                { transform: 'translateY(0) scale(1)', opacity: 1 },
+                { transform: `translateY(-${window.innerHeight + 100}px) scale(0)`, opacity: 0 }
+            ], {
+                duration: duration,
+                easing: 'cubic-bezier(0.4, 0, 0.2, 1)'
+            }).onfinish = () => particle.remove();
+        }
+
+        setInterval(createParticle, 200);
+    </script>
+</body></html>

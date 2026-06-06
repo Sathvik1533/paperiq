@@ -1,0 +1,302 @@
+<!DOCTYPE html><html class="dark" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Screen 13 — Analysis: Study Priority Order</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&amp;family=Geist:wght@100..900&amp;family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#ffb690",
+                        "primary-container": "#f97316",
+                        "surface": "#07070d",
+                        "surface-card": "rgba(15, 15, 15, 0.75)",
+                        "on-surface": "#e2e2e2",
+                        "on-surface-variant": "#e0c0b1",
+                        "outline-subtle": "rgba(255, 255, 255, 0.06)",
+                        "outline-medium": "rgba(255, 255, 255, 0.20)",
+                        "success": "#10b981",
+                    },
+                    spacing: {
+                        "sm": "8px",
+                        "xs": "4px",
+                        "xl": "32px",
+                        "md": "12px",
+                        "lg": "24px",
+                        "base": "16px",
+                        "xxl": "48px",
+                    },
+                    fontFamily: {
+                        "body": ["Geist", "sans-serif"],
+                        "headline": ["Space Grotesk", "sans-serif"],
+                        "mono": ["JetBrains Mono", "monospace"],
+                    },
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            background-color: #07070d;
+            color: #e2e2e2;
+            font-family: 'Geist', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+        .glass-card {
+            background: rgba(15, 15, 15, 0.75);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .glass-card:hover {
+            background: rgba(22, 22, 22, 0.85);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+        .orange-glow {
+            filter: drop-shadow(0 0 15px rgba(249, 115, 22, 0.4));
+        }
+        .priority-1-glow:hover {
+            filter: drop-shadow(0 0 25px rgba(249, 115, 22, 0.6));
+        }
+        .radial-header-bg {
+            background: radial-gradient(circle at center, rgba(249, 115, 22, 0.15) 0%, transparent 70%);
+        }
+        .sticky-summary {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            background: rgba(7, 7, 13, 0.9);
+            backdrop-filter: blur(12px);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="selection:bg-primary-container selection:text-white">
+<main class="max-w-[900px] mx-auto px-base py-huge space-y-lg relative">
+<!-- Header Section -->
+<header class="relative py-xl text-center radial-header-bg rounded-full">
+<h1 class="font-headline text-[32px] font-bold tracking-tight text-white flex items-center justify-center gap-3">
+<span class="">📚</span> Study Priority Order
+            </h1>
+</header>
+<!-- Intelligence Banner -->
+<section class="bg-[#f9731614] border border-outline-medium rounded-xl p-lg flex items-start gap-md">
+<span class="material-symbols-outlined text-primary-container mt-1">bolt</span>
+<p class="font-body text-body-md text-white leading-relaxed">
+                PaperIQ analysed <span class="font-bold text-primary-container">163 questions</span> from <span class="font-bold">12 past papers</span> — here's exactly where to focus your next 48 hours.
+            </p>
+</section>
+<!-- Sticky Priority Summary -->
+<nav class="sticky-summary py-sm px-md rounded-full border border-outline-subtle shadow-lg mt-base">
+<div class="flex items-center justify-center gap-base overflow-x-auto no-scrollbar whitespace-nowrap py-xs">
+<span class="font-mono text-xs uppercase tracking-widest text-on-surface-variant">Priority Order:</span>
+<span class="font-mono text-sm font-bold text-primary-container">#1 Unit IV</span>
+<span class="font-mono text-sm font-medium text-white/70">#2 Unit II</span>
+<span class="font-mono text-sm font-medium text-white/50">#3 Unit III</span>
+<span class="font-mono text-sm font-medium text-white/40">#4 Unit V</span>
+<span class="font-mono text-sm font-medium text-white/30">#5 Unit I</span>
+</div>
+</nav>
+<!-- Unit Cards Container -->
+<div class="space-y-lg pt-base">
+<!-- Priority 1 Card -->
+<div class="glass-card rounded-2xl overflow-hidden border-l-[6px] border-primary-container priority-1-glow">
+<div class="p-lg md:p-xl space-y-lg">
+<div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-lg">
+<div class="flex items-center gap-lg">
+<div class="w-[44px] h-[44px] rounded-full bg-primary-container flex items-center justify-center font-mono font-bold text-lg text-white orange-glow">1</div>
+<div>
+<h2 class="font-headline text-headline-md text-white">Unit IV</h2>
+<p class="font-body text-on-surface-variant">Micro Operations and Pipeline</p>
+</div>
+</div>
+<div class="text-right">
+<div class="font-mono text-display-hero-mobile text-white leading-none">17.8<span class="text-headline-md opacity-60">%</span></div>
+<div class="font-mono text-data-label text-primary-container uppercase mt-1">of exam weight</div>
+</div>
+</div>
+<div class="flex flex-wrap gap-md items-center">
+<div class="px-md py-1.5 rounded-full bg-success/20 border border-success/30 text-success text-sm font-medium flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-success animate-pulse"></span> High Confidence 92%
+                        </div>
+<div class="flex items-center gap-2 text-on-surface-variant text-sm font-body">
+<span class="material-symbols-outlined text-base">schedule</span> Suggested Study Time: 12 hours
+                        </div>
+</div>
+<p class="font-body text-white/80 max-w-[70ch] leading-relaxed italic">
+                        "Focus on Pipeline Hazards and Vector Processing; these appeared in 9 out of 12 analyzed papers."
+                    </p>
+<hr class="border-t border-outline-subtle">
+<div class="space-y-md">
+<div class="flex flex-wrap gap-sm">
+<div class="px-md py-1.5 rounded-lg bg-white/5 border border-outline-subtle font-mono text-xs flex items-center gap-2 hover:border-primary-container transition-colors group cursor-default">
+                                Arithmetic Pipeline <span class="text-primary-container group-hover:scale-110 transition-transform">| 14</span>
+</div>
+<div class="px-md py-1.5 rounded-lg bg-white/5 border border-outline-subtle font-mono text-xs flex items-center gap-2 hover:border-primary-container transition-colors group cursor-default">
+                                Instruction Cycle <span class="text-primary-container group-hover:scale-110 transition-transform">| 12</span>
+</div>
+<div class="px-md py-1.5 rounded-lg bg-white/5 border border-outline-subtle font-mono text-xs flex items-center gap-2 hover:border-primary-container transition-colors group cursor-default">
+                                Vector Processing <span class="text-primary-container group-hover:scale-110 transition-transform">| 9</span>
+</div>
+<button class="px-md py-1.5 text-xs font-medium text-primary-container hover:underline transition-all">Show all topics 🎯</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Priority 2 Card -->
+<div class="glass-card rounded-2xl overflow-hidden border-l-[6px] border-primary-container/70 hover:border-primary-container">
+<div class="p-lg md:p-xl space-y-lg">
+<div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-lg">
+<div class="flex items-center gap-lg">
+<div class="w-[44px] h-[44px] rounded-full border-2 border-primary-container/70 flex items-center justify-center font-mono font-bold text-lg text-white">2</div>
+<div>
+<h2 class="font-headline text-headline-md text-white">Unit II</h2>
+<p class="font-body text-on-surface-variant">Combinational &amp; Sequential Circuits</p>
+</div>
+</div>
+<div class="text-right">
+<div class="font-mono text-headline-lg text-white/90 leading-none">12.9<span class="text-headline-md opacity-40">%</span></div>
+<div class="font-mono text-data-label text-on-surface-variant uppercase mt-1">of exam weight</div>
+</div>
+</div>
+<div class="flex flex-wrap gap-md items-center">
+<div class="px-md py-1.5 rounded-full bg-primary-container/10 border border-primary-container/30 text-primary-container text-sm font-medium">
+                            Mid Confidence 88%
+                        </div>
+<div class="flex items-center gap-2 text-on-surface-variant text-sm font-body">
+<span class="material-symbols-outlined text-base">schedule</span> Suggested Study Time: 8 hours
+                        </div>
+</div>
+<p class="font-body text-white/70 max-w-[70ch] leading-relaxed">
+                        Master the flip-flop conversion and state reduction tables.
+                    </p>
+<hr class="border-t border-outline-subtle">
+<div class="flex flex-wrap gap-sm">
+<div class="px-md py-1.5 rounded-lg bg-white/5 border border-outline-subtle font-mono text-xs flex items-center gap-2 hover:border-primary-container transition-colors group cursor-default">
+                            JK Flip Flop <span class="text-primary-container group-hover:scale-110 transition-transform">| 11</span>
+</div>
+<div class="px-md py-1.5 rounded-lg bg-white/5 border border-outline-subtle font-mono text-xs flex items-center gap-2 hover:border-primary-container transition-colors group cursor-default">
+                            Mux Analysis <span class="text-primary-container group-hover:scale-110 transition-transform">| 8</span>
+</div>
+<div class="px-md py-1.5 rounded-lg bg-white/5 border border-outline-subtle font-mono text-xs flex items-center gap-2 hover:border-primary-container transition-colors group cursor-default">
+                            Decoders <span class="text-primary-container group-hover:scale-110 transition-transform">| 7</span>
+</div>
+<button class="px-md py-1.5 text-xs font-medium text-primary-container hover:underline">Show all topics 🎯</button>
+</div>
+</div>
+</div>
+<!-- Priority 3 Card -->
+<div class="glass-card rounded-2xl overflow-hidden border-l-[6px] border-white/60">
+<div class="p-lg md:p-xl space-y-lg opacity-90">
+<div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-lg">
+<div class="flex items-center gap-lg">
+<div class="w-[44px] h-[44px] rounded-full border-2 border-white/40 flex items-center justify-center font-mono font-bold text-lg text-white">3</div>
+<div>
+<h2 class="font-headline text-headline-md text-white">Unit III</h2>
+<p class="font-body text-on-surface-variant">Computer Organization</p>
+</div>
+</div>
+<div class="text-right">
+<div class="font-mono text-headline-lg text-white/80 leading-none">12.9<span class="text-headline-md opacity-40">%</span></div>
+</div>
+</div>
+<div class="flex flex-wrap gap-md items-center">
+<div class="px-md py-1.5 rounded-full bg-primary-container/10 border border-primary-container/20 text-primary-container text-sm font-medium">
+                            Mid Confidence 81%
+                        </div>
+<div class="flex items-center gap-2 text-on-surface-variant text-sm font-body">
+<span class="material-symbols-outlined text-base">schedule</span> Suggested Study Time: 8 hours
+                        </div>
+</div>
+<div class="flex flex-wrap gap-sm">
+<div class="px-md py-1.5 rounded-lg bg-white/5 border border-outline-subtle font-mono text-xs flex items-center gap-2 hover:border-primary-container transition-colors group cursor-default">
+                            Bus Structures <span class="text-primary-container group-hover:scale-110 transition-transform">| 10</span>
+</div>
+<button class="px-md py-1.5 text-xs font-medium text-primary-container hover:underline">Show all topics 🎯</button>
+</div>
+</div>
+</div>
+<!-- Priority 4 Card -->
+<div class="glass-card rounded-2xl overflow-hidden border-l-[6px] border-white/40">
+<div class="p-lg md:p-xl space-y-lg opacity-75">
+<div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-lg">
+<div class="flex items-center gap-lg">
+<div class="w-[44px] h-[44px] rounded-full border-2 border-white/20 flex items-center justify-center font-mono font-bold text-lg text-white">4</div>
+<div>
+<h2 class="font-headline text-headline-md text-white">Unit V</h2>
+<p class="font-body text-on-surface-variant">Memory and I/O</p>
+</div>
+</div>
+<div class="text-right">
+<div class="font-mono text-headline-lg text-white/70 leading-none">12.3<span class="text-headline-md opacity-40">%</span></div>
+</div>
+</div>
+<div class="flex items-center gap-2 text-on-surface-variant text-sm font-body">
+<span class="material-symbols-outlined text-base">schedule</span> Suggested Study Time: 6 hours
+                    </div>
+</div>
+</div>
+<!-- Priority 5 Card -->
+<div class="glass-card rounded-2xl overflow-hidden border-l-[6px] border-white/20">
+<div class="p-lg md:p-xl space-y-lg opacity-60">
+<div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-lg">
+<div class="flex items-center gap-lg">
+<div class="w-[44px] h-[44px] rounded-full border-2 border-white/10 flex items-center justify-center font-mono font-bold text-lg text-white">5</div>
+<div>
+<h2 class="font-headline text-headline-md text-white">Unit I</h2>
+<p class="font-body text-on-surface-variant">Digital Fundamentals</p>
+</div>
+</div>
+<div class="text-right">
+<div class="font-mono text-headline-lg text-white/60 leading-none">8.0<span class="text-headline-md opacity-40">%</span></div>
+</div>
+</div>
+<div class="flex items-center gap-2 text-on-surface-variant text-sm font-body">
+<span class="material-symbols-outlined text-base">schedule</span> Suggested Study Time: 4 hours
+                    </div>
+</div>
+</div>
+</div>
+<!-- Floating Action Visual (Atmospheric) -->
+<div class="fixed bottom-lg right-lg pointer-events-none opacity-20">
+<div class="w-[300px] h-[300px] bg-primary-container rounded-full blur-[120px]"></div>
+</div>
+</main>
+<script>
+        // Micro-interactions for expanding/collapsing pills or simple click effects
+        document.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                if (this.innerText.includes('Show all topics')) {
+                    const container = this.parentElement;
+                    const items = container.querySelectorAll('div');
+                    // Simulating an expansion
+                    this.innerHTML = "Closing in 2s... 🎯";
+                    this.classList.add('text-white');
+                    setTimeout(() => {
+                        this.innerHTML = "Show all topics 🎯";
+                        this.classList.remove('text-white');
+                    }, 2000);
+                }
+            });
+        });
+
+        // Sticky nav scroll behavior for a cleaner fade in/out
+        const stickyNav = document.querySelector('.sticky-summary');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 150) {
+                stickyNav.classList.add('shadow-2xl', 'border-white/20');
+            } else {
+                stickyNav.classList.remove('shadow-2xl', 'border-white/20');
+            }
+        });
+    </script>
+
+
+</body></html>

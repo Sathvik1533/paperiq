@@ -2,8 +2,144 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  background-color: #111827;
-  color: white;
-  font-family: system-ui, sans-serif;
+/* ─── Base ─────────────────────────────────────────────────────────────── */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
+
+body {
+  background-color: #07070d;
+  color: #e2e2e2;
+  font-family: 'Geist', sans-serif;
+  overflow-x: hidden;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+.font-headline { font-family: 'Space Grotesk', sans-serif; }
+.font-mono     { font-family: 'JetBrains Mono', monospace; }
+
+/* ─── Material Symbols ───────────────────────────────────────────────────── */
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  vertical-align: middle;
+  line-height: 1;
+}
+
+/* ─── Glass Card ─────────────────────────────────────────────────────────── */
+.glass-card {
+  background: rgba(15, 15, 15, 0.75);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+.glass-card:hover {
+  border-color: rgba(249, 115, 22, 0.3);
+}
+
+/* ─── Glow ───────────────────────────────────────────────────────────────── */
+.glow-orange {
+  box-shadow: 0 0 20px rgba(249, 115, 22, 0.3);
+}
+.glow-orange:hover {
+  box-shadow: 0 0 40px rgba(249, 115, 22, 0.5);
+}
+
+/* ─── Scroll reveal ──────────────────────────────────────────────────────── */
+.reveal-hidden {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: all 0.7s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ─── Custom scrollbar ──────────────────────────────────────────────────── */
+::-webkit-scrollbar       { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: #07070d; }
+::-webkit-scrollbar-thumb { background: #333535; border-radius: 10px; }
+
+/* ─── Toggle switch ──────────────────────────────────────────────────────── */
+.toggle-track {
+  width: 44px; height: 24px;
+  background: #333535;
+  border-radius: 9999px;
+  position: relative;
+  transition: background 0.2s;
+  cursor: pointer;
+}
+.toggle-track.on { background: #f97316; }
+.toggle-thumb {
+  width: 20px; height: 20px;
+  background: white;
+  border-radius: 50%;
+  position: absolute;
+  top: 2px; left: 2px;
+  transition: transform 0.2s;
+}
+.toggle-track.on .toggle-thumb { transform: translateX(20px); }
+
+/* ─── Skeleton ───────────────────────────────────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg,
+    rgba(255,255,255,0.04) 25%,
+    rgba(255,255,255,0.08) 50%,
+    rgba(255,255,255,0.04) 75%
+  );
+  background-size: 400px 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+/* ─── Animations ──────────────────────────────────────────────────────────── */
+@keyframes float-gentle {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-10px); }
+}
+@keyframes pulse-emerald {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0.4); }
+  50%       { box-shadow: 0 0 0 6px rgba(16,185,129,0); }
+}
+@keyframes scan {
+  0%   { transform: translateY(-100%); opacity: 0; }
+  50%  { opacity: 1; }
+  100% { transform: translateY(200%); opacity: 0; }
+}
+@keyframes progress-ring {
+  from { stroke-dashoffset: 283; }
+}
+
+.animate-float       { animation: float-gentle 6s ease-in-out infinite; }
+.animate-pulse-badge { animation: pulse-emerald 3s ease-in-out infinite; }
+.scan-line           {
+  animation: scan 3s linear infinite;
+  background: linear-gradient(to bottom, transparent, #f97316, transparent);
+}
+
+/* ─── Range slider ───────────────────────────────────────────────────────── */
+input[type="range"] {
+  -webkit-appearance: none;
+  height: 4px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 5px;
+  outline: none;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px; height: 16px;
+  background: #f97316;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+/* ─── Selection ──────────────────────────────────────────────────────────── */
+::selection { background: rgba(249,115,22,0.3); color: white; }

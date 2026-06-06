@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>PaperIQ | AI-Powered Exam Insights for JNTUH Students</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;700&amp;family=Geist:wght@100;300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        body {
+            background-color: #07070d;
+            color: #e2e2e2;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .glow-primary {
+            box-shadow: 0 0 20px rgba(249, 115, 22, 0.3);
+        }
+
+        .glow-primary:hover {
+            box-shadow: 0 0 35px rgba(249, 115, 22, 0.5);
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .animate-float {
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes pulse-soft {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .animate-pulse-soft {
+            animation: pulse-soft 3s ease-in-out infinite;
+        }
+
+        .glass-card {
+            background: rgba(15, 15, 15, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .fade-in-up {
+            animation: fadeInUp 0.8s ease-out forwards;
+            opacity: 0;
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .delay-1 { animation-delay: 0.2s; }
+        .delay-2 { animation-delay: 0.4s; }
+        .delay-3 { animation-delay: 0.6s; }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                "primary-fixed-dim": "#ffb690",
+                "surface": "#121414",
+                "surface-container-low": "#1a1c1c",
+                "on-secondary-fixed": "#1c1b1b",
+                "secondary-fixed": "#e5e2e1",
+                "primary-fixed": "#ffdbca",
+                "inverse-surface": "#e2e2e2",
+                "outline-variant": "#584237",
+                "on-primary": "#552100",
+                "surface-container-high": "#282a2b",
+                "outline": "#a78b7d",
+                "tertiary-fixed-dim": "#c8c5cf",
+                "secondary-container": "#4a4949",
+                "on-primary-fixed": "#341100",
+                "on-secondary-fixed-variant": "#474646",
+                "on-background": "#e2e2e2",
+                "surface-dim": "#121414",
+                "on-tertiary-container": "#323139",
+                "surface-container": "#1e2020",
+                "on-tertiary-fixed-variant": "#47464e",
+                "error-container": "#93000a",
+                "secondary": "#c8c6c5",
+                "background": "#121414",
+                "inverse-primary": "#9d4300",
+                "primary": "#ffb690",
+                "surface-tint": "#ffb690",
+                "on-primary-container": "#582200",
+                "surface-bright": "#37393a",
+                "inverse-on-surface": "#2f3131",
+                "surface-variant": "#333535",
+                "on-primary-fixed-variant": "#783200",
+                "on-surface-variant": "#e0c0b1",
+                "on-error-container": "#ffdad6",
+                "on-tertiary-fixed": "#1b1b22",
+                "primary-container": "#f97316",
+                "surface-container-highest": "#333535",
+                "error": "#ffb4ab",
+                "tertiary": "#c8c5cf",
+                "on-surface": "#e2e2e2",
+                "on-secondary": "#313030",
+                "on-error": "#690005",
+                "on-secondary-container": "#bab8b7",
+                "on-tertiary": "#303037",
+                "tertiary-fixed": "#e4e1eb",
+                "tertiary-container": "#9b99a2",
+                "secondary-fixed-dim": "#c8c6c5",
+                "surface-container-lowest": "#0c0f0f"
+              },
+              "borderRadius": {
+                "DEFAULT": "0.25rem",
+                "lg": "0.5rem",
+                "xl": "12px",
+                "2xl": "16px",
+                "full": "9999px"
+              },
+              "spacing": {
+                "xs": "4px",
+                "base": "16px",
+                "xxl": "48px",
+                "section": "96px",
+                "lg": "24px",
+                "md": "12px",
+                "huge": "64px",
+                "sm": "8px",
+                "xl": "32px"
+              },
+              "fontFamily": {
+                "headline-md": ["Space Grotesk"],
+                "data-label": ["JetBrains Mono"],
+                "display-hero": ["Space Grotesk"],
+                "data-value": ["JetBrains Mono"],
+                "body-md": ["Geist"],
+                "headline-lg": ["Space Grotesk"],
+                "body-sm": ["Geist"],
+                "body-lg": ["Geist"],
+                "display-hero-mobile": ["Space Grotesk"]
+              },
+              "fontSize": {
+                "headline-md": ["24px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                "data-label": ["12px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                "display-hero": ["56px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                "data-value": ["14px", {"lineHeight": "1.4", "fontWeight": "500"}],
+                "body-md": ["15px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                "headline-lg": ["32px", {"lineHeight": "1.3", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                "body-sm": ["13px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                "display-hero-mobile": ["36px", {"lineHeight": "1.2", "fontWeight": "700"}]
+              }
+            }
+          }
+        }
+    </script>
+</head>
+<body class="font-body-md text-body-md selection:bg-primary-container selection:text-white">
+<!-- TopNavBar -->
+<nav class="fixed top-0 z-50 w-full bg-background/80 backdrop-blur-md border-b border-outline-variant">
+<div class="flex justify-between items-center w-full px-base md:px-xl max-w-[1200px] mx-auto h-20">
+<div class="font-headline-md text-headline-md font-bold text-on-surface tracking-tight">
+                Paper<span class="text-primary-container">IQ</span>
+</div>
+<div class="hidden md:flex gap-xl items-center">
+<a class="text-primary font-bold border-b-2 border-primary pb-1" href="#">Home</a>
+<a class="text-on-surface-variant font-body-md text-body-md hover:text-primary transition-colors duration-200" href="#">Analysis</a>
+<a class="text-on-surface-variant font-body-md text-body-md hover:text-primary transition-colors duration-200" href="#">R22 Support</a>
+<a class="text-on-surface-variant font-body-md text-body-md hover:text-primary transition-colors duration-200" href="#">Pricing</a>
+</div>
+<div class="flex items-center gap-base">
+<button class="text-on-surface-variant font-body-md text-body-md hover:text-primary transition-colors hidden sm:block">Login</button>
+<button class="bg-primary-container text-white px-base py-2 rounded-xl font-bold hover:scale-95 transition-transform glow-primary">
+                    Get Started
+                </button>
+</div>
+</div>
+</nav>
+<main class="pt-20">
+<!-- Section 1: Hero -->
+<section class="relative min-h-[921px] flex flex-col items-center justify-center py-huge overflow-hidden">
+<!-- Background Decorative element -->
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary-container/10 blur-[120px] rounded-full -z-10"></div>
+<div class="max-w-[1200px] mx-auto px-base text-center">
+<div class="mb-base flex justify-center">
+<span class="px-base py-xs bg-surface-container-low border border-outline-variant rounded-full text-[#10b981] font-data-label text-data-label flex items-center gap-xs animate-pulse-soft">
+<span class="w-2 h-2 rounded-full bg-[#10b981]"></span>
+                        Students save <span class="font-bold">4-6 hours</span> of manual organization
+                    </span>
+</div>
+<p class="font-body-md text-[12px] uppercase tracking-[0.1em] text-on-surface-variant font-medium mb-md fade-in-up">
+                    EXAM PREPARATION FOR JNTUH STUDENTS
+                </p>
+<h1 class="font-display-hero text-display-hero-mobile md:text-display-hero text-on-surface leading-[1.1] mb-base fade-in-up delay-1">
+                    You Have 47 Papers to Analyze. <br/>
+<span class="text-primary-container">We Already Did It.</span>
+</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl mx-auto mb-xl fade-in-up delay-2">
+                    Stop scrolling WhatsApp groups for last year's papers. Upload your Hall Ticket. 
+                    <span class="text-[#10b981]">Get personalized insights in 30 seconds.</span>
+</p>
+<div class="flex flex-col sm:flex-row gap-base justify-center items-center fade-in-up delay-3">
+<button class="bg-primary-container text-white px-xl py-4 rounded-xl font-bold text-body-lg glow-primary hover:scale-95 transition-all flex items-center gap-sm">
+                        Upload Hall Ticket — Get Started
+                        <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+<div class="mt-xxl flex flex-wrap justify-center gap-xl text-on-surface-variant font-data-label text-data-label opacity-80 fade-in-up delay-3">
+<span class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-primary-container text-sm">check_circle</span>
+                        5,730 questions analyzed
+                    </span>
+<span class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-primary-container text-sm">check_circle</span>
+                        10 subjects ready
+                    </span>
+<span class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-primary-container text-sm">check_circle</span>
+                        60% AI coverage
+                    </span>
+</div>
+<!-- Floating Card Visualization -->
+<div class="mt-section relative flex justify-center fade-in-up delay-3">
+<div class="glass-card p-base rounded-2xl w-full max-w-md shadow-huge animate-float border-primary-container/20">
+<div class="flex justify-between items-center mb-md">
+<div>
+<h3 class="font-headline-md text-headline-md text-on-surface">Data Structures</h3>
+<p class="text-body-sm text-on-surface-variant">R22 Regulation • CSE</p>
+</div>
+<div class="bg-primary-container/10 px-sm py-1 rounded text-primary-container font-data-label text-[10px]">
+                                AI SCANNED
+                            </div>
+</div>
+<div class="space-y-base text-left">
+<div class="p-sm bg-white/5 rounded-lg border border-white/10">
+<div class="flex justify-between mb-xs">
+<span class="text-primary font-bold text-sm">Priority 1: Unit I</span>
+<span class="text-on-surface-variant text-[11px]">85% Probable</span>
+</div>
+<div class="w-full bg-white/10 h-1 rounded-full overflow-hidden">
+<div class="bg-primary-container h-full w-[85%]"></div>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-base">
+<div class="p-sm bg-white/5 rounded-lg border border-white/10">
+<p class="text-[10px] uppercase text-on-surface-variant mb-1">Repeated Qs</p>
+<p class="font-data-value text-xl text-on-surface">14</p>
+</div>
+<div class="p-sm bg-white/5 rounded-lg border border-white/10">
+<p class="text-[10px] uppercase text-on-surface-variant mb-1">Time Effort</p>
+<p class="font-data-value text-xl text-on-surface">2.4h</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Section 2: The Problem -->
+<section class="py-section px-base max-w-[1200px] mx-auto">
+<div class="text-center mb-xxl">
+<h2 class="font-headline-lg text-headline-lg text-on-surface mb-base">The Manual Way vs The PaperIQ Way</h2>
+</div>
+<div class="grid md:grid-cols-2 gap-xl">
+<!-- Red Card -->
+<div class="p-xl rounded-2xl bg-surface-container border border-red-500/20 relative overflow-hidden group">
+<div class="absolute top-0 right-0 w-32 h-32 bg-red-500/5 blur-3xl rounded-full"></div>
+<h3 class="font-headline-md text-headline-md text-on-surface mb-xl flex items-center gap-sm">
+                        Without PaperIQ
+                        <span class="text-red-500 material-symbols-outlined">cancel</span>
+</h3>
+<div class="space-y-xl">
+<div class="flex gap-base">
+<div class="text-red-500/40 font-data-label text-xl">0h</div>
+<div>
+<p class="text-on-surface font-medium">Hunting PDF Groups</p>
+<p class="text-on-surface-variant text-body-sm">Scrolling through 300+ unread messages in 4 different WhatsApp groups.</p>
+</div>
+</div>
+<div class="flex gap-base">
+<div class="text-red-500/40 font-data-label text-xl">2h</div>
+<div>
+<p class="text-on-surface font-medium">Sorting Regulation R18 vs R22</p>
+<p class="text-on-surface-variant text-body-sm">Downloading wrong papers and realizing mid-way they don't apply.</p>
+</div>
+</div>
+<div class="flex gap-base">
+<div class="text-red-500/40 font-data-label text-xl">6h</div>
+<div>
+<p class="text-on-surface font-medium">Manual Tallying</p>
+<p class="text-on-surface-variant text-body-sm">Counting how many times "B-Trees" appeared across 10 years of papers.</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Green Card -->
+<div class="p-xl rounded-2xl bg-[#0f0f0f] border border-[#10b981]/30 relative overflow-hidden group ring-1 ring-[#10b981]/10">
+<div class="absolute top-0 right-0 w-32 h-32 bg-[#10b981]/10 blur-3xl rounded-full"></div>
+<div class="flex justify-between items-start mb-xl">
+<h3 class="font-headline-md text-headline-md text-on-surface flex items-center gap-sm">
+                            With PaperIQ
+                            <span class="text-[#10b981] material-symbols-outlined">check_circle</span>
+</h3>
+<span class="bg-[#10b981]/20 text-[#10b981] px-base py-1 rounded-full text-data-label font-bold border border-[#10b981]/30">4-6 HOURS SAVED</span>
+</div>
+<div class="space-y-xl">
+<div class="flex gap-base">
+<div class="text-[#10b981] font-data-label text-xl">0s</div>
+<div>
+<p class="text-on-surface font-medium">Upload Hall Ticket</p>
+<p class="text-on-surface-variant text-body-sm">Our AI automatically detects your year, regulation, and subjects.</p>
+</div>
+</div>
+<div class="flex gap-base">
+<div class="text-[#10b981] font-data-label text-xl">15s</div>
+<div>
+<p class="text-on-surface font-medium">Global Repository Scan</p>
+<p class="text-on-surface-variant text-body-sm">Matches your syllabus against thousands of historical JNTUH papers.</p>
+</div>
+</div>
+<div class="flex gap-base">
+<div class="text-[#10b981] font-data-label text-xl">30s</div>
+<div>
+<p class="text-on-surface font-medium">Personalized Insights</p>
+<p class="text-on-surface-variant text-body-sm">A prioritized study list delivered instantly to your dashboard.</p>
+</div>
+</div>
+</div>
+<div class="mt-xl p-base bg-[#10b981]/10 rounded-xl border border-[#10b981]/20">
+<p class="text-on-surface font-bold text-center">STUDY MODE ACTIVATED</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Section 3: How It Works -->
+<section class="py-section bg-surface-container-lowest">
+<div class="max-w-[1200px] mx-auto px-base">
+<div class="text-center mb-huge">
+<h2 class="font-headline-lg text-headline-lg text-on-surface mb-base">Three Steps to Exam Clarity</h2>
+<p class="text-on-surface-variant max-w-xl mx-auto">We've automated the most painful part of exam preparation so you can focus on learning.</p>
+</div>
+<div class="grid md:grid-cols-3 gap-xl relative">
+<!-- Progress Line (Desktop) -->
+<div class="hidden md:block absolute top-12 left-[15%] right-[15%] h-[2px] bg-gradient-to-r from-primary-container/20 via-primary-container to-primary-container/20 -z-0"></div>
+<!-- Step 1 -->
+<div class="relative flex flex-col items-center text-center">
+<div class="w-24 h-24 rounded-full bg-surface-container-high border-2 border-primary-container flex items-center justify-center mb-xl shadow-huge z-10">
+<span class="font-display-hero text-headline-lg text-primary-container">1</span>
+</div>
+<h4 class="font-headline-md text-headline-md text-on-surface mb-md">Upload Hall Ticket</h4>
+<p class="text-on-surface-variant text-body-sm">Drag and drop your JNTUH hall ticket PDF. No manual data entry required.</p>
+</div>
+<!-- Step 2 -->
+<div class="relative flex flex-col items-center text-center">
+<div class="w-24 h-24 rounded-full bg-surface-container-high border-2 border-primary-container flex items-center justify-center mb-xl shadow-huge z-10">
+<span class="font-display-hero text-headline-lg text-primary-container">2</span>
+</div>
+<h4 class="font-headline-md text-headline-md text-on-surface mb-md">AI Analyzes 10 Years</h4>
+<p class="text-on-surface-variant text-body-sm">Our engine cross-references your current subjects with past question patterns.</p>
+</div>
+<!-- Step 3 -->
+<div class="relative flex flex-col items-center text-center">
+<div class="w-24 h-24 rounded-full bg-surface-container-high border-2 border-primary-container flex items-center justify-center mb-xl shadow-huge z-10">
+<span class="font-display-hero text-headline-lg text-primary-container">3</span>
+</div>
+<h4 class="font-headline-md text-headline-md text-on-surface mb-md">Study What Matters</h4>
+<p class="text-on-surface-variant text-body-sm">Receive a heatmap of important units and frequently asked questions.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Section 4: Social Proof -->
+<section class="py-section px-base max-w-[1200px] mx-auto">
+<div class="grid md:grid-cols-3 gap-xl mb-huge">
+<div class="text-center p-xl rounded-2xl bg-surface-container border border-outline-variant">
+<p class="font-data-value text-huge text-primary mb-xs">5,730</p>
+<p class="font-data-label text-on-surface-variant uppercase">Questions Analyzed</p>
+</div>
+<div class="text-center p-xl rounded-2xl bg-surface-container border border-outline-variant">
+<p class="font-data-value text-huge text-primary mb-xs">10</p>
+<p class="font-data-label text-on-surface-variant uppercase">Subjects Covered</p>
+</div>
+<div class="text-center p-xl rounded-2xl bg-surface-container border border-outline-variant">
+<p class="font-data-value text-huge text-primary mb-xs">100+</p>
+<p class="font-data-label text-on-surface-variant uppercase">Active Students</p>
+</div>
+</div>
+<div class="max-w-3xl mx-auto p-xl rounded-2xl bg-[#0f0f0f] border-l-4 border-primary-container shadow-xl">
+<div class="flex gap-base mb-base">
+<div class="flex text-primary-container">
+<span class="material-symbols-outlined">star</span>
+<span class="material-symbols-outlined">star</span>
+<span class="material-symbols-outlined">star</span>
+<span class="material-symbols-outlined">star</span>
+<span class="material-symbols-outlined">star</span>
+</div>
+</div>
+<p class="font-body-lg text-body-lg text-on-surface mb-xl italic leading-relaxed">
+                    "PaperIQ literally saved me 6 hours of work before mid-terms. I used to spend days trying to figure out what was actually important to study. With this, I knew exactly which units to prioritize."
+                </p>
+<div class="flex items-center gap-base">
+<div class="w-12 h-12 rounded-full bg-primary-container/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary-container">person</span>
+</div>
+<div>
+<p class="font-bold text-on-surface">3rd Year CSE Student</p>
+<p class="text-on-surface-variant text-body-sm">MLRIT, Hyderabad</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Section 5: Final CTA -->
+<section class="py-section bg-surface-container-lowest relative overflow-hidden">
+<div class="absolute inset-0 bg-primary-container/5 pointer-events-none"></div>
+<div class="max-w-[800px] mx-auto px-base text-center relative z-10">
+<h2 class="font-display-hero text-display-hero-mobile md:text-headline-lg text-on-surface mb-base">Ready to Stop Wasting Time?</h2>
+<p class="text-on-surface-variant text-body-lg mb-xl">
+                    Join 100+ MLRIT students studying smarter, not harder. Get your personalized analysis in under a minute.
+                </p>
+<button class="bg-primary-container text-white px-xl py-4 rounded-xl font-bold text-body-lg glow-primary hover:scale-105 transition-all flex items-center gap-sm mx-auto group">
+                    Upload Hall Ticket — Get Started
+                    <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</button>
+<p class="mt-base text-on-surface-variant text-body-sm opacity-60">
+                    No sign-up required for your first analysis.
+                </p>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="w-full py-xxl px-base md:px-xl max-w-[1200px] mx-auto flex flex-col md:flex-row justify-between items-center gap-base border-t border-outline-variant">
+<div class="flex flex-col items-center md:items-start gap-xs">
+<div class="font-headline-md text-headline-md font-bold text-on-surface">
+                Paper<span class="text-primary-container">IQ</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-secondary-fixed-variant">© 2024 PaperIQ. Built for high-achieving scholars.</p>
+</div>
+<div class="flex gap-xl flex-wrap justify-center">
+<a class="font-data-label text-data-label text-on-secondary-fixed-variant hover:text-on-surface transition-colors" href="#">Privacy Policy</a>
+<a class="font-data-label text-data-label text-on-secondary-fixed-variant hover:text-on-surface transition-colors" href="#">Terms of Service</a>
+<a class="font-data-label text-data-label text-on-secondary-fixed-variant hover:text-on-surface transition-colors" href="#">Contact Support</a>
+<a class="font-data-label text-data-label text-on-secondary-fixed-variant hover:text-on-surface transition-colors" href="#">Academic Integrity</a>
+</div>
+</footer>
+<script>
+        // Micro-interactions and simple effects
+        document.querySelectorAll('button').forEach(button => {
+            button.addEventListener('mousedown', () => {
+                button.style.transform = 'scale(0.95)';
+            });
+            button.addEventListener('mouseup', () => {
+                button.style.transform = '';
+            });
+        });
+
+        // Intersection Observer for scroll animations
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('fade-in-up');
+                    entry.target.style.opacity = '1';
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('section > div').forEach(section => {
+            observer.observe(section);
+        });
+    </script>
+</body></html>

@@ -10,13 +10,12 @@ class Settings(BaseSettings):
         case_sensitive=False,
         extra="ignore",
     )
-
     # App
     environment: str = "development"
     secret_key: str = "change-me"
     api_version: str = "v1"
     log_level: str = "INFO"
-    cors_origins: str = "http://localhost:5173"
+    cors_origins: str = "http://localhost:5173,http://localhost:3000"
 
     # Supabase
     supabase_url: str = ""

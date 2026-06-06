@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Geist:wght@100;300;400;500;700;900&amp;family=JetBrains+Mono:wght@100;300;400;500;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        body {
+            background-color: #07070d;
+            color: #e2e2e2;
+            -webkit-font-smoothing: antialiased;
+        }
+        .glow-effect {
+            box-shadow: 0 0 20px rgba(255, 182, 144, 0.15);
+        }
+        .primary-glow:hover {
+            box-shadow: 0 0 25px rgba(249, 115, 22, 0.4);
+        }
+        .floating-paper {
+            animation: float 6s ease-in-out infinite;
+        }
+        @keyframes float {
+            0% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(5deg); }
+            100% { transform: translateY(0px) rotate(0deg); }
+        }
+        .skeleton {
+            background: linear-gradient(90deg, #161616 25%, #1e1e1e 50%, #161616 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+        }
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-primary": "#552100",
+                        "on-error": "#690005",
+                        "surface-bright": "#37393a",
+                        "inverse-primary": "#9d4300",
+                        "on-error-container": "#ffdad6",
+                        "tertiary": "#c8c5cf",
+                        "primary": "#ffb690",
+                        "on-background": "#e2e2e2",
+                        "error": "#ffb4ab",
+                        "background": "#121414",
+                        "outline": "#a78b7d",
+                        "inverse-surface": "#e2e2e2",
+                        "surface": "#121414",
+                        "on-secondary-fixed-variant": "#474646",
+                        "on-secondary": "#313030",
+                        "error-container": "#93000a",
+                        "surface-dim": "#121414",
+                        "secondary-fixed-dim": "#c8c6c5",
+                        "surface-container": "#1e2020",
+                        "secondary-fixed": "#e5e2e1",
+                        "secondary": "#c8c6c5",
+                        "outline-variant": "#584237",
+                        "primary-fixed": "#ffdbca",
+                        "inverse-on-surface": "#2f3131",
+                        "surface-container-lowest": "#0c0f0f",
+                        "primary-container": "#f97316",
+                        "on-tertiary-fixed-variant": "#47464e",
+                        "surface-container-high": "#282a2b",
+                        "secondary-container": "#4a4949",
+                        "surface-container-low": "#1a1c1c",
+                        "primary-fixed-dim": "#ffb690",
+                        "on-secondary-fixed": "#1c1b1b",
+                        "on-primary-fixed": "#341100",
+                        "tertiary-fixed-dim": "#c8c5cf",
+                        "tertiary-container": "#9b99a2",
+                        "surface-tint": "#ffb690",
+                        "on-primary-container": "#582200",
+                        "tertiary-fixed": "#e4e1eb",
+                        "on-tertiary-container": "#323139",
+                        "on-primary-fixed-variant": "#783200",
+                        "surface-variant": "#333535",
+                        "on-tertiary-fixed": "#1b1b22",
+                        "on-secondary-container": "#bab8b7",
+                        "on-tertiary": "#303037",
+                        "surface-container-highest": "#333535",
+                        "on-surface": "#e2e2e2",
+                        "on-surface-variant": "#e0c0b1"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "md": "12px",
+                        "lg": "24px",
+                        "huge": "64px",
+                        "section": "96px",
+                        "base": "16px",
+                        "xl": "32px",
+                        "xxl": "48px",
+                        "xs": "4px",
+                        "sm": "8px"
+                    },
+                    "fontFamily": {
+                        "data-value": ["JetBrains Mono"],
+                        "display-hero": ["Space Grotesk"],
+                        "body-md": ["Geist"],
+                        "data-label": ["JetBrains Mono"],
+                        "headline-md": ["Space Grotesk"],
+                        "headline-lg": ["Space Grotesk"],
+                        "body-lg": ["Geist"],
+                        "body-sm": ["Geist"],
+                        "display-hero-mobile": ["Space Grotesk"]
+                    },
+                    "fontSize": {
+                        "data-value": ["14px", {"lineHeight": "1.4", "fontWeight": "500"}],
+                        "display-hero": ["56px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "body-md": ["15px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                        "data-label": ["12px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                        "headline-md": ["24px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                        "headline-lg": ["32px", {"lineHeight": "1.3", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "body-sm": ["13px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                        "display-hero-mobile": ["36px", {"lineHeight": "1.2", "fontWeight": "700"}]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="overflow-x-hidden selection:bg-primary selection:text-on-primary">
+<!-- TopNavBar (Suppressed for focused onboarding flow per instructions) -->
+<main class="min-h-screen relative flex flex-col items-center justify-center py-xxl px-base">
+<!-- Ambient Atmospheric Background -->
+<div class="fixed inset-0 pointer-events-none overflow-hidden">
+<div class="absolute top-1/4 -left-20 w-[400px] h-[400px] bg-primary opacity-5 blur-[120px]"></div>
+<div class="absolute bottom-1/4 -right-20 w-[300px] h-[300px] bg-primary opacity-5 blur-[100px]"></div>
+<!-- Floating Elements -->
+<div class="absolute top-20 right-[15%] floating-paper opacity-20">
+<span class="material-symbols-outlined text-[64px] text-primary" data-icon="description">description</span>
+</div>
+<div class="absolute bottom-40 left-[10%] floating-paper opacity-10" style="animation-delay: -2s;">
+<span class="material-symbols-outlined text-[48px] text-primary" data-icon="task">task</span>
+</div>
+</div>
+<!-- Content Canvas -->
+<div class="w-full max-w-[640px] relative z-10">
+<!-- Header Section -->
+<div class="text-center mb-xl">
+<div class="inline-flex items-center gap-sm bg-primary/10 px-md py-xs rounded-full border border-primary/20 mb-base">
+<span class="material-symbols-outlined text-primary text-[18px]" style="font-variation-settings: 'FILL' 1;">verified</span>
+<span class="font-data-label text-data-label text-primary uppercase">Identity Verified</span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface mb-xs">✓ We found your details</h1>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-md mx-auto">
+                    Our AI has successfully parsed your hall ticket. Please verify if the information below is accurate.
+                </p>
+</div>
+<!-- Main Form Card -->
+<div class="bg-surface-container border border-outline-variant rounded-[24px] overflow-hidden shadow-2xl">
+<div class="p-lg md:p-xl space-y-lg">
+<!-- Meta Details Grid -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-base">
+<!-- College -->
+<div class="space-y-xs">
+<label class="font-data-label text-data-label text-on-secondary-fixed-variant uppercase">College</label>
+<div class="flex items-center h-12 px-md bg-surface-container-low border border-outline-variant rounded-xl group transition-all hover:border-primary/50">
+<span class="font-data-value text-data-value text-primary">MLRIT</span>
+<span class="ml-auto material-symbols-outlined text-on-surface-variant text-[16px]" data-icon="lock">lock</span>
+</div>
+</div>
+<!-- Branch -->
+<div class="space-y-xs">
+<label class="font-data-label text-data-label text-on-secondary-fixed-variant uppercase">Branch</label>
+<div class="flex items-center h-12 px-md bg-surface-container-low border border-outline-variant rounded-xl group transition-all hover:border-primary/50">
+<span class="font-data-value text-data-value text-primary">CSE</span>
+<span class="ml-auto material-symbols-outlined text-on-surface-variant text-[16px]" data-icon="lock">lock</span>
+</div>
+</div>
+<!-- Regulation -->
+<div class="space-y-xs">
+<label class="font-data-label text-data-label text-on-secondary-fixed-variant uppercase">Regulation</label>
+<div class="flex items-center h-12 px-md bg-surface-container-low border border-outline-variant rounded-xl group transition-all hover:border-primary/50">
+<span class="font-data-value text-data-value text-primary">R22</span>
+<span class="ml-auto material-symbols-outlined text-on-surface-variant text-[16px]" data-icon="lock">lock</span>
+</div>
+</div>
+</div>
+<!-- Semester Dropdown -->
+<div class="space-y-xs">
+<label class="font-data-label text-data-label text-on-secondary-fixed-variant uppercase">Current Semester</label>
+<div class="relative">
+<select class="w-full h-14 bg-surface-container-low border border-outline-variant rounded-xl px-md font-body-md text-on-surface appearance-none focus:ring-2 focus:ring-primary focus:border-primary transition-all cursor-pointer">
+<option>Current / 5th Semester</option>
+<option>4th Semester</option>
+<option>6th Semester</option>
+<option>7th Semester</option>
+</select>
+<div class="absolute right-md top-1/2 -translate-y-1/2 pointer-events-none">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="expand_more">expand_more</span>
+</div>
+</div>
+</div>
+<!-- Subject Checklist -->
+<div class="space-y-md pt-base border-t border-outline-variant/30">
+<div class="flex items-center justify-between">
+<label class="font-headline-md text-headline-md text-on-surface">Subject List</label>
+<span class="font-data-label text-data-label text-primary/80">6 detected</span>
+</div>
+<div class="space-y-sm">
+<!-- Subject Item 1 -->
+<div class="flex items-center justify-between p-md bg-surface-container-low border border-outline-variant rounded-xl group hover:border-primary/30 transition-colors cursor-pointer">
+<div class="flex items-center gap-md">
+<div class="relative flex items-center justify-center">
+<input checked="" class="w-5 h-5 rounded border-outline-variant bg-surface text-primary-container focus:ring-offset-background transition-all cursor-pointer" type="checkbox"/>
+</div>
+<span class="font-body-md text-on-surface">Data Structures &amp; Algorithms</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant text-[20px]" data-icon="check_circle" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<!-- Subject Item 2 -->
+<div class="flex items-center justify-between p-md bg-surface-container-low border border-outline-variant rounded-xl group hover:border-primary/30 transition-colors cursor-pointer">
+<div class="flex items-center gap-md">
+<div class="relative flex items-center justify-center">
+<input checked="" class="w-5 h-5 rounded border-outline-variant bg-surface text-primary-container focus:ring-offset-background transition-all cursor-pointer" type="checkbox"/>
+</div>
+<span class="font-body-md text-on-surface">Database Management Systems</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant text-[20px]" data-icon="check_circle" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<!-- Subject Item 3 -->
+<div class="flex items-center justify-between p-md bg-surface-container-low border border-outline-variant rounded-xl group hover:border-primary/30 transition-colors cursor-pointer">
+<div class="flex items-center gap-md">
+<div class="relative flex items-center justify-center">
+<input checked="" class="w-5 h-5 rounded border-outline-variant bg-surface text-primary-container focus:ring-offset-background transition-all cursor-pointer" type="checkbox"/>
+</div>
+<span class="font-body-md text-on-surface">Operating Systems</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant text-[20px]" data-icon="check_circle" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<!-- Skeleton State Item -->
+<div class="flex items-center justify-between p-md bg-surface-container-low border border-outline-variant border-dashed rounded-xl animate-pulse">
+<div class="flex items-center gap-md w-full">
+<div class="w-5 h-5 rounded bg-outline-variant opacity-30"></div>
+<div class="h-4 bg-outline-variant rounded w-2/3 opacity-30 skeleton"></div>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant text-[20px] animate-spin opacity-50" data-icon="sync">sync</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Action Footer -->
+<div class="p-lg md:p-xl bg-surface-container-high border-t border-outline-variant flex flex-col md:flex-row gap-base">
+<button class="flex-1 h-14 bg-primary-container text-white font-headline-md rounded-xl primary-glow active:scale-95 transition-all flex items-center justify-center gap-sm">
+                        Confirm &amp; Continue
+                        <span class="material-symbols-outlined" data-icon="arrow_forward">arrow_forward</span>
+</button>
+<button class="flex-1 md:flex-[0.4] h-14 bg-transparent border border-outline-variant text-on-surface font-headline-md rounded-xl hover:bg-white/5 active:scale-95 transition-all flex items-center justify-center gap-sm">
+                        Edit Details
+                    </button>
+</div>
+</div>
+<!-- Integrity Footer -->
+<p class="mt-xl text-center font-body-sm text-on-secondary-fixed-variant max-w-sm mx-auto">
+                By confirming, you agree to our <a class="text-primary hover:underline" href="#">Academic Integrity</a> policy. We use these details to curate your study path.
+            </p>
+</div>
+</main>
+<!-- Footer (Themed for focused view) -->
+<footer class="w-full py-xxl px-base md:px-xl max-w-[1200px] mx-auto border-t border-outline-variant/30 flex flex-col md:flex-row justify-between items-center gap-base">
+<div class="font-headline-md text-headline-md font-bold text-on-surface">PaperIQ</div>
+<div class="font-body-sm text-body-sm text-on-secondary-fixed-variant text-center">
+            © 2024 PaperIQ. Built for high-achieving scholars.
+        </div>
+<div class="flex gap-lg">
+<a class="font-data-label text-data-label text-on-secondary-fixed-variant hover:text-on-surface transition-colors" href="#">Privacy</a>
+<a class="font-data-label text-data-label text-on-secondary-fixed-variant hover:text-on-surface transition-colors" href="#">Support</a>
+</div>
+</footer>
+<script>
+        // Simple micro-interaction for checkboxes
+        document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const parent = this.closest('.group');
+                if(this.checked) {
+                    parent.classList.remove('opacity-60');
+                    parent.querySelector('.material-symbols-outlined').style.opacity = '1';
+                } else {
+                    parent.classList.add('opacity-60');
+                    parent.querySelector('.material-symbols-outlined').style.opacity = '0.3';
+                }
+            });
+        });
+    </script>
+</body></html>

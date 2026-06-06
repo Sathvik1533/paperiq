@@ -1,0 +1,376 @@
+<!DOCTYPE html><html class="dark" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Screen 19 — Profile | PaperIQ</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Geist:wght@100;300;400;500;600;700;800;900&amp;family=JetBrains+Mono:wght@400;500;600&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&amp;family=Space+Grotesk:wght@100..900&amp;display=swap" rel="stylesheet">
+<style>
+        body {
+            background-color: #07070d;
+            color: #e2e2e2;
+            -webkit-font-smoothing: antialiased;
+        }
+        .glass-card {
+            background: rgba(15, 15, 15, 0.75);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(88, 66, 55, 0.3);
+        }
+        .glow-hover:hover {
+            box-shadow: 0 0 20px rgba(249, 115, 22, 0.2);
+            border-color: rgba(249, 115, 22, 0.5);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-fixed": "#e4e1eb",
+                        "on-tertiary-container": "#323139",
+                        "surface-container-highest": "#333535",
+                        "surface-bright": "#37393a",
+                        "primary-fixed-dim": "#ffb690",
+                        "on-secondary-fixed-variant": "#474646",
+                        "on-primary-fixed": "#341100",
+                        "on-primary-container": "#582200",
+                        "surface-container-low": "#1a1c1c",
+                        "on-secondary-fixed": "#1c1b1b",
+                        "secondary-container": "#4a4949",
+                        "tertiary-container": "#9b99a2",
+                        "surface-tint": "#ffb690",
+                        "on-secondary": "#313030",
+                        "on-secondary-container": "#bab8b7",
+                        "primary-fixed": "#ffdbca",
+                        "on-primary-fixed-variant": "#783200",
+                        "on-background": "#e2e2e2",
+                        "surface-container-lowest": "#0c0f0f",
+                        "on-tertiary": "#303037",
+                        "background": "#121414",
+                        "on-tertiary-fixed-variant": "#47464e",
+                        "on-surface": "#e2e2e2",
+                        "secondary": "#c8c6c5",
+                        "surface-variant": "#333535",
+                        "on-error": "#690005",
+                        "on-primary": "#552100",
+                        "on-tertiary-fixed": "#1b1b22",
+                        "error": "#ffb4ab",
+                        "surface-dim": "#121414",
+                        "secondary-fixed": "#e5e2e1",
+                        "primary-container": "#f97316",
+                        "surface-container": "#1e2020",
+                        "surface-container-high": "#282a2b",
+                        "inverse-surface": "#e2e2e2",
+                        "outline": "#a78b7d",
+                        "error-container": "#93000a",
+                        "primary": "#ffb690",
+                        "outline-variant": "#584237",
+                        "surface": "#121414",
+                        "on-error-container": "#ffdad6",
+                        "inverse-on-surface": "#2f3131",
+                        "secondary-fixed-dim": "#c8c6c5",
+                        "on-surface-variant": "#e0c0b1",
+                        "tertiary-fixed-dim": "#c8c5cf",
+                        "tertiary": "#c8c5cf",
+                        "inverse-primary": "#9d4300"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "huge": "64px",
+                        "xl": "32px",
+                        "lg": "24px",
+                        "xxl": "48px",
+                        "md": "12px",
+                        "section": "96px",
+                        "base": "16px",
+                        "sm": "8px",
+                        "xs": "4px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Space Grotesk"],
+                        "data-value": ["JetBrains Mono"],
+                        "data-label": ["JetBrains Mono"],
+                        "body-lg": ["Geist"],
+                        "body-md": ["Geist"],
+                        "headline-md": ["Space Grotesk"],
+                        "body-sm": ["Geist"],
+                        "display-hero-mobile": ["Space Grotesk"],
+                        "display-hero": ["Space Grotesk"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["32px", {"lineHeight": "1.3", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "data-value": ["14px", {"lineHeight": "1.4", "fontWeight": "500"}],
+                        "data-label": ["12px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                        "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "body-md": ["15px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                        "headline-md": ["24px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                        "body-sm": ["13px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                        "display-hero-mobile": ["36px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                        "display-hero": ["56px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+                    }
+                },
+            },
+        }
+    </script>
+</head>
+<body class="font-body-md text-on-surface">
+<!-- TopNavBar -->
+<nav class="sticky top-0 z-50 bg-background border-b border-outline-variant">
+<div class="flex justify-between items-center w-full px-lg py-sm max-w-[1200px] mx-auto">
+<div class="font-headline-md text-headline-md font-bold text-primary-container">PaperIQ</div>
+<div class="hidden md:flex gap-lg items-center">
+<a class="text-on-surface-variant font-body-md hover:text-primary-container transition-colors duration-200" href="#">Dashboard</a>
+<a class="text-on-surface-variant font-body-md hover:text-primary-container transition-colors duration-200" href="#">Analysis</a>
+<a class="text-on-surface-variant font-body-md hover:text-primary-container transition-colors duration-200" href="#">Papers</a>
+<a class="text-primary-container font-bold border-b-2 border-primary-container pb-1" href="#">Profile</a>
+</div>
+<button class="bg-primary-container text-on-primary px-base py-sm rounded-lg font-bold active:scale-95 transition-transform">Run New Analysis</button>
+</div>
+</nav>
+<main class="max-w-[1200px] mx-auto px-lg py-xxl">
+<!-- Header -->
+<header class="mb-huge">
+<h1 class="font-headline-lg text-headline-lg text-on-surface">Profile</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant mt-xs">Manage your academic details and learning preferences</p>
+</header>
+<div class="grid grid-cols-1 md:grid-cols-12 gap-lg">
+<!-- Sidebar / Identity -->
+<div class="md:col-span-4 space-y-lg">
+<!-- User Identity Card -->
+<div class="glass-card rounded-xl p-lg flex flex-col items-center text-center glow-hover transition-all">
+<div class="w-24 h-24 bg-primary-container rounded-full flex items-center justify-center text-white font-headline-lg text-[40px] mb-base">K</div>
+<h2 class="font-headline-md text-headline-md text-on-surface">KOTAGIRI SATHVIK</h2>
+<p class="font-body-md text-on-surface-variant">sathvik.k@student.mlrit.ac.in</p>
+<div class="mt-base px-md py-xs bg-white/10 rounded-full border border-white/20">
+<span class="font-data-label text-data-label text-primary-container">STUDENT</span>
+</div>
+<button class="mt-xl w-full border border-outline-variant py-sm rounded-lg font-body-md text-on-surface-variant hover:bg-white/5 transition-colors flex items-center justify-center gap-xs">
+<span class="material-symbols-outlined text-[18px]">logout</span>
+                        Sign Out
+                    </button>
+</div>
+<!-- Account Management -->
+<div class="glass-card rounded-xl p-lg space-y-base">
+<h3 class="font-headline-md text-[18px] text-on-surface">Account Security</h3>
+<div class="space-y-sm">
+<button class="w-full text-left p-md rounded-lg border border-outline-variant hover:border-primary-container transition-all group">
+<span class="font-body-md text-on-surface flex items-center justify-between">
+                                Change Password
+                                <span class="material-symbols-outlined text-primary-container opacity-0 group-hover:opacity-100 transition-opacity">chevron_right</span>
+</span>
+</button>
+<button class="w-full text-left p-md rounded-lg border border-error/30 hover:bg-error/10 transition-all group">
+<span class="font-body-md text-error flex items-center justify-between">
+                                Delete Account
+                                <span class="material-symbols-outlined text-error opacity-0 group-hover:opacity-100 transition-opacity">delete_forever</span>
+</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Main Content Area -->
+<div class="md:col-span-8 space-y-lg">
+<!-- Academic Intelligence Card (Bento Style) -->
+<div class="glass-card rounded-xl p-lg border border-primary-container/20">
+<div class="flex justify-between items-end mb-lg">
+<h3 class="font-headline-md text-headline-md text-on-surface">Academic Intelligence</h3>
+<span class="font-data-label text-data-label text-on-surface-variant">REAL-TIME METRICS</span>
+</div>
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-base">
+<div class="p-base bg-surface-container-low rounded-lg border border-outline-variant">
+<p class="font-data-label text-data-label text-on-surface-variant mb-xs">TRACKED</p>
+<span class="font-data-value text-[24px] text-primary-container">06</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Subjects</p>
+</div>
+<div class="p-base bg-surface-container-low rounded-lg border border-outline-variant">
+<p class="font-data-label text-data-label text-on-surface-variant mb-xs">ANALYZED</p>
+<span class="font-data-value text-[24px] text-primary-container">47</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Papers</p>
+</div>
+<div class="p-base bg-surface-container-low rounded-lg border border-outline-variant">
+<p class="font-data-label text-data-label text-on-surface-variant mb-xs">SESSIONS</p>
+<span class="font-data-value text-[24px] text-primary-container">12</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Completed</p>
+</div>
+<div class="p-base bg-surface-container-low rounded-lg border border-outline-variant">
+<p class="font-data-label text-data-label text-on-surface-variant mb-xs">PEAK ACTIVITY</p>
+<span class="font-data-value text-[14px] text-primary-container leading-none block mt-sm">Data Structures</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Primary Focus</p>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-lg">
+<!-- Academic Profile Card -->
+<div class="glass-card rounded-xl p-lg flex flex-col">
+<div class="flex justify-between items-start mb-lg">
+<h3 class="font-headline-md text-[20px] text-on-surface">Academic Profile</h3>
+<button class="text-primary-container font-body-sm flex items-center gap-xs hover:underline">
+<span class="material-symbols-outlined text-[16px]">edit</span>
+                                Edit
+                            </button>
+</div>
+<div class="space-y-md">
+<div>
+<label class="font-data-label text-data-label text-on-surface-variant uppercase">College</label>
+<p class="font-body-md text-on-surface">MLRIT Hyderabad</p>
+</div>
+<div>
+<label class="font-data-label text-data-label text-on-surface-variant uppercase">Branch</label>
+<p class="font-body-md text-on-surface">Computer Science &amp; Engineering</p>
+</div>
+<div class="grid grid-cols-2 gap-base pt-sm">
+<div>
+<label class="font-data-label text-data-label text-on-surface-variant uppercase">Regulation</label>
+<p class="font-body-md text-on-surface">R22</p>
+</div>
+<div>
+<label class="font-data-label text-data-label text-on-surface-variant uppercase">Academic Year</label>
+<p class="font-body-md text-on-surface">2nd Year</p>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-base">
+<div>
+<label class="font-data-label text-data-label text-on-surface-variant uppercase">Semester</label>
+<p class="font-body-md text-on-surface">3</p>
+</div>
+<div>
+<label class="font-data-label text-data-label text-on-surface-variant uppercase">Enrolled</label>
+<p class="font-body-md text-on-surface">6 Subjects</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Learning Goals Card -->
+<div class="glass-card rounded-xl p-lg flex flex-col">
+<div class="flex justify-between items-start mb-lg">
+<h3 class="font-headline-md text-[20px] text-on-surface">Learning Goals</h3>
+<button class="text-primary-container font-body-sm flex items-center gap-xs hover:underline">
+<span class="material-symbols-outlined text-[16px]">edit</span>
+                                Edit
+                            </button>
+</div>
+<div class="space-y-md">
+<div class="flex justify-between items-center p-md bg-white/5 rounded-lg">
+<div>
+<label class="font-data-label text-data-label text-on-surface-variant uppercase">Target CGPA</label>
+<p class="font-headline-md text-on-surface">7.5 <span class="text-on-surface-variant text-body-sm">/ 10</span></p>
+</div>
+<div class="h-10 w-10 rounded-full border-2 border-primary-container border-t-transparent animate-spin-slow"></div>
+</div>
+<div class="grid grid-cols-2 gap-base pt-sm">
+<div>
+<label class="font-data-label text-data-label text-on-surface-variant uppercase">Target Marks</label>
+<p class="font-body-md text-on-surface">70% Avg.</p>
+</div>
+<div>
+<label class="font-data-label text-data-label text-on-surface-variant uppercase">Daily Focus</label>
+<p class="font-body-md text-on-surface">4 hrs / day</p>
+</div>
+</div>
+<div>
+<label class="font-data-label text-data-label text-on-surface-variant uppercase">Preparation Level</label>
+<div class="flex gap-xs mt-xs">
+<div class="h-2 flex-1 rounded-full bg-primary-container"></div>
+<div class="h-2 flex-1 rounded-full bg-primary-container"></div>
+<div class="h-2 flex-1 rounded-full bg-white/10"></div>
+</div>
+<p class="font-body-sm text-on-surface mt-xs text-right">Intermediate</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Experience Preferences Card -->
+<div class="glass-card rounded-xl p-lg">
+<h3 class="font-headline-md text-[20px] text-on-surface mb-lg">Experience Preferences</h3>
+<div class="space-y-lg">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-base">
+<div class="max-w-md">
+<p class="font-body-md text-on-surface font-semibold">Dashboard View</p>
+<p class="font-body-sm text-on-surface-variant">Switch between a data-dense intelligence view or a cleaner personalized dashboard.</p>
+</div>
+<div class="flex bg-surface-container-highest p-xs rounded-lg gap-xs">
+<button class="px-md py-xs rounded-md bg-primary-container text-on-primary font-body-sm">Refined Intelligence</button>
+<button class="px-md py-xs rounded-md text-on-surface-variant font-body-sm hover:bg-white/5">Personalized</button>
+</div>
+</div>
+<div class="h-[1px] bg-outline-variant/30"></div>
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-base">
+<div class="max-w-md">
+<p class="font-body-md text-on-surface font-semibold">Analysis Layout</p>
+<p class="font-body-sm text-on-surface-variant">Choose how paper breakdowns are displayed during study sessions.</p>
+</div>
+<div class="flex bg-surface-container-highest p-xs rounded-lg gap-xs">
+<button class="px-md py-xs rounded-md bg-primary-container text-on-primary font-body-sm">Interactive</button>
+<button class="px-md py-xs rounded-md text-on-surface-variant font-body-sm hover:bg-white/5">Compact</button>
+</div>
+</div>
+<div class="h-[1px] bg-outline-variant/30"></div>
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-base">
+<div class="max-w-md">
+<p class="font-body-md text-on-surface font-semibold">Default Landing Page</p>
+<p class="font-body-sm text-on-surface-variant">Which screen would you like to see first when you open PaperIQ?</p>
+</div>
+<select class="bg-surface-container-highest border-none text-on-surface rounded-lg font-body-sm focus:ring-1 focus:ring-primary-container">
+<option>Dashboard</option>
+<option>Analysis</option>
+<option>Papers</option>
+</select>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="mt-huge border-t border-outline-variant bg-surface-container-low">
+<div class="flex flex-col md:flex-row justify-between items-center w-full px-lg py-xxl max-w-[1200px] mx-auto gap-base">
+<div class="font-headline-sm text-headline-sm text-on-surface">PaperIQ</div>
+<div class="flex gap-lg">
+<a class="text-on-surface-variant font-body-sm hover:text-on-surface transition-colors" href="#">Academic Integrity</a>
+<a class="text-on-surface-variant font-body-sm hover:text-on-surface transition-colors" href="#">Support</a>
+<a class="text-on-surface-variant font-body-sm hover:text-on-surface transition-colors" href="#">Privacy Policy</a>
+<a class="text-on-surface-variant font-body-sm hover:text-on-surface transition-colors" href="#">Terms of Service</a>
+</div>
+<p class="font-body-sm text-on-surface-variant">© 2026 PaperIQ. All rights reserved.</p>
+</div>
+</footer>
+<script>
+        // Micro-interactions and subtle effects
+        document.querySelectorAll('.glass-card').forEach(card => {
+            card.addEventListener('mousemove', (e) => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                card.style.setProperty('--mouse-x', `${x}px`);
+                card.style.setProperty('--mouse-y', `${y}px`);
+            });
+        });
+
+        // Simulating some state changes for buttons
+        document.querySelectorAll('button:not(.bg-primary-container)').forEach(btn => {
+            btn.addEventListener('click', function() {
+                if(this.parentElement.classList.contains('flex')) {
+                    const siblings = this.parentElement.querySelectorAll('button');
+                    siblings.forEach(s => {
+                        s.classList.remove('bg-primary-container', 'text-on-primary');
+                        s.classList.add('text-on-surface-variant');
+                    });
+                    this.classList.add('bg-primary-container', 'text-on-primary');
+                    this.classList.remove('text-on-surface-variant');
+                }
+            });
+        });
+    </script>
+
+
+</body></html>

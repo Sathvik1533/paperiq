@@ -1,0 +1,464 @@
+<!DOCTYPE html><html class="dark" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Screen 15 — Papers Browser</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&amp;family=JetBrains+Mono:wght@100..800&amp;family=Geist:wght@100..900&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-highest": "#333535",
+                        "outline": "#a78b7d",
+                        "on-background": "#e2e2e2",
+                        "surface-tint": "#ffb690",
+                        "on-tertiary": "#303037",
+                        "on-surface": "#e2e2e2",
+                        "surface-bright": "#37393a",
+                        "secondary-container": "#4a4949",
+                        "tertiary-fixed-dim": "#c8c5cf",
+                        "on-primary": "#552100",
+                        "secondary": "#c8c6c5",
+                        "primary-fixed-dim": "#ffb690",
+                        "tertiary-container": "#9b99a2",
+                        "tertiary": "#c8c5cf",
+                        "error": "#ffb4ab",
+                        "on-error": "#690005",
+                        "primary": "#ffb690",
+                        "on-tertiary-fixed-variant": "#47464e",
+                        "on-error-container": "#ffdad6",
+                        "surface-dim": "#121414",
+                        "inverse-surface": "#e2e2e2",
+                        "secondary-fixed-dim": "#c8c6c5",
+                        "on-tertiary-fixed": "#1b1b22",
+                        "on-secondary-fixed-variant": "#474646",
+                        "surface-container": "#1e2020",
+                        "secondary-fixed": "#e5e2e1",
+                        "background": "#07070d",
+                        "on-secondary-fixed": "#1c1b1b",
+                        "on-secondary": "#313030",
+                        "outline-variant": "rgba(255, 255, 255, 0.08)",
+                        "on-tertiary-container": "#323139",
+                        "inverse-primary": "#9d4300",
+                        "on-primary-fixed": "#341100",
+                        "surface-variant": "#333535",
+                        "tertiary-fixed": "#e4e1eb",
+                        "surface": "#0f0f0f",
+                        "on-primary-fixed-variant": "#783200",
+                        "surface-container-lowest": "#0c0f0f",
+                        "surface-container-high": "#282a2b",
+                        "primary-container": "#f97316",
+                        "on-secondary-container": "#bab8b7",
+                        "surface-container-low": "#1a1c1c",
+                        "primary-fixed": "#ffdbca",
+                        "on-surface-variant": "#e0c0b1",
+                        "error-container": "#93000a",
+                        "inverse-on-surface": "#2f3131",
+                        "on-primary-container": "#582200"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "8px",
+                        "xl": "12px",
+                        "2xl": "16px",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xxl": "48px",
+                        "sm": "8px",
+                        "xs": "4px",
+                        "md": "12px",
+                        "base": "16px",
+                        "lg": "24px",
+                        "huge": "64px",
+                        "xl": "32px",
+                        "section": "96px"
+                    },
+                    "fontFamily": {
+                        "data-value": ["JetBrains Mono"],
+                        "body-md": ["Geist"],
+                        "headline-lg": ["Space Grotesk"],
+                        "display-hero": ["Space Grotesk"],
+                        "data-label": ["JetBrains Mono"],
+                        "body-lg": ["Geist"],
+                        "headline-md": ["Space Grotesk"],
+                        "body-sm": ["Geist"]
+                    },
+                    "fontSize": {
+                        "data-value": ["14px", {"lineHeight": "1.4", "fontWeight": "500"}],
+                        "body-md": ["15px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                        "headline-lg": ["32px", {"lineHeight": "1.3", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "display-hero": ["56px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "data-label": ["12px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                        "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "headline-md": ["24px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                        "body-sm": ["13px", {"lineHeight": "1.5", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            background-color: #07070d;
+            color: #e2e2e2;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #07070d;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+        .paper-card:hover {
+            border-color: #f97316;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(249, 115, 22, 0.15);
+        }
+        .range-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            outline: none;
+        }
+        .range-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #ffb690;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body class="font-body-md selection:bg-primary-container selection:text-white">
+<!-- TopNavBar -->
+<header class="bg-surface border-b border-outline-variant fixed top-0 w-full z-50">
+<nav class="flex justify-between items-center px-lg py-sm w-full max-w-[1440px] mx-auto">
+<div class="flex items-center gap-xl">
+<span class="font-headline-md text-headline-md font-bold text-primary">PaperIQ</span>
+<div class="hidden md:flex gap-lg items-center ml-xl">
+<a class="text-on-surface-variant font-medium hover:text-primary transition-colors duration-200" href="#">Dashboard</a>
+<a class="text-on-surface-variant font-medium hover:text-primary transition-colors duration-200" href="#">Analysis</a>
+<a class="text-primary font-bold border-b-2 border-primary pb-1 transition-colors duration-200" href="#">Papers</a>
+</div>
+</div>
+<div class="flex items-center gap-base">
+<button class="text-outline hover:text-on-surface transition-colors font-data-label text-data-label">Support</button>
+<button class="bg-primary-container text-on-primary-container px-base py-sm rounded-lg font-bold text-body-sm active:scale-95 transition-transform">Run New Analysis</button>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-outline-variant bg-surface-container">
+<img alt="User Profile" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB8OOBZi0UKKUSfimk3LrhCJnFhohMD7zZnohxjhdHgghXnrmHAjTkxZEtJkm7Bk0BZPbGzYBksZVMcECCMGYzAYdHPUYfqOv-8rmtsOWRfnamiEubX18uHJUTLaNrT9_3PS6kzX4XCZpbwRwt_jLKaL3nrwkrmOl5-E6FsWJ6yhIu3HIqJf6LAhEyQ5LpDzI5ex0Hnu_LNh295mKyUU2nL8cQmagXfevu6e53m4m4a7NODJUuMfNUTRa_I0T5h5WDtOTRN4z8A3G8">
+</div>
+</div>
+</nav>
+</header>
+<div class="flex pt-[72px] h-screen overflow-hidden">
+<!-- Filter Sidebar -->
+<aside class="w-72 bg-surface-container border-r border-outline-variant h-full p-base custom-scrollbar overflow-y-auto hidden md:block">
+<div class="flex items-center gap-sm mb-lg">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">filter_list</span>
+<span class="font-headline-md text-body-lg font-bold">Filters</span>
+</div>
+<div class="space-y-xl">
+<!-- Subject Dropdown -->
+<div class="space-y-sm">
+<label class="font-data-label text-data-label text-outline block">SUBJECT</label>
+<select class="w-full bg-surface border border-outline-variant rounded-xl px-sm py-md text-body-sm focus:border-primary-container focus:ring-0 outline-none text-on-surface appearance-none cursor-pointer">
+<option>All Subjects</option>
+<option>Data Structures</option>
+<option>DBMS</option>
+<option>Operating Systems</option>
+<option>Computer Networks</option>
+</select>
+</div>
+<!-- Regulation Section -->
+<div class="space-y-sm">
+<label class="font-data-label text-data-label text-outline block">REGULATION</label>
+<div class="flex gap-sm">
+<span class="bg-primary-container/10 text-primary px-sm py-xs rounded-lg font-data-value text-data-label border border-primary/20">R22</span>
+<span class="bg-white/5 text-outline px-sm py-xs rounded-lg font-data-value text-data-label border border-white/5 cursor-pointer hover:bg-white/10 transition-colors">R18</span>
+<span class="bg-white/5 text-outline px-sm py-xs rounded-lg font-data-value text-data-label border border-white/5 cursor-pointer hover:bg-white/10 transition-colors">R16</span>
+</div>
+</div>
+<!-- Exam Category -->
+<div class="space-y-md">
+<label class="font-data-label text-data-label text-outline block">EXAM CATEGORY</label>
+<div class="space-y-sm">
+<label class="flex items-center gap-sm cursor-pointer group">
+<input class="rounded border-outline-variant bg-surface text-primary focus:ring-primary-container w-4 h-4" type="checkbox">
+<span class="text-body-sm group-hover:text-primary transition-colors">Mid-Term 1</span>
+</label>
+<label class="flex items-center gap-sm cursor-pointer group">
+<input class="rounded border-outline-variant bg-surface text-primary focus:ring-primary-container w-4 h-4" type="checkbox">
+<span class="text-body-sm group-hover:text-primary transition-colors">Mid-Term 2</span>
+</label>
+<label checked="" class="flex items-center gap-sm cursor-pointer group">
+<input checked="" class="rounded border-outline-variant bg-surface text-primary focus:ring-primary-container w-4 h-4" type="checkbox">
+<span class="text-body-sm text-primary transition-colors">End-Semester</span>
+</label>
+</div>
+</div>
+<!-- Year Range Slider -->
+<div class="space-y-md">
+<div class="flex justify-between items-center">
+<label class="font-data-label text-data-label text-outline block">YEAR RANGE</label>
+<span class="text-data-label font-data-value text-primary">2021 - 2025</span>
+</div>
+<input class="range-slider" max="2025" min="2018" step="1" type="range">
+</div>
+<div class="pt-base border-t border-outline-variant">
+<button class="w-full text-center py-sm text-on-surface-variant hover:text-on-surface text-data-label font-data-label transition-colors" onclick="resetFilters()">RESET ALL FILTERS</button>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 overflow-y-auto custom-scrollbar bg-background">
+<div class="max-w-[1000px] mx-auto p-lg lg:p-huge space-y-xl">
+<!-- Header Section -->
+<div class="space-y-sm border-b border-outline-variant pb-lg">
+<h1 class="font-headline-lg text-headline-lg text-on-surface">Past Examination Papers</h1>
+<p class="text-outline font-body-md">Browse and filter papers by subject, year, and exam type</p>
+</div>
+<!-- Count Line -->
+<div class="flex items-center gap-sm text-body-sm font-body-md text-outline">
+<span class="text-primary-container font-bold">47 papers found</span>
+<span class="opacity-30">•</span>
+<span class="">End-Semester</span>
+<span class="opacity-30">•</span>
+<span class="">2021-2025</span>
+<span class="opacity-30">•</span>
+<span class="">R22</span>
+</div>
+<!-- Paper Cards Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-lg" id="papers-grid">
+<!-- Card 1 -->
+<div class="paper-card bg-surface border border-outline-variant p-lg rounded-2xl transition-all duration-300 group cursor-pointer">
+<div class="flex justify-between items-start mb-base">
+<h3 class="font-headline-md text-body-lg text-on-surface group-hover:text-primary transition-colors">Data Structures</h3>
+<span class="bg-white/5 border border-outline-variant px-sm py-xs rounded-lg text-data-label font-data-label">R22</span>
+</div>
+<div class="space-y-md">
+<div class="flex items-center gap-sm text-outline">
+<span class="material-symbols-outlined text-[18px]">calendar_today</span>
+<span class="text-body-sm">Mid-Term 2 — December 2024</span>
+</div>
+<div class="flex items-center gap-xl py-sm border-y border-outline-variant">
+<div class="flex flex-col">
+<span class="text-outline text-data-label font-data-label">QUESTIONS</span>
+<span class="text-on-surface font-data-value text-data-value">18</span>
+</div>
+<div class="flex flex-col">
+<span class="text-outline text-data-label font-data-label">TOTAL MARKS</span>
+<span class="text-on-surface font-data-value text-data-value">50</span>
+</div>
+<div class="flex flex-col">
+<span class="text-outline text-data-label font-data-label">DURATION</span>
+<span class="text-on-surface font-data-value text-data-value">90 Mins</span>
+</div>
+</div>
+<div class="text-body-sm text-outline flex gap-lg">
+<span class="flex items-center gap-xs"><span class="w-1 h-1 bg-primary rounded-full"></span> Part A: 10 Q's</span>
+<span class="flex items-center gap-xs"><span class="w-1 h-1 bg-primary rounded-full"></span> Part B: 8 Q's</span>
+</div>
+</div>
+<div class="mt-lg pt-base border-t border-outline-variant flex justify-end">
+<a class="text-primary-container font-bold text-body-sm flex items-center gap-xs group-hover:gap-sm transition-all" href="#">
+                                View Paper <span class="material-symbols-outlined text-[18px]">arrow_right_alt</span>
+</a>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="paper-card bg-surface border border-outline-variant p-lg rounded-2xl transition-all duration-300 group cursor-pointer">
+<div class="flex justify-between items-start mb-base">
+<h3 class="font-headline-md text-body-lg text-on-surface group-hover:text-primary transition-colors">Database Management Systems</h3>
+<span class="bg-white/5 border border-outline-variant px-sm py-xs rounded-lg text-data-label font-data-label">R22</span>
+</div>
+<div class="space-y-md">
+<div class="flex items-center gap-sm text-outline">
+<span class="material-symbols-outlined text-[18px]">calendar_today</span>
+<span class="text-body-sm">End-Semester — May 2024</span>
+</div>
+<div class="flex items-center gap-xl py-sm border-y border-outline-variant">
+<div class="flex flex-col">
+<span class="text-outline text-data-label font-data-label">QUESTIONS</span>
+<span class="text-on-surface font-data-value text-data-value">22</span>
+</div>
+<div class="flex flex-col">
+<span class="text-outline text-data-label font-data-label">TOTAL MARKS</span>
+<span class="text-on-surface font-data-value text-data-value">75</span>
+</div>
+<div class="flex flex-col">
+<span class="text-outline text-data-label font-data-label">DURATION</span>
+<span class="text-on-surface font-data-value text-data-value">3 Hours</span>
+</div>
+</div>
+<div class="text-body-sm text-outline flex gap-lg">
+<span class="flex items-center gap-xs"><span class="w-1 h-1 bg-primary rounded-full"></span> Part A: 12 Q's</span>
+<span class="flex items-center gap-xs"><span class="w-1 h-1 bg-primary rounded-full"></span> Part B: 10 Q's</span>
+</div>
+</div>
+<div class="mt-lg pt-base border-t border-outline-variant flex justify-end">
+<a class="text-primary-container font-bold text-body-sm flex items-center gap-xs group-hover:gap-sm transition-all" href="#">
+                                View Paper <span class="material-symbols-outlined text-[18px]">arrow_right_alt</span>
+</a>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="paper-card bg-surface border border-outline-variant p-lg rounded-2xl transition-all duration-300 group cursor-pointer">
+<div class="flex justify-between items-start mb-base">
+<h3 class="font-headline-md text-body-lg text-on-surface group-hover:text-primary transition-colors">Operating Systems</h3>
+<span class="bg-white/5 border border-outline-variant px-sm py-xs rounded-lg text-data-label font-data-label">R22</span>
+</div>
+<div class="space-y-md">
+<div class="flex items-center gap-sm text-outline">
+<span class="material-symbols-outlined text-[18px]">calendar_today</span>
+<span class="text-body-sm">Mid-Term 1 — Sept 2024</span>
+</div>
+<div class="flex items-center gap-xl py-sm border-y border-outline-variant">
+<div class="flex flex-col">
+<span class="text-outline text-data-label font-data-label">QUESTIONS</span>
+<span class="text-on-surface font-data-value text-data-value">15</span>
+</div>
+<div class="flex flex-col">
+<span class="text-outline text-data-label font-data-label">TOTAL MARKS</span>
+<span class="text-on-surface font-data-value text-data-value">40</span>
+</div>
+<div class="flex flex-col">
+<span class="text-outline text-data-label font-data-label">DURATION</span>
+<span class="text-on-surface font-data-value text-data-value">60 Mins</span>
+</div>
+</div>
+<div class="text-body-sm text-outline flex gap-lg">
+<span class="flex items-center gap-xs"><span class="w-1 h-1 bg-primary rounded-full"></span> Part A: 8 Q's</span>
+<span class="flex items-center gap-xs"><span class="w-1 h-1 bg-primary rounded-full"></span> Part B: 7 Q's</span>
+</div>
+</div>
+<div class="mt-lg pt-base border-t border-outline-variant flex justify-end">
+<a class="text-primary-container font-bold text-body-sm flex items-center gap-xs group-hover:gap-sm transition-all" href="#">
+                                View Paper <span class="material-symbols-outlined text-[18px]">arrow_right_alt</span>
+</a>
+</div>
+</div>
+<!-- Card 4 -->
+<div class="paper-card bg-surface border border-outline-variant p-lg rounded-2xl transition-all duration-300 group cursor-pointer">
+<div class="flex justify-between items-start mb-base">
+<h3 class="font-headline-md text-body-lg text-on-surface group-hover:text-primary transition-colors">Computer Networks</h3>
+<span class="bg-white/5 border border-outline-variant px-sm py-xs rounded-lg text-data-label font-data-label">R22</span>
+</div>
+<div class="space-y-md">
+<div class="flex items-center gap-sm text-outline">
+<span class="material-symbols-outlined text-[18px]">calendar_today</span>
+<span class="text-body-sm">End-Semester — May 2023</span>
+</div>
+<div class="flex items-center gap-xl py-sm border-y border-outline-variant">
+<div class="flex flex-col">
+<span class="text-outline text-data-label font-data-label">QUESTIONS</span>
+<span class="text-on-surface font-data-value text-data-value">20</span>
+</div>
+<div class="flex flex-col">
+<span class="text-outline text-data-label font-data-label">TOTAL MARKS</span>
+<span class="text-on-surface font-data-value text-data-value">75</span>
+</div>
+<div class="flex flex-col">
+<span class="text-outline text-data-label font-data-label">DURATION</span>
+<span class="text-on-surface font-data-value text-data-value">3 Hours</span>
+</div>
+</div>
+<div class="text-body-sm text-outline flex gap-lg">
+<span class="flex items-center gap-xs"><span class="w-1 h-1 bg-primary rounded-full"></span> Part A: 10 Q's</span>
+<span class="flex items-center gap-xs"><span class="w-1 h-1 bg-primary rounded-full"></span> Part B: 10 Q's</span>
+</div>
+</div>
+<div class="mt-lg pt-base border-t border-outline-variant flex justify-end">
+<a class="text-primary-container font-bold text-body-sm flex items-center gap-xs group-hover:gap-sm transition-all" href="#">
+                                View Paper <span class="material-symbols-outlined text-[18px]">arrow_right_alt</span>
+</a>
+</div>
+</div>
+</div>
+<!-- Empty State (Hidden for demo) -->
+<div class="hidden flex-col items-center justify-center py-section text-center space-y-lg" id="empty-state">
+<img alt="No papers found" class="w-64 h-64 opacity-60 mix-blend-lighten" data-alt="A subtle, minimalist vector illustration for an empty state. A single sheet of paper with a soft diagonal slash through it, styled for a dark UI. Minimalist lines, subtle transparency, stroke color in rgba(255, 255, 255, 0.2). Academic/Technical style. The artwork reflects the dark premium PaperIQ aesthetic with deep blacks and subtle orange highlights." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC9IY7kpD88HQxw71q2H4Xn9HV64ZuVgA6mZZ2aZtoQYYgFgpe605Tl7ZOA0ndWNNTRPEvG4pXv0VQRJVFMWqHFgIVwMLPQ-WLSBnI6c91PkJOd_gASMfNv9vqzW3G3ULlUEMURjU6_vdSC__LDi1tSDZmOwmhTMA8-oxpejG_72EtZ_gYSzLEQToPNwEbf6_8OMrveqEZxgfrTwpMlVwdOpsonjS3vTRuAdHJVz0csQ-R29PH36ByDF51O9BC7rsssaHOTrFLTU4k">
+<div class="space-y-sm">
+<h3 class="font-headline-md text-headline-md text-on-surface">No papers found</h3>
+<p class="text-outline max-w-md mx-auto">We couldn't find any papers matching your specific filters. Try resetting or adjusting your selection.</p>
+</div>
+<div class="flex gap-base justify-center">
+<button class="bg-primary-container text-on-primary-container px-lg py-sm rounded-xl font-bold hover:scale-105 transition-transform" onclick="resetFilters()">Reset All Filters</button>
+<button class="border border-outline-variant text-on-surface px-lg py-sm rounded-xl font-bold hover:bg-white/5 transition-colors">Browse Subjects</button>
+</div>
+<div class="pt-xl">
+<p class="text-data-label font-data-label text-outline mb-sm uppercase">SUGGESTIONS</p>
+<div class="flex gap-sm justify-center flex-wrap">
+<span class="bg-white/5 px-base py-sm rounded-full text-body-sm text-on-surface border border-white/5 cursor-pointer hover:border-primary/50">Check R18 Regulation</span>
+<span class="bg-white/5 px-base py-sm rounded-full text-body-sm text-on-surface border border-white/5 cursor-pointer hover:border-primary/50">Broaden Year Range</span>
+</div>
+</div>
+</div>
+<!-- Pagination -->
+<div class="flex flex-col md:flex-row justify-between items-center pt-xl border-t border-outline-variant gap-base">
+<div class="text-body-sm text-outline">
+                        Page <span class="text-on-surface font-bold">1</span> of 3
+                    </div>
+<div class="flex gap-sm">
+<button class="p-sm rounded-lg border border-outline-variant text-outline opacity-50 cursor-not-allowed">
+<span class="material-symbols-outlined">chevron_left</span>
+</button>
+<button class="w-8 h-8 rounded-lg bg-primary-container text-on-primary-container font-bold text-body-sm">1</button>
+<button class="w-8 h-8 rounded-lg text-outline hover:text-on-surface hover:bg-white/5 transition-colors font-bold text-body-sm">2</button>
+<button class="w-8 h-8 rounded-lg text-outline hover:text-on-surface hover:bg-white/5 transition-colors font-bold text-body-sm">3</button>
+<button class="p-sm rounded-lg border border-outline-variant text-outline hover:text-on-surface hover:border-primary transition-colors">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Footer from Shared Components -->
+<footer class="bg-surface-dim border-t border-outline-variant w-full mt-huge">
+<div class="flex flex-col md:flex-row justify-between items-center px-lg py-xl w-full max-w-[1200px] mx-auto gap-lg">
+<div class="flex flex-col items-center md:items-start">
+<span class="font-headline-md text-headline-md text-on-surface font-bold mb-xs">PaperIQ</span>
+<p class="font-data-label text-data-label text-outline">© 2024 PaperIQ Academic Intelligence</p>
+</div>
+<div class="flex gap-lg flex-wrap justify-center">
+<a class="text-outline hover:text-on-surface transition-colors font-data-label text-data-label" href="#">Academic Integrity</a>
+<a class="text-outline hover:text-on-surface transition-colors font-data-label text-data-label" href="#">Support Center</a>
+<a class="text-outline hover:text-on-surface transition-colors font-data-label text-data-label" href="#">Privacy Policy</a>
+<a class="text-outline hover:text-on-surface transition-colors font-data-label text-data-label" href="#">Terms of Service</a>
+</div>
+</div>
+</footer>
+</main>
+</div>
+<script>
+        function resetFilters() {
+            // Simulated toggle for empty state demonstration
+            const grid = document.getElementById('papers-grid');
+            const empty = document.getElementById('empty-state');
+            
+            if (grid.classList.contains('hidden')) {
+                grid.classList.remove('hidden');
+                grid.classList.add('grid');
+                empty.classList.add('hidden');
+                empty.classList.remove('flex');
+            } else {
+                grid.classList.add('hidden');
+                grid.classList.remove('grid');
+                empty.classList.remove('hidden');
+                empty.classList.add('flex');
+            }
+        }
+    </script>
+
+
+</body></html>

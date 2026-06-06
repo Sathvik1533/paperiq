@@ -241,3 +241,87 @@ export async function upsertUserProfile(userId: string, profile: Record<string, 
   const { error } = await supabase.from('user_profiles').upsert({ ...profile, id: userId })
   if (error) throw error
 }
+
+// ── Onboarding ────────────────────────────────────────────────────────────
+
+export async function parseHallTicket(file: File): Promise<{
+  branch: string | null
+  regulation: string | null
+  year: number | null
+  semester: number | null
+  semester_display: string | null
+  subject_codes: string[]
+  subjects: Array<{code: string; name: string}>
+  confidence: string
+}> {
+  const { data: { session } } = await supabase.auth.getSession()
+  const form = new FormData()
+  form.append('file', file)
+  
+  // IMPORTANT: Do NOT set Content-Type header for FormData
+  // The browser will automatically set it with the correct multipart/form-data boundary
+  const headers: Record<string, string> = {}
+  if (session?.access_token) {
+    headers['Authorization'] = `Bearer ${session.access_token}`
+  }
+  
+  const res = await fetch(`${BASE_URL}/onboarding/parse-hall-ticket`, {
+    method: 'POST',
+    headers,
+    body: form,
+  })
+  
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(`Hall ticket parse failed: ${text}`)
+  }
+  
+  return res.json()
+}
+
+export async function confirmHallTicketProfile(profile: {
+  branch: string
+  regulation: string
+  year: number
+  semester: number
+  subject_codes: string[]
+}): Promise<{ success: boolean }> {
+  return fetchWithAuth('/onboarding/confirm-hall-ticket', {
+    method: 'POST',
+    body: JSON.stringify(profile),
+  })
+}
+
+// ── Beta Student Experience ───────────────────────────────────────────────
+
+export async function getSubjectsForSemester(semester: number, regulation: string): Promise<Subject[]> {
+  const { data, error } = await supabase
+    .from('subjects')
+    .select('*')
+    .eq('semester', semester)
+    .eq('regulation', regulation)
+  if (error) throw error
+  return data || []
+}
+
+export async function generateAnalysis(
+  subjectId: string,
+  regulation: string,
+  examCategory?: string,
+): Promise<any> {
+  const body: any = {
+    subject_id: subjectId,
+    regulation,
+  }
+  if (examCategory) {
+    // Map frontend filter values to exact DB values (title case as stored by exam_classifier.py)
+    const catMap: Record<string, string> = { mid1: 'Mid-1', mid2: 'Mid-2', semester: 'Semester' }
+    body.exam_category = catMap[examCategory] || examCategory
+  }
+  
+  const res = await fetchWithAuth('/analysis/generate', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  })
+  return (res as any).data ?? res
+}

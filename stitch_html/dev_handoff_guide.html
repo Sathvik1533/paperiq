@@ -1,0 +1,45 @@
+# PaperIQ Developer Hand-off Guide (for Kiro)
+
+## Project Overview
+PaperIQ is a high-fidelity AI-powered exam intelligence platform for engineering students. The UI is built on a "Dark Premium" aesthetic, prioritizing data density, confidence metrics, and actionable revision paths.
+
+## Tech Stack Requirements
+- **Framework**: React
+- **Styling**: Tailwind CSS
+- **Typography**: Space Grotesk (Headlines), Geist (Body), JetBrains Mono (Data/Metrics)
+- **Icons**: Lucide React or Material Symbols
+- **Motion**: Framer Motion (for glassmorphic reveals and timeline transitions)
+
+## Design System Tokens (PaperIQ Dark Premium)
+- **Background**: `#07070d`
+- **Surface**: `rgba(15, 15, 15, 0.75)` with backdrop-blur (Glassmorphism)
+- **Primary/Accent**: `#f97316` (Orange Glow)
+- **Success**: `#10b981`
+- **Border/Outline**: `rgba(255, 255, 255, 0.1)`
+
+## Core Screen Architecture & Routes
+Kiro, implement the following routes based on the screens in the Stitch canvas:
+
+### 1. Marketing & Auth
+- `/` -> **Landing Page** (Use Screen: {{DATA:SCREEN:SCREEN_19}})
+- `/signup` -> **Sign Up** (Use Screen: {{DATA:SCREEN:SCREEN_33}})
+- `/login` -> **Login** (Use Screen: {{DATA:SCREEN:SCREEN_2}})
+
+### 2. Core Dashboard & Analysis
+- `/dashboard` -> **Student Command Center** (Use Screen: {{DATA:SCREEN:SCREEN_31}})
+- `/analysis/:subjectId` -> **Subject Deep-Dive** (Use Screen: {{DATA:SCREEN:SCREEN_37}})
+- `/analysis/:subjectId/priority` -> **Study Priority Order** (Use Screen: {{DATA:SCREEN:SCREEN_21}})
+- `/analysis/:subjectId/unit/:unitId` -> **Unit Intelligence** (Use Screen: {{DATA:SCREEN:SCREEN_12}})
+
+### 3. Archive & Library
+- `/papers` -> **Papers Browser** (Use Screen: {{DATA:SCREEN:SCREEN_39}})
+- `/papers/:paperId` -> **Individual Paper View** (Use Screen: {{DATA:SCREEN:SCREEN_29}})
+
+### 4. User Profile
+- `/profile` -> **Academic Profile** (Use Screen: {{DATA:SCREEN:SCREEN_26}})
+- `/settings` -> **System Settings** (Use Screen: {{DATA:SCREEN:SCREEN_10}})
+
+## Implementation Notes
+1. **Glassmorphism**: Use `backdrop-blur-xl` and `bg-white/5` for card containers.
+2. **Glow Effects**: Accent buttons and active priority states should use `box-shadow: 0 0 20px rgba(249, 115, 22, 0.3)`.
+3. **Responsive**: All screens are designed for 1280px desktop, but should collapse to standard mobile/tablet breakpoints using Tailwind's responsive prefixes.

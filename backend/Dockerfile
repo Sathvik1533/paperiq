@@ -12,4 +12,8 @@ RUN playwright install chromium --with-deps
 COPY app/ ./app/
 
 EXPOSE 8000
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+# Production: 4 workers handles ~200 concurrent users comfortably
+# Each worker is async (uvicorn) so handles many requests concurrently within itself
+# $WEB_CONCURRENCY env var lets Railway/Render override this at deploy time
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers ${WEB_CONCURRENCY:-4}"]

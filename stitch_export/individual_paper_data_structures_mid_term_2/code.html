@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>PaperIQ - Data Structures Mid-Term 2</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Geist:wght@100;300;400;500;600;700&amp;family=JetBrains+Mono:wght@100;300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-error-container": "#ffdad6",
+                        "surface-container-high": "#282a2b",
+                        "on-secondary": "#313030",
+                        "error": "#ffb4ab",
+                        "surface-variant": "#333535",
+                        "surface": "#121414",
+                        "surface-container": "#1e2020",
+                        "on-tertiary-fixed": "#1b1b22",
+                        "on-background": "#e2e2e2",
+                        "secondary": "#c8c6c5",
+                        "on-primary-fixed": "#341100",
+                        "on-primary-container": "#582200",
+                        "on-tertiary-container": "#323139",
+                        "error-container": "#93000a",
+                        "surface-container-highest": "#333535",
+                        "background": "#121414",
+                        "on-error": "#690005",
+                        "inverse-surface": "#e2e2e2",
+                        "secondary-fixed-dim": "#c8c6c5",
+                        "on-primary-fixed-variant": "#783200",
+                        "surface-container-lowest": "#0c0f0f",
+                        "outline-variant": "#584237",
+                        "secondary-container": "#4a4949",
+                        "on-primary": "#552100",
+                        "tertiary-fixed-dim": "#c8c5cf",
+                        "surface-tint": "#ffb690",
+                        "tertiary": "#c8c5cf",
+                        "on-tertiary-fixed-variant": "#47464e",
+                        "on-secondary-container": "#bab8b7",
+                        "primary-fixed": "#ffdbca",
+                        "surface-dim": "#121414",
+                        "primary-fixed-dim": "#ffb690",
+                        "tertiary-container": "#9b99a2",
+                        "on-surface": "#e2e2e2",
+                        "primary-container": "#f97316",
+                        "inverse-primary": "#9d4300",
+                        "outline": "#a78b7d",
+                        "inverse-on-surface": "#2f3131",
+                        "on-tertiary": "#303037",
+                        "primary": "#ffb690",
+                        "on-secondary-fixed-variant": "#474646",
+                        "secondary-fixed": "#e5e2e1",
+                        "surface-container-low": "#1a1c1c",
+                        "on-surface-variant": "#e0c0b1",
+                        "tertiary-fixed": "#e4e1eb",
+                        "surface-bright": "#37393a",
+                        "on-secondary-fixed": "#1c1b1b"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "huge": "64px",
+                        "xxl": "48px",
+                        "base": "16px",
+                        "xl": "32px",
+                        "sm": "8px",
+                        "xs": "4px",
+                        "section": "96px",
+                        "md": "12px",
+                        "lg": "24px"
+                    },
+                    "fontFamily": {
+                        "body-sm": ["Geist"],
+                        "headline-md": ["Space Grotesk"],
+                        "display-hero": ["Space Grotesk"],
+                        "body-lg": ["Geist"],
+                        "headline-lg": ["Space Grotesk"],
+                        "display-hero-mobile": ["Space Grotesk"],
+                        "data-value": ["JetBrains Mono"],
+                        "data-label": ["JetBrains Mono"],
+                        "body-md": ["Geist"]
+                    },
+                    "fontSize": {
+                        "body-sm": ["13px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                        "headline-md": ["24px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                        "display-hero": ["56px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "headline-lg": ["32px", {"lineHeight": "1.3", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "display-hero-mobile": ["36px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                        "data-value": ["14px", {"lineHeight": "1.4", "fontWeight": "500"}],
+                        "data-label": ["12px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                        "body-md": ["15px", {"lineHeight": "1.5", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            background-color: #07070d;
+            color: #e2e2e2;
+            -webkit-font-smoothing: antialiased;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #0f0f0f;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #333535;
+            border-radius: 10px;
+        }
+        .glass-panel {
+            background: rgba(15, 15, 15, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .glow-button:hover {
+            box-shadow: 0 0 15px rgba(249, 115, 22, 0.4);
+        }
+        .pdf-collapsed {
+            width: 0;
+            opacity: 0;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .pdf-expanded {
+            width: 450px;
+            opacity: 1;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+    </style>
+</head>
+<body class="font-body-md overflow-x-hidden">
+<!-- Top Navigation -->
+<nav class="sticky top-0 z-50 bg-surface border-b border-outline-variant">
+<div class="flex justify-between items-center px-lg py-sm w-full max-w-[1200px] mx-auto">
+<div class="flex items-center gap-xl">
+<span class="font-headline-md text-headline-md font-bold text-primary-container">PaperIQ</span>
+<div class="hidden md:flex gap-lg items-center">
+<a class="font-body-md text-on-surface-variant font-medium hover:text-primary transition-colors duration-200" href="#">Dashboard</a>
+<a class="font-body-md text-on-surface-variant font-medium hover:text-primary transition-colors duration-200" href="#">Analysis</a>
+<a class="font-body-md text-primary font-bold border-b-2 border-primary pb-1" href="#">Papers</a>
+</div>
+</div>
+<div class="flex items-center gap-md">
+<button class="px-base py-sm rounded-lg border border-outline-variant font-body-sm text-on-surface hover:bg-surface-container-highest transition-all active:scale-95">Support</button>
+<button class="px-base py-sm rounded-lg bg-primary-container text-on-primary-container font-body-sm font-bold glow-button transition-all active:scale-95">Run New Analysis</button>
+</div>
+</div>
+</nav>
+<main class="w-full max-w-[1200px] mx-auto px-base py-xl min-h-screen">
+<!-- Breadcrumbs -->
+<nav class="flex items-center gap-xs text-data-label font-data-label text-outline mb-lg">
+<span>Papers</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span>Data Structures</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="text-on-surface">Mid-Term 2 — December 2024</span>
+</nav>
+<!-- Header Section -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-base mb-xxl">
+<div>
+<h1 class="font-headline-md text-headline-md text-on-surface mb-xs">Data Structures</h1>
+<div class="flex flex-wrap items-center gap-base font-data-label text-data-label text-outline tracking-wider uppercase">
+<span class="px-sm py-1 bg-surface-container rounded border border-outline-variant">R22</span>
+<span>•</span>
+<span>18 Questions</span>
+<span>•</span>
+<span>50 Total Marks</span>
+<span>•</span>
+<span>90 Minutes</span>
+</div>
+</div>
+<button class="flex items-center gap-sm px-base py-md rounded-xl bg-surface-container border border-outline-variant hover:border-primary transition-all text-on-surface font-body-sm" id="togglePdf">
+<span class="material-symbols-outlined">picture_as_pdf</span>
+                View Original PDF
+            </button>
+</div>
+<div class="flex gap-lg">
+<!-- Left Content: Structured List -->
+<div class="flex-1 flex flex-col gap-xl">
+<!-- Paper Structure Summary -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-base">
+<div class="bg-surface-container p-lg rounded-xl border border-outline-variant">
+<div class="flex justify-between items-center mb-md">
+<span class="font-body-md font-bold text-on-surface">Part A</span>
+<span class="font-data-value text-data-value text-primary">55.6%</span>
+</div>
+<div class="w-full h-1.5 bg-surface-container-highest rounded-full overflow-hidden mb-sm">
+<div class="h-full bg-primary-container w-[55.6%]"></div>
+</div>
+<p class="font-body-sm text-on-surface-variant">10 Questions • 2 Marks each</p>
+</div>
+<div class="bg-surface-container p-lg rounded-xl border border-outline-variant">
+<div class="flex justify-between items-center mb-md">
+<span class="font-body-md font-bold text-on-surface">Part B</span>
+<span class="font-data-value text-data-value text-primary">44.4%</span>
+</div>
+<div class="w-full h-1.5 bg-surface-container-highest rounded-full overflow-hidden mb-sm">
+<div class="h-full bg-primary-container w-[44.4%]"></div>
+</div>
+<p class="font-body-sm text-on-surface-variant">8 Questions • Varied weightage</p>
+</div>
+</div>
+<!-- Filters -->
+<div class="flex flex-wrap items-center justify-between gap-base">
+<div class="flex items-center gap-xs">
+<button class="px-base py-xs bg-primary-container text-on-primary-container rounded-full font-body-sm font-medium">All Questions</button>
+<button class="px-base py-xs bg-surface-container text-on-surface-variant rounded-full font-body-sm hover:bg-surface-container-highest transition-colors">Part A</button>
+<button class="px-base py-xs bg-surface-container text-on-surface-variant rounded-full font-body-sm hover:bg-surface-container-highest transition-colors">Part B</button>
+</div>
+<div class="flex items-center gap-sm">
+<div class="relative">
+<button class="flex items-center gap-sm px-base py-xs bg-surface-container border border-outline-variant rounded-lg font-body-sm text-on-surface">
+                                All Units
+                                <span class="material-symbols-outlined text-[16px]">expand_more</span>
+</button>
+</div>
+<div class="relative">
+<button class="flex items-center gap-sm px-base py-xs bg-surface-container border border-outline-variant rounded-lg font-body-sm text-on-surface">
+                                All Topics
+                                <span class="material-symbols-outlined text-[16px]">expand_more</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Question List -->
+<div class="flex flex-col gap-base">
+<!-- Q1 -->
+<div class="group bg-surface-container rounded-xl border-l-4 border-l-primary-container border-y border-r border-outline-variant p-lg hover:bg-surface-container-high transition-all">
+<div class="flex justify-between items-start mb-md">
+<div class="flex items-center gap-sm">
+<span class="font-data-label text-data-label text-primary uppercase tracking-tighter">Question 1</span>
+<span class="w-1 h-1 rounded-full bg-outline"></span>
+<span class="font-data-label text-data-label text-outline">Part A</span>
+</div>
+<div class="flex items-center gap-xs">
+<span class="px-sm py-xs bg-surface-container-highest rounded-lg font-data-value text-data-value text-on-surface">2 Marks</span>
+<span class="px-sm py-xs bg-surface-container-highest rounded-lg font-data-value text-data-value text-on-surface">Unit III</span>
+</div>
+</div>
+<p class="font-body-lg text-body-lg text-on-surface mb-lg">Define stack and explain its operations.</p>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-[16px] text-outline">sell</span>
+<span class="font-data-label text-data-label text-outline uppercase">Topic: Stacks</span>
+</div>
+<button class="text-primary font-body-sm font-medium hover:underline flex items-center gap-xs">
+                                View Solutions
+                                <span class="material-symbols-outlined text-[18px]">arrow_outward</span>
+</button>
+</div>
+</div>
+<!-- Q2 -->
+<div class="group bg-surface-container rounded-xl border-l-4 border-l-primary-container border-y border-r border-outline-variant p-lg hover:bg-surface-container-high transition-all">
+<div class="flex justify-between items-start mb-md">
+<div class="flex items-center gap-sm">
+<span class="font-data-label text-data-label text-primary uppercase tracking-tighter">Question 2</span>
+<span class="w-1 h-1 rounded-full bg-outline"></span>
+<span class="font-data-label text-data-label text-outline">Part A</span>
+</div>
+<div class="flex items-center gap-xs">
+<span class="px-sm py-xs bg-surface-container-highest rounded-lg font-data-value text-data-value text-on-surface">2 Marks</span>
+<span class="px-sm py-xs bg-surface-container-highest rounded-lg font-data-value text-data-value text-on-surface">Unit I</span>
+</div>
+</div>
+<p class="font-body-lg text-body-lg text-on-surface mb-lg">What is an array? Explain its advantages.</p>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-[16px] text-outline">sell</span>
+<span class="font-data-label text-data-label text-outline uppercase">Topic: Arrays</span>
+</div>
+<button class="text-primary font-body-sm font-medium hover:underline flex items-center gap-xs">
+                                View Solutions
+                                <span class="material-symbols-outlined text-[18px]">arrow_outward</span>
+</button>
+</div>
+</div>
+<!-- Q3 -->
+<div class="group bg-surface-container rounded-xl border-l-4 border-l-[#4ade80] border-y border-r border-outline-variant p-lg hover:bg-surface-container-high transition-all">
+<div class="flex justify-between items-start mb-md">
+<div class="flex items-center gap-sm">
+<span class="font-data-label text-data-label text-[#4ade80] uppercase tracking-tighter">Question 3</span>
+<span class="w-1 h-1 rounded-full bg-outline"></span>
+<span class="font-data-label text-data-label text-outline">Part B</span>
+</div>
+<div class="flex items-center gap-xs">
+<span class="px-sm py-xs bg-surface-container-highest rounded-lg font-data-value text-data-value text-on-surface">10 Marks</span>
+<span class="px-sm py-xs bg-surface-container-highest rounded-lg font-data-value text-data-value text-on-surface">Unit III</span>
+</div>
+</div>
+<p class="font-body-lg text-body-lg text-on-surface mb-lg">Explain binary search tree operations with examples.</p>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-[16px] text-outline">sell</span>
+<span class="font-data-label text-data-label text-outline uppercase">Topic: BST</span>
+</div>
+<button class="text-primary font-body-sm font-medium hover:underline flex items-center gap-xs">
+                                View Solutions
+                                <span class="material-symbols-outlined text-[18px]">arrow_outward</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Sidebar: Collapsible PDF -->
+<aside class="pdf-collapsed sticky top-[100px] h-[calc(100vh-180px)]" id="pdfPanel">
+<div class="glass-panel h-full rounded-2xl flex flex-col overflow-hidden">
+<div class="p-base border-b border-outline-variant flex items-center justify-between">
+<span class="font-body-md font-bold text-on-surface">Original PDF</span>
+<button class="material-symbols-outlined text-outline hover:text-on-surface transition-colors" id="closePdf">close</button>
+</div>
+<div class="flex-1 bg-[#1a1c1c] p-lg flex flex-col items-center justify-center text-center gap-base">
+<div class="w-32 h-40 bg-surface border border-outline-variant flex items-center justify-center relative shadow-xl rounded-sm">
+<span class="material-symbols-outlined text-huge text-surface-variant">description</span>
+<div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+</div>
+<p class="font-body-sm text-on-surface-variant max-w-[200px]">Data-Structures-Mid2-Dec2024.pdf</p>
+<div class="flex gap-sm">
+<button class="px-base py-xs bg-surface-container-highest rounded-lg text-on-surface text-data-label font-data-label">PREVIEW</button>
+<button class="px-base py-xs bg-primary-container text-on-primary-container rounded-lg font-data-label text-data-label font-bold">DOWNLOAD</button>
+</div>
+</div>
+</div>
+</aside>
+</div>
+</main>
+<!-- Fixed Bottom Bar -->
+<div class="fixed bottom-0 left-0 right-0 bg-surface-container/90 backdrop-blur-md border-t border-outline-variant z-40">
+<div class="w-full max-w-[1200px] mx-auto px-lg py-md flex items-center justify-between">
+<button class="flex items-center gap-sm text-on-surface-variant hover:text-primary transition-colors font-body-sm">
+<span class="material-symbols-outlined">arrow_back</span>
+                Previous Paper
+            </button>
+<button class="flex items-center gap-sm px-xl py-xs bg-surface-container-highest rounded-full border border-outline-variant text-on-surface font-body-sm hover:border-primary transition-all">
+<span class="material-symbols-outlined text-[18px]">grid_view</span>
+                Back to Papers
+            </button>
+<button class="flex items-center gap-sm text-on-surface-variant hover:text-primary transition-colors font-body-sm">
+                Next Paper
+                <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Global Footer -->
+<footer class="bg-surface-dim mt-huge pb-32">
+<div class="flex flex-col md:flex-row justify-between items-center px-lg py-xl w-full max-w-[1200px] mx-auto">
+<div class="flex flex-col gap-xs mb-lg md:mb-0">
+<span class="font-headline-md text-headline-md text-on-surface">PaperIQ</span>
+<span class="font-data-label text-data-label text-outline uppercase tracking-widest italic">Academic Intelligence</span>
+</div>
+<div class="flex flex-col md:flex-row gap-lg items-center">
+<div class="flex gap-lg">
+<a class="font-data-label text-data-label text-outline hover:text-on-surface transition-colors" href="#">Academic Integrity</a>
+<a class="font-data-label text-data-label text-outline hover:text-on-surface transition-colors" href="#">Support Center</a>
+<a class="font-data-label text-data-label text-outline hover:text-on-surface transition-colors" href="#">Privacy Policy</a>
+</div>
+<span class="font-data-label text-data-label text-outline">© 2026 PaperIQ</span>
+</div>
+</div>
+</footer>
+<script>
+        const toggleBtn = document.getElementById('togglePdf');
+        const closeBtn = document.getElementById('closePdf');
+        const pdfPanel = document.getElementById('pdfPanel');
+
+        toggleBtn.addEventListener('click', () => {
+            pdfPanel.classList.remove('pdf-collapsed');
+            pdfPanel.classList.add('pdf-expanded', 'ml-lg');
+            toggleBtn.classList.add('bg-primary-container', 'text-on-primary-container', 'border-primary');
+        });
+
+        closeBtn.addEventListener('click', () => {
+            pdfPanel.classList.add('pdf-collapsed');
+            pdfPanel.classList.remove('pdf-expanded', 'ml-lg');
+            toggleBtn.classList.remove('bg-primary-container', 'text-on-primary-container', 'border-primary');
+        });
+
+        // Hover effect for question cards
+        const cards = document.querySelectorAll('.group');
+        cards.forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                card.style.transform = 'translateY(-2px)';
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'translateY(0)';
+            });
+        });
+    </script>
+</body></html>

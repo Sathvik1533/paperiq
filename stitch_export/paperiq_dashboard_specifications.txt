@@ -1,0 +1,12 @@
+# PaperIQ Dashboard PRD
+- **User**: Sathvik (First Name)
+- **Semester**: Semester 6
+- **Subjects**: 6 subjects total, 2 needing immediate attention.
+- **Subjects List**: Data Structures, DBMS, Operating Systems, Computer Networks, Python Programming, Software Engineering.
+- **Key Features**: 
+    - Welcome header with personalized greeting.
+    - Subject cards with priority bars and coverage metrics.
+    - Recent analysis snapshot sidebar.
+    - Global "Run New Analysis" CTA.
+    - High-priority alerts for subjects with >85% priority score.
+- **Mood**: Professional, Intelligent, High-Trust, Encouraging.

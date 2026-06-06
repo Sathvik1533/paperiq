@@ -19,6 +19,9 @@ requests==2.32.3
 # Document processing
 pymupdf==1.24.14
 python-docx==1.1.2
+pypdf==5.1.0
+pytesseract==0.3.13
+Pillow==11.0.0
 
 # Archive extraction
 patool==3.1.0

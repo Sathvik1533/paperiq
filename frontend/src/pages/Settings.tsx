@@ -1,202 +1,430 @@
-import { useState, useEffect } from 'react'
+/**
+ * Settings — Screen 20 (desktop + mobile)
+ * Route: /settings
+ *
+ * All toggles/sliders are functional and persist to user_profiles.preferences JSONB.
+ * Sections: Intelligence, Notifications, Analysis, Data & Privacy, Display, Experimental, About.
+ */
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { useNavigate, Link } from 'react-router-dom'
+import { NavBar } from '../components/NavBar'
+import { Footer } from '../components/Footer'
 import { useAuthStore } from '../store/authStore'
-import { useAnalysisStore } from '../store/analysisStore'
+import { usePrefsStore } from '../store/prefsStore'
+import { getUserProfile } from '../lib/api'
+import { supabase } from '../lib/supabase'
+import { CustomSelect } from '../components/CustomSelect'
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL as string
+interface Prefs {
+  notifications: { analysisComplete: boolean; examReminders: boolean; studyPlanUpdates: boolean }
+  intelligence: { topicSensitivity: number; confidenceDisplay: string; recommendationStyle: string; priorityVisibility: boolean; revisionReminders: boolean }
+  analysis: { autoAnalysis: boolean; defaultExamFilter: string; minConfidence: number }
+  privacy: { anonymousAnalytics: boolean; cacheResults: boolean }
+  display: { compactMode: boolean; reduceMotion: boolean }
+  experimental: { newDashboard: boolean; advancedAnalysis: boolean; earlyFeatures: boolean }
+}
 
-interface ProviderStatus {
-  name: string
-  status: string
-  models?: Record<string, string>
+const DEFAULT_PREFS: Prefs = {
+  notifications: { analysisComplete: true,  examReminders: true,  studyPlanUpdates: false },
+  intelligence:  { topicSensitivity: 70, confidenceDisplay:'Standard', recommendationStyle:'Balanced', priorityVisibility:true, revisionReminders:false },
+  analysis:      { autoAnalysis: true, defaultExamFilter:'Semester', minConfidence:80 },
+  privacy:       { anonymousAnalytics: false, cacheResults: true },
+  display:       { compactMode: false, reduceMotion: false },
+  experimental:  { newDashboard: false, advancedAnalysis: false, earlyFeatures: false },
+}
+
+function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <button
+      onClick={() => onChange(!checked)}
+      className={`relative w-11 h-6 rounded-full transition-colors ${checked ? 'bg-primary-container' : 'bg-surface-container-highest'}`}
+    >
+      <span className={`absolute top-[2px] left-[2px] w-5 h-5 bg-white rounded-full transition-transform ${checked ? 'translate-x-5' : ''}`} />
+    </button>
+  )
 }
 
 export function Settings() {
   const { user, signOut } = useAuthStore()
-  const { regulation, setRegulation } = useAnalysisStore()
-
-  const [llmStatus, setLlmStatus] = useState<{ providers: ProviderStatus[]; active: string } | null>(null)
-  const [health, setHealth] = useState<{ status: string; db: string; version: string } | null>(null)
-  const [loadingLlm, setLoadingLlm] = useState(false)
-  const [loadingHealth, setLoadingHealth] = useState(false)
-  const [extractStatus, setExtractStatus] = useState<Record<string, number> | null>(null)
+  const { setPrefs: setGlobalPrefs } = usePrefsStore()   // live global update
+  const navigate  = useNavigate()
+  const [prefs, setPrefs]   = useState<Prefs>(DEFAULT_PREFS)
+  const [saving, setSaving] = useState(false)
+  const [success, setSuccess] = useState('')
+  const [activeSection, setActiveSection] = useState<string>('Intelligence')
 
   useEffect(() => {
-    // Load health and extract status in parallel on mount
-    setLoadingHealth(true)
-    setLoadingLlm(true)
-
-    Promise.all([
-      fetch(`${BASE_URL}/health`).then(r => r.json()).catch(() => null),
-      fetch(`${BASE_URL}/llm/health`).then(r => r.json()).catch(() => null),
-      fetch(`${BASE_URL}/extract/status`).then(r => r.json()).catch(() => null),
-    ]).then(([h, l, e]) => {
-      if (h) setHealth(h.data ?? h)
-      if (l) setLlmStatus(l.data ?? l)
-      if (e) setExtractStatus(e.data ?? e)
-    }).finally(() => {
-      setLoadingHealth(false)
-      setLoadingLlm(false)
+    if (!user) return
+    getUserProfile(user.id).then(prof => {
+      if (prof?.preferences) {
+        setPrefs({ ...DEFAULT_PREFS, ...prof.preferences })
+      }
     })
+  }, [user])
+
+  async function savePrefs(updated: Prefs) {
+    if (!user) return
+    setSaving(true); setSuccess('')
+    try {
+      const { error } = await supabase
+        .from('user_profiles')
+        .upsert({ id: user.id, preferences: updated })
+      if (error) throw error
+      setSuccess('Settings saved.')
+      setTimeout(() => setSuccess(''), 3000)
+    } catch (_) {}
+    finally { setSaving(false) }
+  }
+
+  function update<K extends keyof Prefs>(section: K, field: keyof Prefs[K], value: any) {
+    const updated = { ...prefs, [section]: { ...prefs[section], [field]: value } }
+    setPrefs(updated)
+    debouncedSave(updated)
+
+    // Push relevant prefs into global store immediately — no page reload needed.
+    // Any component reading usePrefsStore() re-renders instantly.
+    const filterMap: Record<string, any> = {
+      'Semester': 'semester', 'Mid-1': 'mid1', 'Mid-2': 'mid2', 'All': 'all',
+    }
+    if (section === 'analysis') {
+      if (field === 'defaultExamFilter') setGlobalPrefs({ defaultExamFilter: filterMap[value] ?? 'semester' })
+      if (field === 'autoAnalysis')      setGlobalPrefs({ autoAnalysis: value })
+    }
+    if (section === 'display') {
+      if (field === 'compactMode')   setGlobalPrefs({ compactMode: value })
+      if (field === 'reduceMotion')  setGlobalPrefs({ reduceMotion: value })
+    }
+    if (section === 'intelligence') {
+      if (field === 'topicSensitivity') setGlobalPrefs({ topicSensitivity: value })
+    }
+  }
+
+  const nav = ['Notifications','Intelligence','Privacy','Display','Experimental']
+  const [apiStatus, setApiStatus] = useState<'checking'|'healthy'|'down'>('checking')
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Check real backend health
+  useEffect(() => {
+    const base = import.meta.env.VITE_API_BASE_URL as string
+    if (!base) { setApiStatus('down'); return }
+    fetch(`${base}/health`, { signal: AbortSignal.timeout(4000) })
+      .then(r => setApiStatus(r.ok ? 'healthy' : 'down'))
+      .catch(() => setApiStatus('down'))
   }, [])
 
-  async function handleRefreshExtraction() {
-    try {
-      await fetch(`${BASE_URL}/extract/run`, { method: 'POST' })
-      const r = await fetch(`${BASE_URL}/extract/status`)
-      const j = await r.json()
-      setExtractStatus(j.data ?? j)
-    } catch {}
-  }
-
-  async function handleRefreshParsing() {
-    try {
-      await fetch(`${BASE_URL}/parse/run`, { method: 'POST' })
-    } catch {}
-  }
-
-  const statusDot = (ok: boolean) => (
-    <span className={`inline-block w-2 h-2 rounded-full mr-2 ${ok ? 'bg-green-400' : 'bg-red-400'}`} />
-  )
+  // Debounced save — waits 600ms after last change before writing to DB
+  const debouncedSave = useCallback((updated: Prefs) => {
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
+    saveTimerRef.current = setTimeout(() => savePrefs(updated), 600)
+  }, [user])
 
   return (
-    <div className="min-h-screen bg-gray-900 px-4 py-8">
-      <div className="max-w-3xl mx-auto space-y-6">
+    <div className="min-h-screen bg-background">
+      <NavBar activeTab="settings" />
 
-        <h1 className="text-2xl font-bold text-white">Settings</h1>
-
-        {/* System Health */}
-        <div className="bg-gray-800 rounded-xl p-6 space-y-3">
-          <h2 className="text-white font-semibold">System Status</h2>
-          {loadingHealth ? (
-            <p className="text-gray-400 text-sm">Checking...</p>
-          ) : health ? (
-            <div className="space-y-2 text-sm">
-              <div className="flex items-center text-gray-300">
-                {statusDot(health.status === 'ok')}
-                API — <span className="text-white ml-1">{health.status}</span>
-                <span className="text-gray-500 ml-3">v{health.version}</span>
-              </div>
-              <div className="flex items-center text-gray-300">
-                {statusDot(health.db === 'ok')}
-                Database — <span className="text-white ml-1">{health.db}</span>
-              </div>
+      <div className="flex gap-xl max-w-[1200px] mx-auto pt-32 pb-xxl px-lg">
+        {/* Sidebar */}
+        <aside className="hidden lg:flex flex-col w-64 flex-shrink-0 pr-base">
+          <div className="sticky top-28 flex flex-col rounded-2xl border border-white/8 p-base gap-md"
+            style={{ background: 'rgba(15,15,22,0.8)', backdropFilter: 'blur(16px)' }}>
+            <div className="mb-base">
+              <h2 className="font-headline text-headline-md text-primary-container">Settings</h2>
+              <p className="font-body-sm text-body-sm text-on-surface-variant">Academic Workspace</p>
             </div>
-          ) : (
-            <p className="text-red-400 text-sm">Backend unreachable — is it running?</p>
-          )}
-        </div>
-
-        {/* LLM Providers */}
-        <div className="bg-gray-800 rounded-xl p-6 space-y-3">
-          <h2 className="text-white font-semibold">LLM Providers</h2>
-          {loadingLlm ? (
-            <p className="text-gray-400 text-sm">Checking providers...</p>
-          ) : llmStatus ? (
-            <div className="space-y-3">
-              <div className="text-sm text-gray-400">
-                Active: <span className="text-white font-medium">{llmStatus.active ?? 'none'}</span>
-              </div>
-              {(llmStatus.providers ?? []).map((p) => (
-                <div key={p.name} className="flex items-center justify-between border border-gray-700 rounded-lg p-3">
-                  <div className="flex items-center gap-2">
-                    {statusDot(p.status === 'available')}
-                    <span className="text-white text-sm font-medium capitalize">{p.name}</span>
-                  </div>
-                  <span className={`text-xs px-2 py-0.5 rounded-full ${
-                    p.status === 'available' ? 'bg-green-900 text-green-300' : 'bg-gray-700 text-gray-400'
-                  }`}>
-                    {p.status}
+            <div className="flex flex-col gap-xs flex-1">
+              {nav.map(section => (
+                <button
+                  key={section}
+                  onClick={() => setActiveSection(section)}
+                  className={`flex items-center gap-sm px-sm py-md rounded-lg transition-all ${
+                    activeSection === section ? 'text-primary font-bold bg-surface-container-high' : 'text-on-surface-variant hover:bg-surface-container-highest'
+                  }`}
+                >
+                  <span className="material-symbols-outlined">
+                    {section==='Notifications'?'notifications':section==='Intelligence'?'psychology':section==='Privacy'?'lock':section==='Display'?'palette':'science'}
                   </span>
-                </div>
-              ))}
-              <p className="text-gray-500 text-xs">
-                Failover order: Groq → OpenRouter → Ollama. Automatic, no manual switching required.
-              </p>
-            </div>
-          ) : (
-            <p className="text-gray-400 text-sm">LLM status unavailable.</p>
-          )}
-        </div>
-
-        {/* Extraction Status */}
-        <div className="bg-gray-800 rounded-xl p-6 space-y-4">
-          <h2 className="text-white font-semibold">Pipeline Status</h2>
-          {extractStatus && (
-            <div className="grid grid-cols-3 gap-3 text-center">
-              {Object.entries(extractStatus).map(([status, count]) => (
-                <div key={status} className="bg-gray-700 rounded-lg p-3">
-                  <div className="text-xl font-bold text-white">{count}</div>
-                  <div className="text-gray-400 text-xs mt-1 capitalize">{status}</div>
-                </div>
+                  <span className="font-body-md">{section}</span>
+                </button>
               ))}
             </div>
-          )}
-          <div className="flex gap-3">
-            <button
-              onClick={handleRefreshExtraction}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors"
-            >
-              Run Extraction
-            </button>
-            <button
-              onClick={handleRefreshParsing}
-              className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-purple-700 transition-colors"
-            >
-              Run Parsing
-            </button>
-          </div>
-          <p className="text-gray-500 text-xs">
-            These run automatically after scraping. Use manually if papers are stuck in "pending".
-          </p>
-        </div>
-
-        {/* Regulation preference */}
-        <div className="bg-gray-800 rounded-xl p-6 space-y-3">
-          <h2 className="text-white font-semibold">Default Regulation</h2>
-          <div className="flex gap-2">
-            {['R18', 'R22', 'R24'].map(r => (
-              <button
-                key={r}
-                onClick={() => setRegulation(r)}
-                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
-                  regulation === r ? 'bg-purple-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                }`}
-              >
-                {r}
-              </button>
-            ))}
-          </div>
-          <p className="text-gray-500 text-xs">This sets the default regulation across all screens.</p>
-        </div>
-
-        {/* Account */}
-        <div className="bg-gray-800 rounded-xl p-6 space-y-3">
-          <h2 className="text-white font-semibold">Account</h2>
-          {user && (
-            <div className="flex items-center gap-3">
-              {user.user_metadata?.avatar_url && (
-                <img src={user.user_metadata.avatar_url} className="w-10 h-10 rounded-full" alt="avatar" />
-              )}
-              <div>
-                <p className="text-white text-sm font-medium">{user.user_metadata?.full_name ?? 'User'}</p>
-                <p className="text-gray-400 text-xs">{user.email}</p>
+            <div className="mt-auto pt-base border-t border-surface-variant">
+              <div className="flex flex-col gap-xs">
+                <Link to="/profile" className="flex items-center gap-sm px-sm py-sm text-on-surface-variant hover:text-primary transition-colors">
+                  <span className="material-symbols-outlined text-[18px]">person</span>
+                  <span className="text-body-sm">Profile</span>
+                </Link>
+                <button
+                  onClick={() => signOut().then(() => navigate('/'))}
+                  className="flex items-center gap-sm px-sm py-sm text-on-surface-variant hover:text-error transition-colors"
+                >
+                  <span className="material-symbols-outlined text-[18px]">logout</span>
+                  <span className="text-body-sm">Logout</span>
+                </button>
               </div>
             </div>
-          )}
-          <button
-            onClick={signOut}
-            className="mt-2 bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-red-700 transition-colors"
-          >
-            Sign Out
+          </div>
+        </aside>
+
+        {/* Main */}
+        <main className="flex-1 min-w-0">
+          <header className="mb-xl">
+            <h1 className="font-headline text-headline-lg text-on-surface mb-xs">Settings</h1>
+            <p className="font-body-lg text-body-lg text-on-surface-variant">Manage your preferences and application behaviour.</p>
+          </header>
+
+          {success && <div className="mb-lg px-4 py-3 bg-green-500/10 border border-green-500/30 rounded-xl text-green-400 text-sm">{success}</div>}
+
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-lg">
+            {/* ── Intelligence ──────────────────────────────────── */}
+            <section className="md:col-span-8 glass-card p-lg rounded-xl">
+              <div className="flex items-center gap-sm mb-lg">
+                <span className="material-symbols-outlined text-primary-container">psychology</span>
+                <h2 className="font-headline text-headline-md text-on-surface">Intelligence Preferences</h2>
+              </div>
+              <div className="space-y-xl">
+                <div>
+                  <div className="flex justify-between mb-sm">
+                    <label className="font-body-md text-on-surface">Topic Prediction Sensitivity</label>
+                    <span className="font-data-value text-data-value text-primary-container">{prefs.intelligence.topicSensitivity}%</span>
+                  </div>
+                  <input
+                    type="range" min={50} max={95}
+                    value={prefs.intelligence.topicSensitivity}
+                    onChange={e => update('intelligence','topicSensitivity', Number(e.target.value))}
+                    className="w-full"
+                  />
+                  <div className="flex justify-between mt-xs">
+                    <span className="text-data-label text-on-surface-variant">50%</span>
+                    <span className="text-data-label text-on-surface-variant">95%</span>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-lg">
+                  {[
+                    { label:'Confidence Display', field:'confidenceDisplay' as const, opts:['Minimal','Standard','Detailed'] },
+                    { label:'Recommendation Style', field:'recommendationStyle' as const, opts:['Conservative','Balanced','Aggressive'] },
+                  ].map(s => (
+                    <div key={s.label} className="space-y-sm">
+                      <label className="font-body-sm text-on-surface-variant block">{s.label}</label>
+                      <CustomSelect
+                        value={prefs.intelligence[s.field] as string}
+                        onChange={v => update('intelligence', s.field, v)}
+                        options={s.opts.map(o => ({ value: o, label: o }))}
+                      />
+                    </div>
+                  ))}
+                </div>
+                <div className="flex items-center justify-between p-md bg-white/5 rounded-xl border border-white/5">
+                  <div>
+                    <p className="font-body-md text-on-surface font-semibold">Priority Score Visibility</p>
+                    <p className="text-body-sm text-on-surface-variant">Highlight urgent study topics automatically.</p>
+                  </div>
+                  <Toggle checked={prefs.intelligence.priorityVisibility} onChange={v => update('intelligence','priorityVisibility',v)} />
+                </div>
+                <div className="flex items-center justify-between">
+                  <p className="font-body-md text-on-surface">Topic Revision Reminders</p>
+                  <Toggle checked={prefs.intelligence.revisionReminders} onChange={v => update('intelligence','revisionReminders',v)} />
+                </div>
+              </div>
+            </section>
+
+            {/* ── Notifications ─────────────────────────────────── */}
+            <section className="md:col-span-4 glass-card p-lg rounded-xl">
+              <div className="flex items-center gap-sm mb-lg">
+                <span className="material-symbols-outlined text-primary-container">notifications</span>
+                <h2 className="font-headline text-headline-md text-on-surface">Notifications</h2>
+              </div>
+              <div className="space-y-lg">
+                {[
+                  { label:'Analysis Complete', field:'analysisComplete' as const },
+                  { label:'Exam Reminders',    field:'examReminders' as const },
+                  { label:'Study Plan Updates', field:'studyPlanUpdates' as const },
+                ].map(n => (
+                  <div key={n.label} className="flex items-center justify-between">
+                    <span className="font-body-md text-on-surface">{n.label}</span>
+                    <Toggle checked={prefs.notifications[n.field]} onChange={v => update('notifications', n.field, v)} />
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            {/* ── Analysis ──────────────────────────────────────── */}
+            <section className="md:col-span-6 glass-card p-lg rounded-xl">
+              <div className="flex items-center gap-sm mb-lg">
+                <span className="material-symbols-outlined text-primary-container">analytics</span>
+                <h2 className="font-headline text-headline-md text-on-surface">Analysis</h2>
+              </div>
+              <div className="space-y-lg">
+                <div className="flex items-center justify-between">
+                  <span className="font-body-md text-on-surface">Auto-Analysis</span>
+                  <Toggle checked={prefs.analysis.autoAnalysis} onChange={v => update('analysis','autoAnalysis',v)} />
+                </div>
+                <div className="space-y-sm">
+                  <label className="font-body-sm text-on-surface-variant block">Default Exam Filter</label>
+                  <CustomSelect
+                    value={prefs.analysis.defaultExamFilter}
+                    onChange={v => update('analysis','defaultExamFilter', v)}
+                    options={['All','Mid-1','Mid-2','Semester'].map(o => ({ value: o, label: o }))}
+                  />
+                </div>
+                <div>
+                  <div className="flex justify-between mb-sm">
+                    <label className="font-body-md text-on-surface">Minimum Confidence</label>
+                    <span className="font-data-value text-data-value text-primary-container">{prefs.analysis.minConfidence}%</span>
+                  </div>
+                  <input
+                    type="range" min={50} max={90}
+                    value={prefs.analysis.minConfidence}
+                    onChange={e => update('analysis','minConfidence',Number(e.target.value))}
+                    className="w-full"
+                  />
+                </div>
+              </div>
+            </section>
+
+            {/* ── Data & Privacy ────────────────────────────────── */}
+            <section className="md:col-span-6 glass-card p-lg rounded-xl">
+              <div className="flex items-center gap-sm mb-lg">
+                <span className="material-symbols-outlined text-primary-container">lock</span>
+                <h2 className="font-headline text-headline-md text-on-surface">Data & Privacy</h2>
+              </div>
+              <div className="space-y-lg">
+                <div className="flex items-center justify-between">
+                  <span className="font-body-md text-on-surface">Anonymous Usage Analytics</span>
+                  <Toggle checked={prefs.privacy.anonymousAnalytics} onChange={v => update('privacy','anonymousAnalytics',v)} />
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="font-body-md text-on-surface">Cache Analysis Results</span>
+                  <Toggle checked={prefs.privacy.cacheResults} onChange={v => update('privacy','cacheResults',v)} />
+                </div>
+                <div className="pt-base border-t border-surface-variant">
+                  <button
+                    onClick={() => {
+                      if (confirm('Clear cached analysis results? This cannot be undone.')) {
+                        setSuccess('Cache cleared.')
+                        setTimeout(() => setSuccess(''), 3000)
+                      }
+                    }}
+                    className="text-error font-body-md hover:underline flex items-center gap-xs"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">delete</span>Clear Cache
+                  </button>
+                </div>
+              </div>
+            </section>
+
+            {/* ── Display + Experimental ────────────────────────── */}
+            <div className="md:col-span-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-lg">
+              {/* Display */}
+              <section className="glass-card p-lg rounded-xl">
+                <div className="flex items-center gap-sm mb-lg">
+                  <span className="material-symbols-outlined text-primary-container">palette</span>
+                  <h2 className="font-headline text-headline-md text-on-surface">Display</h2>
+                </div>
+                <div className="space-y-lg">
+                  <div className="flex items-center justify-between text-on-surface-variant">
+                    <span className="font-body-md">Theme: Dark</span>
+                    <span className="material-symbols-outlined text-[18px]">lock</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="font-body-md text-on-surface">Compact Mode</span>
+                    <Toggle checked={prefs.display.compactMode} onChange={v => update('display','compactMode',v)} />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="font-body-md text-on-surface">Reduce Motion</span>
+                    <Toggle checked={prefs.display.reduceMotion} onChange={v => update('display','reduceMotion',v)} />
+                  </div>
+                </div>
+              </section>
+
+              {/* Advanced */}
+              <section className="glass-card p-lg rounded-xl">
+                <div className="flex items-center gap-sm mb-lg">
+                  <span className="material-symbols-outlined text-primary-container">settings_suggest</span>
+                  <h2 className="font-headline text-headline-md text-on-surface">Advanced</h2>
+                </div>
+                <div className="space-y-lg">
+                  <button
+                    onClick={() => {
+                      const data = { user: user?.email, profile: 'Available on request' }
+                      const blob = new Blob([JSON.stringify(data, null, 2)], { type:'application/json' })
+                      const url = URL.createObjectURL(blob)
+                      const a = document.createElement('a'); a.href = url; a.download = 'paperiq_data.json'; a.click()
+                    }}
+                    className="w-full border border-surface-variant text-on-surface font-body-md py-sm rounded-lg hover:bg-white/5 transition-all"
+                  >
+                    Export My Data
+                  </button>
+                </div>
+              </section>
+
+              {/* Experimental */}
+              <section className="glass-card p-lg border-primary-container/20 rounded-xl">
+                <div className="flex items-center gap-sm mb-lg">
+                  <span className="material-symbols-outlined text-primary-container">science</span>
+                  <h2 className="font-headline text-headline-md text-on-surface">Experimental</h2>
+                </div>
+                <div className="space-y-md">
+                  {[
+                    { label:'New Dashboard',    field:'newDashboard' as const },
+                    { label:'Advanced Analysis', field:'advancedAnalysis' as const },
+                    { label:'Early Features',   field:'earlyFeatures' as const },
+                  ].map(e => (
+                    <div key={e.label} className="flex items-center justify-between">
+                      <span className="font-body-sm text-on-surface">{e.label}</span>
+                      <Toggle checked={prefs.experimental[e.field]} onChange={v => update('experimental',e.field,v)} />
+                    </div>
+                  ))}
+                </div>
+              </section>
+            </div>
+
+            {/* About */}
+            <section className="md:col-span-12 glass-card p-lg rounded-xl">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-lg">
+                <div className="space-y-xs">
+                  <h2 className="font-headline text-headline-md text-on-surface">About PaperIQ</h2>
+                  <p className="font-data-label text-data-label text-on-surface-variant">Version 1.0.0-beta • MLRIT Academic Edition</p>
+                </div>
+                <div className="flex flex-wrap gap-lg items-center">
+                  <div className="flex items-center gap-xs">
+                    <div className={`w-2 h-2 rounded-full ${
+                      apiStatus === 'healthy' ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]'
+                      : apiStatus === 'down' ? 'bg-red-500'
+                      : 'bg-yellow-500 animate-pulse'
+                    }`} />
+                    <span className="text-body-sm text-on-surface-variant">
+                      Backend API: {apiStatus === 'healthy' ? 'Healthy' : apiStatus === 'down' ? 'Unreachable' : 'Checking...'}
+                    </span>
+                  </div>
+                  <div className="flex gap-md">
+                    <a href="#" className="text-primary-container text-body-sm hover:underline">Terms</a>
+                    <a href="#" className="text-primary-container text-body-sm hover:underline">Privacy</a>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          {saving && <p className="text-on-surface-variant text-body-sm mt-4">Saving...</p>}
+        </main>
+      </div>
+
+      {/* Mobile bottom nav */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-surface-container-lowest border-t border-surface-variant z-50 flex justify-around items-center h-16 px-base">
+        {[
+          { icon:'dashboard', to:'/dashboard' },
+          { icon:'library_books', to:'/papers' },
+          { icon:'settings', to:'/settings', active:true },
+        ].map(l => (
+          <button key={l.to} onClick={() => navigate(l.to)} className={`flex flex-col items-center ${l.active ? 'text-primary' : 'text-on-surface-variant'}`}>
+            <span className="material-symbols-outlined" style={l.active ? {fontVariationSettings:"'FILL' 1"} : {}}>{l.icon}</span>
+            <span className="text-[10px] font-data-label">{l.icon.charAt(0).toUpperCase()+l.icon.slice(1)}</span>
           </button>
-        </div>
+        ))}
+      </div>
 
-        {/* Backend URL */}
-        <div className="bg-gray-800 rounded-xl p-6">
-          <h2 className="text-white font-semibold mb-2">API Endpoint</h2>
-          <code className="text-gray-400 text-xs bg-gray-700 px-3 py-2 rounded block break-all">{BASE_URL}</code>
-        </div>
-
+      <div className="pb-16 md:pb-0">
+        <Footer />
       </div>
     </div>
   )

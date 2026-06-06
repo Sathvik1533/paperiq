@@ -63,6 +63,31 @@ _job_store: dict[str, dict] = {}
 # Endpoints
 # ---------------------------------------------------------------------------
 
+@router.post("/analysis/generate")
+async def generate_analysis(req: RunAnalysisRequest):
+    """
+    Beta Student Experience: Synchronous analysis generation.
+    Returns complete report immediately (no background job).
+    """
+    from app.analysis.report_builder import ReportBuilder
+    
+    try:
+        builder = ReportBuilder()
+        report = builder.build(
+            subject_id=req.subject_id,
+            regulation=req.regulation,
+            branch_id=req.branch_id,
+            year_from=req.year_from,
+            year_to=req.year_to,
+            exam_category=req.exam_category,
+            exam_attempt=req.exam_attempt,
+        )
+        return {"success": True, "data": report}
+    except Exception as e:
+        log.error(f"Analysis generation failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.post("/analysis/run", response_model=RunAnalysisResponse, status_code=202)
 async def run_analysis(req: RunAnalysisRequest, background_tasks: BackgroundTasks):
     """

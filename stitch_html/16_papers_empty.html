@@ -1,0 +1,303 @@
+<!DOCTYPE html><html class="dark" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Screen 16 — Papers Browser: Empty State</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Geist:wght@100;300;400;500;700;900&amp;family=JetBrains+Mono:wght@100;300;400;500;700;800&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-error-container": "#ffdad6",
+                    "surface-container-high": "#282a2b",
+                    "on-secondary": "#313030",
+                    "error": "#ffb4ab",
+                    "surface-variant": "#333535",
+                    "surface": "#121414",
+                    "surface-container": "#1e2020",
+                    "on-tertiary-fixed": "#1b1b22",
+                    "on-background": "#e2e2e2",
+                    "secondary": "#c8c6c5",
+                    "on-primary-fixed": "#341100",
+                    "on-primary-container": "#582200",
+                    "on-tertiary-container": "#323139",
+                    "error-container": "#93000a",
+                    "surface-container-highest": "#333535",
+                    "background": "#121414",
+                    "on-error": "#690005",
+                    "inverse-surface": "#e2e2e2",
+                    "secondary-fixed-dim": "#c8c6c5",
+                    "on-primary-fixed-variant": "#783200",
+                    "surface-container-lowest": "#0c0f0f",
+                    "outline-variant": "#584237",
+                    "secondary-container": "#4a4949",
+                    "on-primary": "#552100",
+                    "tertiary-fixed-dim": "#c8c5cf",
+                    "surface-tint": "#ffb690",
+                    "tertiary": "#c8c5cf",
+                    "on-tertiary-fixed-variant": "#47464e",
+                    "on-secondary-container": "#bab8b7",
+                    "primary-fixed": "#ffdbca",
+                    "surface-dim": "#121414",
+                    "primary-fixed-dim": "#ffb690",
+                    "tertiary-container": "#9b99a2",
+                    "on-surface": "#e2e2e2",
+                    "primary-container": "#f97316",
+                    "inverse-primary": "#9d4300",
+                    "outline": "#a78b7d",
+                    "inverse-on-surface": "#2f3131",
+                    "on-tertiary": "#303037",
+                    "primary": "#ffb690",
+                    "on-secondary-fixed-variant": "#474646",
+                    "secondary-fixed": "#e5e2e1",
+                    "surface-container-low": "#1a1c1c",
+                    "on-surface-variant": "#e0c0b1",
+                    "tertiary-fixed": "#e4e1eb",
+                    "surface-bright": "#37393a",
+                    "on-secondary-fixed": "#1c1b1b"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "huge": "64px",
+                    "xxl": "48px",
+                    "base": "16px",
+                    "xl": "32px",
+                    "sm": "8px",
+                    "xs": "4px",
+                    "section": "96px",
+                    "md": "12px",
+                    "lg": "24px"
+            },
+            "fontFamily": {
+                    "body-sm": ["Geist"],
+                    "headline-md": ["Space Grotesk"],
+                    "display-hero": ["Space Grotesk"],
+                    "body-lg": ["Geist"],
+                    "headline-lg": ["Space Grotesk"],
+                    "display-hero-mobile": ["Space Grotesk"],
+                    "data-value": ["JetBrains Mono"],
+                    "data-label": ["JetBrains Mono"],
+                    "body-md": ["Geist"]
+            },
+            "fontSize": {
+                    "body-sm": ["13px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                    "headline-md": ["24px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                    "display-hero": ["56px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "headline-lg": ["32px", {"lineHeight": "1.3", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "display-hero-mobile": ["36px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                    "data-value": ["14px", {"lineHeight": "1.4", "fontWeight": "500"}],
+                    "data-label": ["12px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                    "body-md": ["15px", {"lineHeight": "1.5", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #07070d;
+            color: #e2e2e2;
+            -webkit-font-smoothing: antialiased;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        .glow-button {
+            transition: all 0.3s ease;
+        }
+        .glow-button:hover {
+            box-shadow: 0 0 20px rgba(249, 115, 22, 0.4);
+            transform: translateY(-1px);
+        }
+        .tonal-layer {
+            background: #0f0f0f;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .empty-state-bg {
+            background-image: url('https://lh3.googleusercontent.com/aida/AP1WRLvI1tB4m9LkGK9-OCAf_bG4Qh4MSJKm6TUDWEpVzRAsBfCurW8bgvaZp83Hf7VsuDmCwpuSais6mgH2BrCzO08eOawOwUBlH2pvqMvcoVRfHGgilQAE7LNXkbq-wO89RnsCdlaQ33enXh9lAZF_z1bKpELrPrPAX1WWj76LnbzW2ZXmT2zMKj7cMh_Q7IAZgOoRTcdPclms38I_t2Gd_0S4drnf8KTNUrZnrVFcGdXRx28fJCXkJ_XJyQ');
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: contain;
+            opacity: 0.15;
+            filter: invert(1);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+<!-- TopNavBar -->
+<header class="bg-surface dark:bg-surface border-b border-outline-variant dark:border-outline-variant docked full-width top-0 z-50">
+<div class="flex justify-between items-center px-lg py-sm w-full max-w-[1200px] mx-auto">
+<div class="flex items-center gap-xl">
+<span class="font-headline-md text-headline-md font-bold text-primary dark:text-primary">PaperIQ</span>
+<nav class="hidden md:flex items-center gap-lg">
+<a class="text-on-surface-variant font-medium hover:text-primary transition-colors duration-200 font-body-md text-body-md" href="#">Dashboard</a>
+<a class="text-on-surface-variant font-medium hover:text-primary transition-colors duration-200 font-body-md text-body-md" href="#">Analysis</a>
+<a class="text-primary font-bold border-b-2 border-primary pb-1 font-body-md text-body-md" href="#">Papers</a>
+</nav>
+</div>
+<div class="flex items-center gap-base">
+<div class="hidden md:flex items-center bg-surface-container-low rounded-lg px-md py-xs border border-outline-variant">
+<span class="material-symbols-outlined text-outline mr-sm">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-body-sm font-body-sm text-on-surface w-48" placeholder="Search papers..." type="text">
+</div>
+<button class="hidden md:block bg-primary-container text-on-primary-fixed font-bold px-lg py-xs rounded-lg glow-button active:scale-95 transition-transform">
+                    Run New Analysis
+                </button>
+<div class="flex items-center gap-sm">
+<button class="p-xs text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">help_outline</span>
+</button>
+<img alt="User Profile" class="w-8 h-8 rounded-full border border-outline-variant" data-alt="A professional headshot of a young academic researcher in a minimalist studio setting. The lighting is soft and directional, highlighting the contours of the face against a deep charcoal background. The individual is wearing a modern, dark navy turtleneck, conveying a sense of focused intellectualism and digital craftsmanship." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAXlU2iaXWVNaB1_aODhBRijFdyGv2AG5qpsiSKmENpkZPFxHLRiAbl-EC2maB9zSzXF6HegAS5DK1ugxNmDAfPCKp79nWYKIEU2Lp1V8uENsUFCF99TQ-oiFvueTP_Y4yAu6nFcFeS2HqKAuFfkIuJunAGYglcfqKgI2k8tT-rJnd90IcPsrFfJMQGZIec8b7cQ0Rirf748ToFJUr5jUhIl49AAaaEZGKZz_E1lT7pLTL8FBm-nnEaGxw-bQyn7HGpMUGKio8WrWg">
+</div>
+</div>
+</div>
+</header>
+<div class="flex flex-1 w-full max-w-[1200px] mx-auto relative">
+<!-- SideNavBar -->
+<aside class="hidden md:flex flex-col h-full p-base bg-surface-container dark:bg-surface-container border-r border-outline-variant docked left-0 h-full w-64">
+<div class="mb-huge">
+<div class="flex items-center gap-sm mb-xs">
+<div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary" style="font-variation-settings: 'FILL' 1;">description</span>
+</div>
+<span class="font-headline-md text-headline-md text-primary">PaperIQ</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant opacity-60 px-xs">Academic Intelligence</p>
+</div>
+<nav class="flex-1 flex flex-col gap-xs">
+<a class="flex items-center gap-md p-md text-on-surface-variant font-body-sm text-body-sm hover:bg-surface-bright transition-all active:translate-x-1" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="">Dashboard</span>
+</a>
+<a class="flex items-center gap-md p-md text-on-surface-variant font-body-sm text-body-sm hover:bg-surface-bright transition-all active:translate-x-1" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span class="">Analysis</span>
+</a>
+<a class="flex items-center gap-md p-md text-primary font-bold bg-surface-container-highest rounded-lg font-body-sm text-body-sm active:translate-x-1" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">description</span>
+<span class="">Papers</span>
+</a>
+<a class="flex items-center gap-md p-md text-on-surface-variant font-body-sm text-body-sm hover:bg-surface-bright transition-all active:translate-x-1" href="#">
+<span class="material-symbols-outlined">account_circle</span>
+<span class="">Profile</span>
+</a>
+</nav>
+<div class="mt-auto border-t border-outline-variant pt-base flex flex-col gap-xs">
+<button class="w-full bg-primary-container text-white py-md rounded-xl font-bold glow-button mb-base">
+                    Run New Analysis
+                </button>
+<a class="flex items-center gap-md p-md text-on-surface-variant font-body-sm text-body-sm hover:bg-surface-bright transition-all" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="">Settings</span>
+</a>
+<a class="flex items-center gap-md p-md text-on-surface-variant font-body-sm text-body-sm hover:bg-surface-bright transition-all" href="#">
+<span class="material-symbols-outlined">help_outline</span>
+<span class="">Help</span>
+</a>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="flex-1 flex flex-col items-center justify-center p-xl relative overflow-hidden">
+<!-- Asymmetric Glow Effect -->
+<div class="absolute -top-24 -right-24 w-96 h-96 bg-primary/5 rounded-full blur-[100px]"></div>
+<div class="absolute -bottom-24 -left-24 w-64 h-64 bg-primary/5 rounded-full blur-[80px]"></div>
+<!-- Centered Empty State -->
+<div class="relative z-10 text-center max-w-md w-full">
+<!-- Illustration Layer -->
+<div class="w-64 h-64 mx-auto mb-xl relative">
+<div class="empty-state-bg absolute inset-0"></div>
+</div>
+<h1 class="font-headline-md text-headline-md text-on-surface mb-base tracking-tight">
+                    No papers available yet
+                </h1>
+<p class="font-body-md text-body-md text-on-surface-variant mb-xxl leading-relaxed px-base" style="color: rgba(226, 226, 226, 0.6);">
+                    Upload papers or run your first analysis to start building your paper archive.
+                </p>
+<div class="flex flex-col gap-base items-center">
+<button class="bg-primary-container text-white px-huge py-md rounded-xl font-bold glow-button text-body-lg font-body-lg active:scale-95 transition-transform">
+                        Run First Analysis
+                    </button>
+<button class="text-on-surface-variant hover:text-primary transition-colors font-body-sm text-body-sm border-b border-transparent hover:border-primary">
+                        Manual Paper Upload
+                    </button>
+</div>
+</div>
+<!-- Background Decorative Element (Bento-like hint) -->
+<div class="absolute bottom-huge right-huge opacity-10 pointer-events-none">
+<div class="grid grid-cols-2 gap-base rotate-3 scale-110">
+<div class="w-32 h-40 border border-outline rounded-xl"></div>
+<div class="w-32 h-32 border border-outline rounded-xl mt-base"></div>
+<div class="w-32 h-24 border border-outline rounded-xl -mt-md"></div>
+<div class="w-32 h-48 border border-outline rounded-xl -mt-xl"></div>
+</div>
+</div>
+</main>
+</div>
+<!-- Footer -->
+<footer class="bg-surface-dim dark:bg-surface-dim border-t border-outline-variant full-width">
+<div class="flex flex-col md:flex-row justify-between items-center px-lg py-xl w-full max-w-[1200px] mx-auto">
+<div class="flex flex-col md:flex-row items-center gap-xl mb-base md:mb-0">
+<span class="font-headline-md text-headline-md text-on-surface">PaperIQ</span>
+<span class="font-data-label text-data-label text-outline">© 2026 PaperIQ</span>
+</div>
+<div class="flex flex-wrap justify-center gap-lg">
+<a class="font-data-label text-data-label text-outline hover:text-on-surface transition-colors opacity-80 hover:opacity-100" href="#">Academic Integrity</a>
+<a class="font-data-label text-data-label text-outline hover:text-on-surface transition-colors opacity-80 hover:opacity-100" href="#">Support Center</a>
+<a class="font-data-label text-data-label text-outline hover:text-on-surface transition-colors opacity-80 hover:opacity-100" href="#">Privacy Policy</a>
+<a class="font-data-label text-data-label text-outline hover:text-on-surface transition-colors opacity-80 hover:opacity-100" href="#">Terms of Service</a>
+</div>
+</div>
+</footer>
+<!-- Mobile Navigation (Suppressed per "Destination Rule" logic for clean first-state, but structured for scalability) -->
+<div class="md:hidden fixed bottom-0 left-0 right-0 bg-surface border-t border-outline-variant px-lg py-sm flex justify-around items-center z-50">
+<button class="flex flex-col items-center gap-xs text-on-surface-variant">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="text-[10px] font-medium">Dashboard</span>
+</button>
+<button class="flex flex-col items-center gap-xs text-on-surface-variant">
+<span class="material-symbols-outlined">analytics</span>
+<span class="text-[10px] font-medium">Analysis</span>
+</button>
+<button class="flex flex-col items-center gap-xs text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">description</span>
+<span class="text-[10px] font-bold">Papers</span>
+</button>
+<button class="flex flex-col items-center gap-xs text-on-surface-variant">
+<span class="material-symbols-outlined">account_circle</span>
+<span class="text-[10px] font-medium">Profile</span>
+</button>
+</div>
+<script>
+        // Micro-interaction for the illustration parallax
+        document.addEventListener('mousemove', (e) => {
+            const illustration = document.querySelector('.empty-state-bg');
+            if (!illustration) return;
+            
+            const x = (window.innerWidth / 2 - e.pageX) / 50;
+            const y = (window.innerHeight / 2 - e.pageY) / 50;
+            
+            illustration.style.transform = `translate(${x}px, ${y}px)`;
+        });
+
+        // Simple button active state handler
+        document.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('mousedown', () => btn.classList.add('scale-95'));
+            btn.addEventListener('mouseup', () => btn.classList.remove('scale-95'));
+            btn.addEventListener('mouseleave', () => btn.classList.remove('scale-95'));
+        });
+    </script>
+
+
+</body></html>

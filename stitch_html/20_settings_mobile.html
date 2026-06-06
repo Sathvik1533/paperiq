@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Geist:wght@100;300;400;500;600;700;800;900&amp;family=JetBrains+Mono:wght@100;300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        body {
+            background-color: #07070d;
+            color: #e2e2e2;
+            -webkit-font-smoothing: antialiased;
+        }
+        .glass-card {
+            background: rgba(15, 15, 15, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #f97316;
+        }
+        .toggle-checkbox:checked + .toggle-label .toggle-dot {
+            transform: translateX(100%);
+        }
+        /* Custom scrollbar for focus areas */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #333535;
+            border-radius: 10px;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "secondary-fixed-dim": "#c8c6c5",
+                      "surface-container-lowest": "#0c0f0f",
+                      "secondary-fixed": "#e5e2e1",
+                      "secondary": "#c8c6c5",
+                      "on-tertiary": "#303037",
+                      "on-tertiary-fixed-variant": "#47464e",
+                      "on-secondary-fixed": "#1c1b1b",
+                      "inverse-surface": "#e2e2e2",
+                      "surface-variant": "#333535",
+                      "surface-container-high": "#282a2b",
+                      "secondary-container": "#4a4949",
+                      "error-container": "#93000a",
+                      "surface-bright": "#37393a",
+                      "on-error-container": "#ffdad6",
+                      "primary-container": "#f97316",
+                      "on-primary-fixed-variant": "#783200",
+                      "tertiary": "#c8c5cf",
+                      "surface": "#121414",
+                      "on-surface-variant": "#e0c0b1",
+                      "surface-dim": "#121414",
+                      "primary": "#ffb690",
+                      "on-primary-container": "#582200",
+                      "primary-fixed-dim": "#ffb690",
+                      "tertiary-fixed": "#e4e1eb",
+                      "primary-fixed": "#ffdbca",
+                      "surface-tint": "#ffb690",
+                      "inverse-primary": "#9d4300",
+                      "surface-container": "#1e2020",
+                      "surface-container-highest": "#333535",
+                      "on-error": "#690005",
+                      "tertiary-container": "#9b99a2",
+                      "background": "#121414",
+                      "on-surface": "#e2e2e2",
+                      "on-secondary-fixed-variant": "#474646",
+                      "error": "#ffb4ab",
+                      "on-secondary": "#313030",
+                      "on-primary-fixed": "#341100",
+                      "on-tertiary-container": "#323139",
+                      "on-secondary-container": "#bab8b7",
+                      "tertiary-fixed-dim": "#c8c5cf",
+                      "surface-container-low": "#1a1c1c",
+                      "on-tertiary-fixed": "#1b1b22",
+                      "on-primary": "#552100",
+                      "on-background": "#e2e2e2",
+                      "outline-variant": "#584237",
+                      "inverse-on-surface": "#2f3131",
+                      "outline": "#a78b7d"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "xl": "32px",
+                      "lg": "24px",
+                      "xxl": "48px",
+                      "xs": "4px",
+                      "sm": "8px",
+                      "md": "12px",
+                      "huge": "64px",
+                      "section": "96px",
+                      "base": "16px"
+              },
+              "fontFamily": {
+                      "body-sm": ["Geist"],
+                      "body-lg": ["Geist"],
+                      "body-md": ["Geist"],
+                      "headline-lg": ["Space Grotesk"],
+                      "display-hero": ["Space Grotesk"],
+                      "headline-md": ["Space Grotesk"],
+                      "display-hero-mobile": ["Space Grotesk"],
+                      "data-value": ["JetBrains Mono"],
+                      "data-label": ["JetBrains Mono"]
+              },
+              "fontSize": {
+                      "body-sm": ["13px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                      "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                      "body-md": ["15px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                      "headline-lg": ["32px", {"lineHeight": "1.3", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                      "display-hero": ["56px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                      "headline-md": ["24px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                      "display-hero-mobile": ["36px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                      "data-value": ["14px", {"lineHeight": "1.4", "fontWeight": "500"}],
+                      "data-label": ["12px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "500"}]
+              }
+            },
+          },
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="flex flex-col min-h-screen">
+<!-- Top AppBar (Mobile Style) -->
+<header class="sticky top-0 z-50 glass-card border-b-0 px-lg h-16 flex items-center justify-between">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-primary font-bold">psychology</span>
+<h1 class="font-headline-md text-headline-md tracking-tight text-on-surface">Settings</h1>
+</div>
+<div class="flex items-center gap-base">
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer">search</span>
+<div class="w-8 h-8 rounded-full border border-outline-variant overflow-hidden">
+<img alt="User Profile" class="w-full h-full object-cover" data-alt="A professional high-resolution close-up portrait of a young academic with glasses in a minimalist modern library. The lighting is soft and directional, casting subtle shadows that emphasize depth. The background is a blur of dark wood and scholarly books, maintaining a deep-focus dark mode aesthetic with warm orange light accents." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBsQ1D4Bdvt3-1IF9S18mA6jZt36E9_yZsqlleHnFhnJzm8BNT5pvdHtGKtgI8ds0qHq28gODKIuYXUQoay3_QR4SIcqQixTh1UgP_PQa9TcoXLunelyaSox2xkQ1TfWk0X7pm9Z3ZfWUcg4cFBd9DV2Nq6BG0KB6ISWfBH8_qFXVo0JJVRZ4NO6eTQCNvTXP_4My46YHee1uEo202NoEMSsKOn5TCRFFAmuOt_1vxJzfhAHvCZ2N6mzwgmEjNMVvxWmOGV3KKG59g"/>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-grow px-base py-lg max-w-full overflow-x-hidden space-y-lg">
+<!-- Profile Quick Glance -->
+<section class="glass-card rounded-xl p-base flex items-center gap-md">
+<div class="p-sm bg-primary-container/20 rounded-lg">
+<span class="material-symbols-outlined text-primary">verified_user</span>
+</div>
+<div>
+<p class="font-headline-md text-body-lg font-bold text-on-surface">Academic Pro</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Active Workspace: Stanford AI Labs</p>
+</div>
+<button class="ml-auto p-xs">
+<span class="material-symbols-outlined text-on-surface-variant">chevron_right</span>
+</button>
+</section>
+<!-- Notifications Section -->
+<section class="space-y-sm">
+<div class="flex items-center gap-sm px-xs mb-md">
+<span class="material-symbols-outlined text-on-primary-fixed-variant text-body-md" style="font-variation-settings: 'FILL' 1;">notifications</span>
+<h2 class="font-data-label text-data-label uppercase tracking-widest text-on-surface-variant">Notifications</h2>
+</div>
+<div class="glass-card rounded-xl overflow-hidden divide-y divide-surface-variant">
+<div class="flex items-center justify-between p-base">
+<div>
+<p class="font-body-md text-body-md text-on-surface">Study Alerts</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Reminders for scheduled paper reviews</p>
+</div>
+<div class="relative inline-block w-10 align-middle select-none transition duration-200 ease-in">
+<input checked="" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer z-10 transition-transform duration-200 ease-in-out translate-x-0" id="study_alerts" name="study_alerts" type="checkbox"/>
+<label class="toggle-label block overflow-hidden h-6 rounded-full bg-surface-container-highest cursor-pointer transition-colors duration-200 ease-in-out" for="study_alerts"></label>
+</div>
+</div>
+<div class="flex items-center justify-between p-base">
+<div>
+<p class="font-body-md text-body-md text-on-surface">Citation Updates</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Notify when a tracked paper is cited</p>
+</div>
+<div class="relative inline-block w-10 align-middle select-none transition duration-200 ease-in">
+<input class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer z-10 transition-transform duration-200 ease-in-out translate-x-0" id="citation_updates" name="citation_updates" type="checkbox"/>
+<label class="toggle-label block overflow-hidden h-6 rounded-full bg-surface-container-highest cursor-pointer transition-colors duration-200 ease-in-out" for="citation_updates"></label>
+</div>
+</div>
+</div>
+</section>
+<!-- Intelligence Preferences Section -->
+<section class="space-y-sm">
+<div class="flex items-center gap-sm px-xs mb-md">
+<span class="material-symbols-outlined text-on-primary-fixed-variant text-body-md" style="font-variation-settings: 'FILL' 1;">psychology</span>
+<h2 class="font-data-label text-data-label uppercase tracking-widest text-on-surface-variant">Intelligence</h2>
+</div>
+<div class="glass-card rounded-xl overflow-hidden divide-y divide-surface-variant">
+<div class="flex items-center justify-between p-base">
+<div>
+<p class="font-body-md text-body-md text-on-surface">Auto-Summarization</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Generate abstracts for new PDF uploads</p>
+</div>
+<div class="relative inline-block w-10 align-middle select-none transition duration-200 ease-in">
+<input checked="" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer z-10 transition-transform duration-200 ease-in-out translate-x-0" id="auto_sum" name="auto_sum" type="checkbox"/>
+<label class="toggle-label block overflow-hidden h-6 rounded-full bg-surface-container-highest cursor-pointer transition-colors duration-200 ease-in-out" for="auto_sum"></label>
+</div>
+</div>
+<div class="flex items-center justify-between p-base">
+<div>
+<p class="font-body-md text-body-md text-on-surface">Contextual Search</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Use neural embeddings for library search</p>
+</div>
+<div class="relative inline-block w-10 align-middle select-none transition duration-200 ease-in">
+<input checked="" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer z-10 transition-transform duration-200 ease-in-out translate-x-0" id="neural_search" name="neural_search" type="checkbox"/>
+<label class="toggle-label block overflow-hidden h-6 rounded-full bg-surface-container-highest cursor-pointer transition-colors duration-200 ease-in-out" for="neural_search"></label>
+</div>
+</div>
+</div>
+</section>
+<!-- Data & Privacy Section -->
+<section class="space-y-sm">
+<div class="flex items-center gap-sm px-xs mb-md">
+<span class="material-symbols-outlined text-on-primary-fixed-variant text-body-md" style="font-variation-settings: 'FILL' 1;">lock</span>
+<h2 class="font-data-label text-data-label uppercase tracking-widest text-on-surface-variant">Privacy &amp; Data</h2>
+</div>
+<div class="glass-card rounded-xl overflow-hidden divide-y divide-surface-variant">
+<div class="p-base flex items-center justify-between">
+<div>
+<p class="font-body-md text-body-md text-on-surface">Data Syncing</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Cloud backup across devices</p>
+</div>
+<span class="font-data-value text-data-value text-primary px-sm py-1 bg-primary-container/10 rounded">ENCRYPTED</span>
+</div>
+<div class="p-base flex items-center justify-between active:bg-surface-container-highest transition-all">
+<div>
+<p class="font-body-md text-body-md text-on-surface">Manage Local Storage</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">1.4 GB used of 5 GB</p>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant">folder_open</span>
+</div>
+</div>
+</section>
+<!-- Display Section -->
+<section class="space-y-sm">
+<div class="flex items-center gap-sm px-xs mb-md">
+<span class="material-symbols-outlined text-on-primary-fixed-variant text-body-md" style="font-variation-settings: 'FILL' 1;">palette</span>
+<h2 class="font-data-label text-data-label uppercase tracking-widest text-on-surface-variant">Display</h2>
+</div>
+<div class="glass-card rounded-xl p-base space-y-lg">
+<div class="flex items-center justify-between">
+<p class="font-body-md text-body-md text-on-surface">Interface Scale</p>
+<div class="flex items-center gap-sm">
+<button class="w-8 h-8 rounded bg-surface-container-high border border-outline-variant text-on-surface font-bold">-</button>
+<span class="font-data-value text-data-value w-8 text-center">100%</span>
+<button class="w-8 h-8 rounded bg-surface-container-high border border-outline-variant text-on-surface font-bold">+</button>
+</div>
+</div>
+<div class="space-y-sm">
+<p class="font-body-md text-body-md text-on-surface">Color Accent</p>
+<div class="flex gap-md">
+<div class="w-10 h-10 rounded-full bg-[#f97316] ring-2 ring-white ring-offset-2 ring-offset-[#07070d]"></div>
+<div class="w-10 h-10 rounded-full bg-blue-500 opacity-60"></div>
+<div class="w-10 h-10 rounded-full bg-emerald-500 opacity-60"></div>
+<div class="w-10 h-10 rounded-full bg-purple-500 opacity-60"></div>
+</div>
+</div>
+</div>
+</section>
+<!-- Experimental Section -->
+<section class="space-y-sm pb-huge">
+<div class="flex items-center gap-sm px-xs mb-md">
+<span class="material-symbols-outlined text-on-primary-fixed-variant text-body-md" style="font-variation-settings: 'FILL' 1;">science</span>
+<h2 class="font-data-label text-data-label uppercase tracking-widest text-on-surface-variant">Experimental</h2>
+</div>
+<div class="glass-card rounded-xl p-base border-dashed border-primary/30">
+<div class="flex items-center justify-between">
+<div class="max-w-[70%]">
+<div class="flex items-center gap-sm mb-xs">
+<p class="font-body-md text-body-md text-on-surface">Graph Visualization</p>
+<span class="text-[10px] bg-primary text-on-primary-fixed font-bold px-1 rounded">BETA</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Interact with citations as a 3D network node map.</p>
+</div>
+<div class="relative inline-block w-10 align-middle select-none transition duration-200 ease-in">
+<input class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer z-10 transition-transform duration-200 ease-in-out translate-x-0" id="graph_viz" name="graph_viz" type="checkbox"/>
+<label class="toggle-label block overflow-hidden h-6 rounded-full bg-surface-container-highest cursor-pointer transition-colors duration-200 ease-in-out" for="graph_viz"></label>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer Space (Before Nav) -->
+<footer class="px-lg pb-huge text-center space-y-sm opacity-40">
+<p class="font-data-label text-data-label text-on-surface-variant">© 2024 PaperIQ Academic. Precision Research Tools.</p>
+<div class="flex justify-center gap-md">
+<a class="font-data-label text-data-label text-on-surface-variant underline" href="#">Privacy</a>
+<a class="font-data-label text-data-label text-on-surface-variant underline" href="#">Terms</a>
+</div>
+</footer>
+<!-- Bottom Navigation Bar -->
+<nav class="fixed bottom-0 left-0 right-0 h-16 glass-card border-t-0 flex items-center justify-around px-base z-50">
+<a class="flex flex-col items-center gap-xs text-on-surface-variant" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-data-label text-[10px]">Library</span>
+</a>
+<a class="flex flex-col items-center gap-xs text-on-surface-variant" href="#">
+<span class="material-symbols-outlined">science</span>
+<span class="font-data-label text-[10px]">Studies</span>
+</a>
+<div class="relative -top-6">
+<button class="w-14 h-14 bg-primary text-on-primary shadow-lg shadow-primary/20 rounded-full flex items-center justify-center transition-transform active:scale-90">
+<span class="material-symbols-outlined text-[32px]">add</span>
+</button>
+</div>
+<a class="flex flex-col items-center gap-xs text-on-surface-variant" href="#">
+<span class="material-symbols-outlined">explore</span>
+<span class="font-data-label text-[10px]">Explore</span>
+</a>
+<!-- Active Tab: Profile/Settings -->
+<a class="flex flex-col items-center gap-xs text-primary" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">person</span>
+<span class="font-data-label text-[10px]">Profile</span>
+<div class="w-1 h-1 bg-primary rounded-full absolute -bottom-1"></div>
+</a>
+</nav>
+<script>
+        // Micro-interactions for toggles
+        document.querySelectorAll('.toggle-checkbox').forEach(toggle => {
+            toggle.addEventListener('change', function() {
+                const parent = this.closest('.glass-card');
+                if(this.checked) {
+                    parent.style.borderColor = 'rgba(249, 115, 22, 0.2)';
+                } else {
+                    parent.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+                }
+            });
+        });
+
+        // Simple touch effect for cards
+        document.querySelectorAll('.glass-card').forEach(card => {
+            card.addEventListener('touchstart', () => {
+                card.style.transform = 'scale(0.98)';
+                card.style.transition = 'transform 0.1s ease';
+            });
+            card.addEventListener('touchend', () => {
+                card.style.transform = 'scale(1)';
+            });
+        });
+    </script>
+</body></html>
