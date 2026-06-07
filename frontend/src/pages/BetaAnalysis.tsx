@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { usePrefsStore } from '../store/prefsStore'
 import { getUserProfile, getSubjectsForSemester, generateAnalysis } from '../lib/api'
+import { supabase } from '../lib/supabase'
 import { NavBar } from '../components/NavBar'
 import { Footer } from '../components/Footer'
 import { AnalysisLoadingState } from '../components/AnalysisLoadingState'
@@ -46,6 +47,9 @@ export function BetaAnalysis() {
   const [error, setError] = useState('')
   const [filter, setFilter] = useState<Filter>(prefs.defaultExamFilter)
   const [showAllQ, setShowAllQ] = useState(false)
+  // Real stats passed to loading screen — fetched from DB before analysis starts
+  const [loadingQuestionCount, setLoadingQuestionCount] = useState<number | undefined>(undefined)
+  const [loadingCoveragePct, setLoadingCoveragePct] = useState<number | undefined>(undefined)
 
   // "Run New Analysis" button sets ?reset=1 in the URL.
   // This effect detects it, clears all state, and removes the param so
@@ -124,8 +128,26 @@ export function BetaAnalysis() {
     setLoading(true)
     setError('')
     setAnalysis(null)
+    // Reset loading stats
+    setLoadingQuestionCount(undefined)
+    setLoadingCoveragePct(undefined)
+
+    // Pre-fetch real question count for this subject so the loading screen
+    // can show authentic numbers instead of hardcoded placeholders
+    supabase
+      .from('questions')
+      .select('id', { count: 'exact', head: true })
+      .eq('subject_id', id)
+      .then(({ count }) => {
+        if (count != null) setLoadingQuestionCount(count)
+      })
+
     try {
       const report = await generateAnalysis(id, profile?.regulation || 'R22', filter !== 'all' ? filter : undefined)
+      // When analysis completes, update loading stats with real coverage
+      if (report?.coverage_analysis?.classification_coverage != null) {
+        setLoadingCoveragePct(report.coverage_analysis.classification_coverage)
+      }
       setAnalysis(report)
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Analysis failed'
@@ -154,7 +176,11 @@ export function BetaAnalysis() {
     return (
       <div className="min-h-screen bg-background">
         <NavBar activeTab="analysis" />
-        <AnalysisLoadingState subjectName={selectedSubjectName} />
+        <AnalysisLoadingState
+          subjectName={selectedSubjectName}
+          questionCount={loadingQuestionCount}
+          coveragePct={loadingCoveragePct}
+        />
       </div>
     )
   }
