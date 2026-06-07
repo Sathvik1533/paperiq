@@ -36,6 +36,7 @@ interface Paper {
   duration_hours?: number   // actual DB column name
   original_url?: string     // actual DB column (download link)
   storage_path?: string     // actual DB column (Supabase storage)
+  storage_bucket?: string   // actual DB column (Supabase bucket name)
 }
 
 export function PaperView() {
@@ -62,7 +63,7 @@ export function PaperView() {
       setLoading(true)
       const { data: p, error: pErr } = await supabase
         .from('papers')
-        .select('id, title, exam_type, exam_year, exam_month, exam_category, regulation, subject_id, max_marks, duration_hours, original_url, storage_path')
+        .select('id, title, exam_type, exam_year, exam_month, exam_category, regulation, subject_id, max_marks, duration_hours, original_url, storage_path, storage_bucket')
         .eq('id', paperId)
         .single()
       if (pErr) throw pErr
@@ -104,9 +105,13 @@ export function PaperView() {
       }
 
       // Auto-trigger download if ?download=1
-      if (searchParams.get('download') === '1' && (p.original_url || p.storage_path)) {
-        const url = p.original_url || getStorageUrl(p.storage_path!)
-        window.open(url, '_blank')
+      if (searchParams.get('download') === '1') {
+        const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1'
+        const isRarOrZip = p.original_url?.match(/\.(rar|zip)$/i)
+        const url = (p.original_url?.startsWith('http') && !isRarOrZip)
+          ? p.original_url
+          : `${apiBase}/papers/${p.id}/download`
+        window.open(url, '_blank', 'noopener,noreferrer')
       }
     } catch (err: any) {
       setError(err.message || 'Failed to load paper')
@@ -115,35 +120,58 @@ export function PaperView() {
     }
   }
 
-  // Helper to convert storage_path to public URL
-  function getStorageUrl(path: string): string {
-    const { data } = supabase.storage.from('paper').getPublicUrl(path)
+  // Build the public Supabase Storage URL using the SDK — handles URL encoding correctly
+  function getStorageUrl(storagePath: string, bucketName: string): string {
+    const { data } = supabase.storage.from(bucketName).getPublicUrl(storagePath)
     return data?.publicUrl || ''
   }
 
-  function downloadPaper() {
+  async function downloadPaper() {
     if (!paper) return
-    
-    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1'
-    
-    // If paper has original_url (DOCX from MLRIT), use that
-    // Otherwise, generate PDF from questions
-    const downloadUrl = paper.original_url 
-      ? paper.original_url 
-      : `${apiBaseUrl}/papers/${paperId}/download`
-    
-    window.open(downloadUrl, '_blank')
+
+    const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1'
+
+    // Priority 1: original_url is a direct PDF or DOCX (not a RAR archive)
+    if (paper.original_url && paper.original_url.startsWith('http')) {
+      const url = paper.original_url.toLowerCase()
+      if (!url.endsWith('.rar') && !url.endsWith('.zip')) {
+        // Direct document link — open it
+        console.log('[Download] direct original_url →', paper.original_url)
+        window.open(paper.original_url, '_blank', 'noopener,noreferrer')
+        return
+      }
+      // RAR/ZIP — fall through to backend extraction
+      console.log('[Download] original_url is archive, using backend extraction')
+    }
+
+    // Priority 2: Backend on-demand PDF generation from extracted questions
+    // This is the primary working path — generates a clean PDF from the parsed questions
+    const pdfUrl = `${apiBase}/papers/${paper.id}/download`
+    console.log('[Download] Backend PDF →', pdfUrl)
+    window.open(pdfUrl, '_blank', 'noopener,noreferrer')
+  }
+
+  // Helper to normalize part value (handles both "Part A" and "A" formats)
+  const normalizePart = (part: string | undefined): 'A' | 'B' | null => {
+    if (!part) return null
+    const partUpper = part.toUpperCase()
+    if (partUpper === 'A' || partUpper === 'PART A') return 'A'
+    if (partUpper === 'B' || partUpper === 'PART B') return 'B'
+    return null
   }
 
   const filteredQ = questions.filter(q => {
-    if (filterPart !== 'all' && q.part !== filterPart) return false
+    if (filterPart !== 'all') {
+      const qPart = normalizePart(q.part)
+      if (qPart !== filterPart) return false
+    }
     if (filterUnit && !q.unit_name?.toLowerCase().includes(filterUnit.toLowerCase())) return false
     if (filterTopic && q.topic_name !== filterTopic) return false
     return true
   })
 
-  const partACount = questions.filter(q => q.part === 'A').length
-  const partBCount = questions.filter(q => q.part === 'B').length
+  const partACount = questions.filter(q => normalizePart(q.part) === 'A').length
+  const partBCount = questions.filter(q => normalizePart(q.part) === 'B').length
   const units  = Array.from(new Set(questions.map(q => q.unit_name).filter(Boolean))) as string[]
   const topics = Array.from(new Set(questions.map(q => q.topic_name).filter(Boolean))) as string[]
 
@@ -214,18 +242,27 @@ export function PaperView() {
             <h2 className="font-headline text-headline-md text-on-surface-variant mb-xs">{subjectName}</h2>
             <h1 className="font-headline text-display-hero-mobile md:text-headline-lg font-bold text-on-surface leading-tight">{formatTitle()}</h1>
             <div className="flex flex-wrap items-center gap-base mt-md">
-              {[
-                { icon:'school',        text: paper.regulation },
-                { icon:'list_alt',      text: `${questions.length} Questions` },
-                { icon:'military_tech', text: paper.max_marks ? `${paper.max_marks} Marks` : '—' },
-                ...(paper.duration_hours
-                  ? [{ icon:'schedule', text: `${paper.duration_hours} Hr${paper.duration_hours > 1 ? 's' : ''}` }]
-                  : []),
-              ].map(tag => (
-                <span key={tag.text} className="flex items-center gap-xs text-body-sm font-data-label text-on-surface-variant bg-surface-container px-sm py-xs rounded-lg">
-                  <span className="material-symbols-outlined text-[18px]">{tag.icon}</span> {tag.text}
-                </span>
-              ))}
+              {(() => {
+                // Strict academic marks calculation — never trust stale DB max_marks column.
+                // Priority 1: Sum marks from parsed questions (ground truth)
+                // Priority 2: Regulation cap — R22 = 60M, all others = 70M
+                const calculatedMarks = questions.length > 0
+                  ? questions.reduce((sum, q) => sum + (q.marks || 0), 0)
+                  : 0
+                const regulationCap = (paper.regulation?.toUpperCase() === 'R22') ? 60 : 70
+                const absoluteTotalMarks = calculatedMarks > 0 ? calculatedMarks : regulationCap
+                
+                return [
+                  { icon:'school',        text: paper.regulation },
+                  { icon:'list_alt',      text: `${questions.length} Questions` },
+                  { icon:'military_tech', text: `${absoluteTotalMarks} Marks` },
+                  { icon:'schedule',      text: `${paper.duration_hours || 3} Hr${(paper.duration_hours || 3) > 1 ? 's' : ''}` },
+                ].map(tag => (
+                  <span key={tag.text} className="flex items-center gap-xs text-body-sm font-data-label text-on-surface-variant bg-surface-container px-sm py-xs rounded-lg">
+                    <span className="material-symbols-outlined text-[18px]">{tag.icon}</span> {tag.text}
+                  </span>
+                ))
+              })()}
             </div>
           </div>
           <div className="flex gap-base">
@@ -278,6 +315,14 @@ export function PaperView() {
                       </div>
                     </div>
                   )}
+                  {partACount === 0 && partBCount === 0 && questions.length > 0 && (
+                    <div className="text-center py-base">
+                      <span className="material-symbols-outlined text-[32px] text-on-surface-variant mb-sm block">info</span>
+                      <p className="text-body-sm text-on-surface-variant">
+                        This paper has {questions.length} questions that are being processed for classification.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -323,35 +368,45 @@ export function PaperView() {
             {filteredQ.length > 0 ? (
               <div className="space-y-base">
                 {filteredQ.map((q) => {
-                  const isPartB = q.part === 'B'
+                  const qPart = normalizePart(q.part)
+                  const isPartB = qPart === 'B'
+                  // Smart fallback for marks: Part A = 2 marks, Part B = 10 marks
+                  const displayMarks = q.marks || (qPart === 'A' ? 2 : qPart === 'B' ? 10 : null)
+                  
                   return (
                     <div
                       key={q.id}
                       className="glass-card rounded-xl p-lg"
                       style={{borderLeft: `4px solid ${isPartB ? '#10b981' : '#f97316'}`}}
                     >
-                      <div className="flex justify-between items-start mb-sm">
-                        <div className="flex gap-sm items-center">
-                          <span className={`font-data-label text-[10px] px-sm py-xs rounded-full uppercase font-bold border ${
-                            q.part === 'A'
-                              ? 'bg-primary-container/10 text-primary-container border-primary-container/20'
-                              : 'bg-secondary-container text-on-secondary-container border-transparent'
-                          }`}>
-                            {q.part ? `Part ${q.part}` : 'Question'}
-                          </span>
-                          {q.unit_name && (
-                            <span className="font-data-label text-[10px] bg-surface-container-highest text-on-surface-variant px-sm py-xs rounded-full uppercase">
-                              {q.unit_name}
-                            </span>
-                          )}
-                        </div>
-                        {q.marks && (
-                          <span className={`font-data-value ${isPartB ? 'text-emerald-500' : 'text-primary-container'}`}>
-                            {q.marks} Marks
+                      {/* Question header with part badges */}
+                      <div className="flex gap-sm items-center mb-sm">
+                        <span className={`font-data-label text-[10px] px-sm py-xs rounded-full uppercase font-bold border ${
+                          qPart === 'A'
+                            ? 'bg-primary-container/10 text-primary-container border-primary-container/20'
+                            : 'bg-secondary-container text-on-secondary-container border-transparent'
+                        }`}>
+                          {qPart ? `Part ${qPart}` : 'Question'}
+                        </span>
+                        {q.unit_name && (
+                          <span className="font-data-label text-[10px] bg-surface-container-highest text-on-surface-variant px-sm py-xs rounded-full uppercase">
+                            {q.unit_name}
                           </span>
                         )}
                       </div>
-                      <h4 className="text-body-lg font-bold mb-md">{q.question_text}</h4>
+                      
+                      {/* Question text and marks - right-aligned layout */}
+                      <div className="flex justify-between items-center w-full gap-lg mb-md">
+                        <h4 className="text-body-lg font-bold flex-1">{q.question_text}</h4>
+                        {displayMarks && (
+                          <span className={`font-data-value font-bold text-lg whitespace-nowrap ${
+                            isPartB ? 'text-emerald-500' : 'text-primary-container'
+                          }`}>
+                            [{displayMarks} Marks]
+                          </span>
+                        )}
+                      </div>
+                      
                       {q.topic_name && (
                         <div className="flex items-center gap-sm">
                           <span className="material-symbols-outlined text-[18px] text-on-surface-variant">tag</span>
@@ -362,10 +417,60 @@ export function PaperView() {
                   )
                 })}
               </div>
+            ) : questions.length === 0 ? (
+              // Graceful empty state when no questions have been extracted yet
+              <div className="glass-card p-xl text-center rounded-xl bg-gradient-to-br from-primary/5 to-secondary/5 border-2 border-dashed border-primary/20">
+                <div className="max-w-md mx-auto space-y-lg">
+                  <div className="relative inline-block">
+                    <span className="material-symbols-outlined text-[64px] text-primary-container mb-base block animate-pulse">
+                      auto_awesome
+                    </span>
+                    <div className="absolute -top-2 -right-2 w-6 h-6 bg-primary-container rounded-full flex items-center justify-center">
+                      <span className="material-symbols-outlined text-[16px] text-on-primary-container" style={{fontVariationSettings:"'FILL' 1"}}>
+                        settings
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-sm">
+                    <h3 className="font-headline text-headline-sm text-on-surface font-bold">
+                      AI Question Breakdown in Progress
+                    </h3>
+                    <p className="text-body-md text-on-surface-variant leading-relaxed">
+                      Our AI is currently analyzing this paper and extracting individual questions with topics and marks breakdown. 
+                    </p>
+                  </div>
+                  
+                  <div className="bg-surface-container-highest/50 rounded-xl p-lg border border-outline-variant/30">
+                    <div className="flex items-start gap-base text-left">
+                      <span className="material-symbols-outlined text-[24px] text-primary-container flex-shrink-0 mt-xs" style={{fontVariationSettings:"'FILL' 1"}}>
+                        download
+                      </span>
+                      <div className="space-y-xs flex-1">
+                        <p className="text-body-md font-bold text-on-surface">
+                          Get the Official Paper Now
+                        </p>
+                        <p className="text-body-sm text-on-surface-variant">
+                          Use the download button on the right to grab the complete, authentic MLRIT examination paper instantly while we process the questions!
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <button
+                    onClick={downloadPaper}
+                    className="bg-primary hover:bg-primary/90 text-white font-bold px-xl py-base rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-sm mx-auto"
+                  >
+                    <span className="material-symbols-outlined text-[20px]">download</span>
+                    Download Question Paper
+                  </button>
+                </div>
+              </div>
             ) : (
+              // No questions match filters
               <div className="glass-card p-xl text-center rounded-xl">
-                <span className="material-symbols-outlined text-[48px] text-on-surface-variant mb-base block">quiz</span>
-                <p className="text-on-surface-variant">No questions found. Extraction may still be in progress.</p>
+                <span className="material-symbols-outlined text-[48px] text-on-surface-variant mb-base block">filter_alt_off</span>
+                <p className="text-on-surface-variant">No questions match your current filters. Try adjusting them above.</p>
               </div>
             )}
           </div>

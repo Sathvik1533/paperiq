@@ -13,7 +13,7 @@ export interface Subject {
   id: string
   name: string
   code: string
-  college_id: string
+  college_id?: string  // optional — fallback entries constructed without a DB row won't have this
   regulation?: string
   semester?: number
   year?: number

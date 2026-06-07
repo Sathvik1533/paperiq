@@ -10,7 +10,7 @@
  * 
  * ENHANCED: Spring-driven animations on all interactive elements
  */
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, useReducedMotion } from 'framer-motion'
 import { NavBar } from '../components/NavBar'
@@ -116,23 +116,33 @@ export function Dashboard() {
   const [error, setError]             = useState('')
 
   // ── Guided Tour ────────────────────────────────────────────────────────────
-  const TOUR_KEY = 'paperiq_tour_complete_v1'
+  const TOUR_KEY = 'paperiq_tour_v1_done'
+  const TOUR_STARTED_KEY = 'paperiq_tour_v1_started'
+  // Read from localStorage once at mount — never re-trigger after completion
   const [showTour, setShowTour] = useState(false)
+  const tourScheduledRef = useRef(false)
 
-  // Start tour once data is loaded (only for users who haven't seen it)
+  // Trigger tour exactly once globally: after data loads, only if never started before.
+  // We mark it as "started" in localStorage immediately to prevent re-triggering if
+  // the user navigates away and returns before completing/skipping the tour.
   useEffect(() => {
-    if (!loading && profile?.current_semester) {
-      const done = localStorage.getItem(TOUR_KEY)
-      if (!done) {
-        // Small delay so UI is fully painted before spotlight kicks in
-        const t = setTimeout(() => setShowTour(true), 800)
-        return () => clearTimeout(t)
-      }
-    }
+    if (loading || !profile?.current_semester) return
+    if (tourScheduledRef.current) return               // already scheduled this mount
+    if (localStorage.getItem(TOUR_KEY)) return         // completed/skipped before
+    if (localStorage.getItem(TOUR_STARTED_KEY)) return // started but not finished (same guard)
+
+    // Mark as started immediately — before the timeout — so StrictMode double-fires
+    // and re-mounts (after navigation) don't schedule a second instance
+    tourScheduledRef.current = true
+    localStorage.setItem(TOUR_STARTED_KEY, 'true')
+
+    const t = setTimeout(() => setShowTour(true), 900)
+    return () => clearTimeout(t)
   }, [loading, profile])
 
   function completeTour() {
-    localStorage.setItem(TOUR_KEY, '1')
+    localStorage.setItem(TOUR_KEY, 'true')
+    localStorage.removeItem(TOUR_STARTED_KEY)
     setShowTour(false)
   }
 
@@ -246,81 +256,31 @@ export function Dashboard() {
 
   const topSubject = sortedSubjects[0]
 
-  // The full platform tour — navigates across all main nav pages
-  // Conditionally includes "Today's Focus" step only if topSubject exists
+  // 3-step tour: Dashboard → Analysis → Papers
   const tourSteps: TourStep[] = [
     {
-      target: 'tour-dashboard',
-      title: 'Your Dashboard',
-      description: 'This is your command centre. All your subjects are ranked by exam question frequency — highest priority first.',
-      position: 'bottom',
-      route: '/dashboard',
-      waitMs: 800,
-    },
-    {
       target: 'tour-subject-grid',
-      title: 'Subject Cards',
-      description: 'Each card shows a subject with its priority score. Click any card to run an AI analysis on it and see what topics are most likely to appear.',
+      title: 'Your Subjects',
+      description: 'These are all your enrolled subjects. Click any card to run an AI analysis — see which topics appear most in past papers.',
       position: 'top',
       route: '/dashboard',
       waitMs: 500,
     },
-    // Only show "Today's Focus" step if topSubject exists
-    ...(topSubject ? [{
-      target: 'tour-today-focus',
-      title: "Today's Focus",
-      description: 'Your highest-priority subject is pinned here. Start here every study session for maximum exam yield.',
-      position: 'left' as const,
-      route: '/dashboard',
-      waitMs: 500,
-    }] : []),
-    {
-      target: 'tour-nav-analysis',
-      title: 'Analysis',
-      description: 'Run a deep AI scan on any subject. Get unit priority rankings, most-asked topics, and repeated questions from 10 years of past papers.',
-      position: 'bottom',
-      route: '/analysis',
-      waitMs: 900,
-    },
     {
       target: 'tour-analysis-subject',
       title: 'Pick a Subject to Analyse',
-      description: 'Select any subject from the dropdown, choose your exam type (Semester / Mid), then hit "Analyse Papers" to see the full breakdown.',
+      description: 'Select a subject, choose Semester exam type, then hit "Analyse Papers" to get unit priorities and most-asked topics from real past papers.',
       position: 'bottom',
       route: '/analysis',
-      waitMs: 700,
-    },
-    {
-      target: 'tour-nav-papers',
-      title: 'Papers Browser',
-      description: 'Browse all 70+ previous question papers. Filter by subject, regulation, year range, or exam category to find exactly what you need.',
-      position: 'bottom',
-      route: '/papers',
       waitMs: 900,
     },
     {
       target: 'tour-papers-filters',
-      title: 'Powerful Filters',
-      description: 'Narrow down by regulation (R22/R20/R18), exam category (Mid-1, Mid-2, Semester), and year range. All filters update the results instantly.',
+      title: 'Download Past Papers',
+      description: 'Browse and download any past paper as a PDF. Filter by subject, regulation, and year. One click — no RAR files, no hunting.',
       position: 'right',
       route: '/papers',
-      waitMs: 700,
-    },
-    {
-      target: 'tour-nav-profile',
-      title: 'Your Profile',
-      description: 'Update your semester, regulation, learning goals, and preparation level. Changing semester here refreshes your entire dashboard.',
-      position: 'bottom',
-      route: '/profile',
       waitMs: 900,
-    },
-    {
-      target: 'tour-run-analysis-cta',
-      title: "Ready? Let's Go.",
-      description: 'Hit "Run New Analysis" any time to start a fresh analysis for any subject. Your journey to smarter exam prep starts now.',
-      position: 'bottom',
-      route: '/dashboard',
-      waitMs: 800,
     },
   ]
 
