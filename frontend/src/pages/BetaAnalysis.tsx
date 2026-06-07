@@ -5,7 +5,7 @@ import { usePrefsStore } from '../store/prefsStore'
 import { getUserProfile, getSubjectsForSemester, generateAnalysis } from '../lib/api'
 import { NavBar } from '../components/NavBar'
 import { Footer } from '../components/Footer'
-import { AnalysisLoading } from '../components/LoadingState'
+import { AnalysisLoadingState } from '../components/AnalysisLoadingState'
 import type { Subject } from '../types'
 
 interface AnalysisReport {
@@ -28,8 +28,6 @@ type Filter = 'all' | 'mid1' | 'mid2' | 'semester'
 
 const FILTERS: { value: Filter; label: string; comingSoon?: boolean }[] = [
   { value: 'all',      label: 'All Papers' },
-  { value: 'mid1',     label: 'Mid-1',    comingSoon: true },
-  { value: 'mid2',     label: 'Mid-2',    comingSoon: true },
   { value: 'semester', label: 'Semester' },
 ]
 
@@ -71,7 +69,42 @@ export function BetaAnalysis() {
       setProfile(prof)
       if (prof?.current_semester && prof?.regulation) {
         const subs = await getSubjectsForSemester(prof.current_semester, prof.regulation)
-        setSubjects(subs || [])
+
+        // ── Canonical subject guarantee ───────────────────────────────────────
+        // Always show all 5 subjects for the semester regardless of DB gaps.
+        // Map: profile semester (1 or 2) → canonical subject list
+        const CANONICAL: Record<string, Array<{ id: string; name: string; code: string; semester: number; regulation: string }>> = {
+          '1-R22': [
+            { id: 'A6CS05', name: 'Data Structures',                               code: 'A6CS05', semester: 1, regulation: 'R22' },
+            { id: 'A6IT02', name: 'Object Oriented Programming through Java',      code: 'A6IT02', semester: 1, regulation: 'R22' },
+            { id: 'A6CS02', name: 'Digital Electronics and Computer Organization', code: 'A6CS02', semester: 1, regulation: 'R22' },
+            { id: 'A6CS07', name: 'Software Engineering',                          code: 'A6CS07', semester: 1, regulation: 'R22' },
+            { id: 'A6BS03', name: 'Computer Oriented Statistical Methods',         code: 'A6BS03', semester: 1, regulation: 'R22' },
+          ],
+          '2-R22': [
+            { id: 'A6HS08', name: 'Business Economics and Financial Analysis',     code: 'A6HS08', semester: 2, regulation: 'R22' },
+            { id: 'A6CS08', name: 'Discrete Mathematics',                          code: 'A6CS08', semester: 2, regulation: 'R22' },
+            { id: 'A6CS09', name: 'Database Management Systems',                   code: 'A6CS09', semester: 2, regulation: 'R22' },
+            { id: 'A6CS11', name: 'Operating System',                              code: 'A6CS11', semester: 2, regulation: 'R22' },
+            { id: 'A6CS13', name: 'Software Testing Fundamentals',                 code: 'A6CS13', semester: 2, regulation: 'R22' },
+          ],
+        }
+
+        const fallbackKey = `${prof.current_semester}-${prof.regulation}`
+        const canonical = CANONICAL[fallbackKey]
+        let finalSubs = subs || []
+
+        if (canonical) {
+          // Merge: DB UUIDs take priority, canonical fills any gaps
+          const dbByCode = new Map(finalSubs.map(s => [s.code, s]))
+          finalSubs = canonical.map(f => {
+            const live = dbByCode.get(f.code)
+            // Use real DB row (preserves UUID needed for API calls) + canonical name
+            return live ? { ...live, name: f.name } : f
+          })
+        }
+
+        setSubjects(finalSubs)
       }
     }).finally(() => setProfileLoading(false))
   }, [user])
@@ -109,11 +142,21 @@ export function BetaAnalysis() {
   const selectedSubjectName = subjects.find(s => s.id === selectedSubject)?.name || ''
 
   if (profileLoading) {
-    return <AnalysisLoading step="Loading your profile" />
+    return (
+      <div className="min-h-screen bg-background">
+        <NavBar activeTab="analysis" />
+        <AnalysisLoadingState subjectName="your profile" />
+      </div>
+    )
   }
 
   if (loading && !analysis) {
-    return <AnalysisLoading step="Analyzing papers" />
+    return (
+      <div className="min-h-screen bg-background">
+        <NavBar activeTab="analysis" />
+        <AnalysisLoadingState subjectName={selectedSubjectName} />
+      </div>
+    )
   }
 
   if (!profile?.current_semester) {
