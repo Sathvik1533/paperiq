@@ -108,6 +108,7 @@ export function BetaAnalysis() {
           })
         }
 
+        console.log(`📚 BetaAnalysis: setting ${finalSubs.length} subjects:`, finalSubs.map(s => s.code).join(', '))
         setSubjects(finalSubs)
       }
     }).finally(() => setProfileLoading(false))
@@ -222,7 +223,7 @@ export function BetaAnalysis() {
         </div>
 
         {/* Control panel */}
-        <div className="glass-card rounded-2xl p-lg mb-xl" data-tour="tour-analysis-subject">
+        <div className="glass-card rounded-2xl p-lg mb-xl overflow-visible" data-tour="tour-analysis-subject">
           <div className="grid sm:grid-cols-2 gap-lg mb-lg">
             <div>
               <label className="font-data-label text-data-label text-on-surface-variant uppercase tracking-wider block mb-sm">Semester</label>
@@ -675,6 +676,24 @@ function SubjectDropdown({
 }) {
   const [open, setOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
+  const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({})
+
+  // Position the dropdown using fixed coordinates so it escapes any overflow:hidden parent
+  const updatePosition = () => {
+    if (!containerRef.current) return
+    const rect = containerRef.current.getBoundingClientRect()
+    setDropdownStyle({
+      position: 'fixed',
+      top: rect.bottom + 8,
+      left: rect.left,
+      width: rect.width,
+      zIndex: 9999,
+    })
+  }
+
+  useEffect(() => {
+    if (open) updatePosition()
+  }, [open])
 
   // Close on outside click
   useEffect(() => {
@@ -683,9 +702,14 @@ function SubjectDropdown({
         setOpen(false)
       }
     }
-    document.addEventListener('mousedown', handleOutside)
-    return () => document.removeEventListener('mousedown', handleOutside)
-  }, [])
+    if (open) {
+      document.addEventListener('mousedown', handleOutside)
+      window.addEventListener('scroll', () => setOpen(false), { passive: true })
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleOutside)
+    }
+  }, [open])
 
   const selected = subjects.find(s => s.id === value)
 
@@ -694,7 +718,7 @@ function SubjectDropdown({
       {/* Trigger button */}
       <button
         type="button"
-        onClick={() => setOpen(prev => !prev)}
+        onClick={() => { setOpen(prev => !prev); updatePosition() }}
         className={`
           w-full flex items-center justify-between
           px-4 py-3 rounded-xl
@@ -717,14 +741,19 @@ function SubjectDropdown({
         </svg>
       </button>
 
-      {/* Options panel */}
+      {/* Options panel — fixed position to escape any overflow:hidden parent */}
       {open && (
-        <div className="
-          absolute z-50 w-full mt-2
-          bg-[#141416] border border-[#222226] rounded-xl
-          shadow-[0_12px_30px_-4px_rgba(0,0,0,0.7)]
-          max-h-64 overflow-y-auto
-        ">
+        <div
+          style={{
+            ...dropdownStyle,
+            background: '#141416',
+            border: '1px solid #222226',
+            borderRadius: '12px',
+            boxShadow: '0 12px 30px -4px rgba(0,0,0,0.7)',
+            maxHeight: '320px',
+            overflowY: 'auto',
+          }}
+        >
           {subjects.map(s => {
             const isSelected = s.id === value
             return (
@@ -732,34 +761,50 @@ function SubjectDropdown({
                 key={s.id}
                 type="button"
                 onClick={() => { onChange(s.id); setOpen(false) }}
-                className={`
-                  w-full flex items-center gap-3 px-4 py-3
-                  text-left transition-colors duration-150
-                  ${isSelected
-                    ? 'bg-[#ff6600]/8 text-[#ff6600]'
-                    : 'text-neutral-400 hover:bg-[#1a1a1d] hover:text-neutral-100'
+                style={{
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  padding: '12px 16px',
+                  textAlign: 'left',
+                  background: isSelected ? 'rgba(255,102,0,0.08)' : 'transparent',
+                  color: isSelected ? '#ff6600' : '#a3a3a3',
+                  border: 'none',
+                  cursor: 'pointer',
+                  transition: 'background 0.15s',
+                }}
+                onMouseEnter={e => {
+                  if (!isSelected) {
+                    e.currentTarget.style.background = '#1a1a1d'
+                    e.currentTarget.style.color = '#e5e5e5'
                   }
-                `}
+                }}
+                onMouseLeave={e => {
+                  if (!isSelected) {
+                    e.currentTarget.style.background = 'transparent'
+                    e.currentTarget.style.color = '#a3a3a3'
+                  }
+                }}
               >
                 {/* Subject code badge */}
-                <span className={`
-                  shrink-0 font-mono text-[11px] font-bold px-2 py-0.5 rounded-md
-                  ${isSelected
-                    ? 'bg-[#ff6600]/10 text-[#ff6600]'
-                    : 'bg-neutral-800 text-neutral-400'
-                  }
-                `}>
+                <span style={{
+                  flexShrink: 0,
+                  fontFamily: 'monospace',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  padding: '2px 8px',
+                  borderRadius: '6px',
+                  background: isSelected ? 'rgba(255,102,0,0.1)' : '#262626',
+                  color: isSelected ? '#ff6600' : '#737373',
+                }}>
                   {s.code}
                 </span>
-
-                {/* Subject name */}
-                <span className="flex-1 text-sm leading-snug">
+                <span style={{ flex: 1, fontSize: '14px', lineHeight: 1.4 }}>
                   {s.name}
                 </span>
-
-                {/* Checkmark for selected */}
                 {isSelected && (
-                  <svg className="w-4 h-4 text-[#ff6600] shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                  <svg style={{ width: 16, height: 16, color: '#ff6600', flexShrink: 0 }} viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" />
                   </svg>
                 )}
