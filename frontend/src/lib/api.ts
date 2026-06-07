@@ -306,12 +306,19 @@ export async function confirmHallTicketProfile(profile: {
 // ── Beta Student Experience ───────────────────────────────────────────────
 
 export async function getSubjectsForSemester(semester: number, regulation: string): Promise<Subject[]> {
+  console.log(`🔍 API: Fetching subjects for Semester ${semester}, ${regulation}`)
   const { data, error } = await supabase
     .from('subjects')
     .select('*')
     .eq('semester', semester)
     .eq('regulation', regulation)
-  if (error) throw error
+    .order('code', { ascending: true })
+  console.log(`🔍 API: Supabase returned ${data?.length || 0} subjects`, data)
+  if (error) {
+    console.error('❌ API: Error fetching subjects:', error)
+    throw error
+  }
+  console.log(`✅ API: Returning ${data?.length || 0} subjects to caller`)
   return data || []
 }
 

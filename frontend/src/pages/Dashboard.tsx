@@ -7,9 +7,12 @@
  *
  * Data flow: user profile → semester/regulation → subjects from DB
  *            → question counts per subject → normalised priority scores (0–94%)
+ * 
+ * ENHANCED: Spring-driven animations on all interactive elements
  */
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { motion, useReducedMotion } from 'framer-motion'
 import { NavBar } from '../components/NavBar'
 import { Footer } from '../components/Footer'
 import { Icon, IconSets } from '../components/Icon'
@@ -17,6 +20,11 @@ import { GuidedTour, type TourStep } from '../components/GuidedTour'
 import { useAuthStore } from '../store/authStore'
 import { getUserProfile, getSubjectsForSemester } from '../lib/api'
 import { supabase } from '../lib/supabase'
+import { PageTransition } from '../components/ui/PageTransition'
+import { StaggerContainer, StaggerItem } from '../components/ui/StaggerContainer'
+import { AnimatedCard } from '../components/ui/AnimatedCard'
+import { AnimatedButton } from '../components/ui/AnimatedButton'
+import { hoverScale, tapScale, SPRING_SNAPPY } from '../lib/motion'
 import type { Subject } from '../types'
 
 // Priority accent colours by rank (0-indexed)
@@ -128,89 +136,17 @@ export function Dashboard() {
     setShowTour(false)
   }
 
-  // The full platform tour — navigates across all main nav pages
-  const tourSteps: TourStep[] = [
-    {
-      target: 'tour-dashboard',
-      title: 'Your Dashboard',
-      description: 'This is your command centre. All your subjects are ranked by exam question frequency — highest priority first.',
-      position: 'bottom',
-      route: '/dashboard',
-      waitMs: 600,
-    },
-    {
-      target: 'tour-subject-grid',
-      title: 'Subject Cards',
-      description: 'Each card shows a subject with its priority score. Click any card to run an AI analysis on it and see what topics are most likely to appear.',
-      position: 'top',
-      route: '/dashboard',
-      waitMs: 400,
-    },
-    {
-      target: 'tour-today-focus',
-      title: "Today's Focus",
-      description: 'Your highest-priority subject is pinned here. Start here every study session for maximum exam yield.',
-      position: 'left',
-      route: '/dashboard',
-      waitMs: 400,
-    },
-    {
-      target: 'tour-nav-analysis',
-      title: 'Analysis',
-      description: 'Run a deep AI scan on any subject. Get unit priority rankings, most-asked topics, and repeated questions from 10 years of past papers.',
-      position: 'bottom',
-      route: '/analysis',
-      waitMs: 700,
-    },
-    {
-      target: 'tour-analysis-subject',
-      title: 'Pick a Subject to Analyse',
-      description: 'Select any subject from the dropdown, choose your exam type (Semester / Mid), then hit "Analyse Papers" to see the full breakdown.',
-      position: 'bottom',
-      route: '/analysis',
-      waitMs: 500,
-    },
-    {
-      target: 'tour-nav-papers',
-      title: 'Papers Browser',
-      description: 'Browse all 70+ previous question papers. Filter by subject, regulation, year range, or exam category to find exactly what you need.',
-      position: 'bottom',
-      route: '/papers',
-      waitMs: 700,
-    },
-    {
-      target: 'tour-papers-filters',
-      title: 'Powerful Filters',
-      description: 'Narrow down by regulation (R22/R20/R18), exam category (Mid-1, Mid-2, Semester), and year range. All filters update the results instantly.',
-      position: 'right',
-      route: '/papers',
-      waitMs: 500,
-    },
-    {
-      target: 'tour-nav-profile',
-      title: 'Your Profile',
-      description: 'Update your semester, regulation, learning goals, and preparation level. Changing semester here refreshes your entire dashboard.',
-      position: 'bottom',
-      route: '/profile',
-      waitMs: 700,
-    },
-    {
-      target: 'tour-run-analysis-cta',
-      title: "Ready? Let's Go.",
-      description: 'Hit "Run New Analysis" any time to start a fresh analysis for any subject. Your journey to smarter exam prep starts now.',
-      position: 'bottom',
-      route: '/dashboard',
-      waitMs: 600,
-    },
-  ]
-
   useEffect(() => {
     if (!user) return
     getUserProfile(user.id)
       .then(async (prof) => {
+        console.log('👤 Dashboard: Profile loaded:', prof)
         setProfile(prof)
         if (prof?.current_semester && prof?.regulation) {
           const subs = await getSubjectsForSemester(prof.current_semester, prof.regulation)
+          console.log(`📚 Dashboard: Loaded ${subs?.length || 0} subjects for Semester ${prof.current_semester}, ${prof.regulation}`)
+          console.log('📚 Dashboard subject codes:', subs?.map(s => s.code).join(', '))
+          console.table(subs)
           setSubjects(subs || [])
 
           if (subs?.length) {
@@ -309,6 +245,84 @@ export function Dashboard() {
     : subjects
 
   const topSubject = sortedSubjects[0]
+
+  // The full platform tour — navigates across all main nav pages
+  // Conditionally includes "Today's Focus" step only if topSubject exists
+  const tourSteps: TourStep[] = [
+    {
+      target: 'tour-dashboard',
+      title: 'Your Dashboard',
+      description: 'This is your command centre. All your subjects are ranked by exam question frequency — highest priority first.',
+      position: 'bottom',
+      route: '/dashboard',
+      waitMs: 800,
+    },
+    {
+      target: 'tour-subject-grid',
+      title: 'Subject Cards',
+      description: 'Each card shows a subject with its priority score. Click any card to run an AI analysis on it and see what topics are most likely to appear.',
+      position: 'top',
+      route: '/dashboard',
+      waitMs: 500,
+    },
+    // Only show "Today's Focus" step if topSubject exists
+    ...(topSubject ? [{
+      target: 'tour-today-focus',
+      title: "Today's Focus",
+      description: 'Your highest-priority subject is pinned here. Start here every study session for maximum exam yield.',
+      position: 'left' as const,
+      route: '/dashboard',
+      waitMs: 500,
+    }] : []),
+    {
+      target: 'tour-nav-analysis',
+      title: 'Analysis',
+      description: 'Run a deep AI scan on any subject. Get unit priority rankings, most-asked topics, and repeated questions from 10 years of past papers.',
+      position: 'bottom',
+      route: '/analysis',
+      waitMs: 900,
+    },
+    {
+      target: 'tour-analysis-subject',
+      title: 'Pick a Subject to Analyse',
+      description: 'Select any subject from the dropdown, choose your exam type (Semester / Mid), then hit "Analyse Papers" to see the full breakdown.',
+      position: 'bottom',
+      route: '/analysis',
+      waitMs: 700,
+    },
+    {
+      target: 'tour-nav-papers',
+      title: 'Papers Browser',
+      description: 'Browse all 70+ previous question papers. Filter by subject, regulation, year range, or exam category to find exactly what you need.',
+      position: 'bottom',
+      route: '/papers',
+      waitMs: 900,
+    },
+    {
+      target: 'tour-papers-filters',
+      title: 'Powerful Filters',
+      description: 'Narrow down by regulation (R22/R20/R18), exam category (Mid-1, Mid-2, Semester), and year range. All filters update the results instantly.',
+      position: 'right',
+      route: '/papers',
+      waitMs: 700,
+    },
+    {
+      target: 'tour-nav-profile',
+      title: 'Your Profile',
+      description: 'Update your semester, regulation, learning goals, and preparation level. Changing semester here refreshes your entire dashboard.',
+      position: 'bottom',
+      route: '/profile',
+      waitMs: 900,
+    },
+    {
+      target: 'tour-run-analysis-cta',
+      title: "Ready? Let's Go.",
+      description: 'Hit "Run New Analysis" any time to start a fresh analysis for any subject. Your journey to smarter exam prep starts now.',
+      position: 'bottom',
+      route: '/dashboard',
+      waitMs: 800,
+    },
+  ]
 
   return (
     <div className="min-h-screen bg-background">
@@ -443,6 +457,52 @@ export function Dashboard() {
           </section>
         )}
 
+        {/* ── Quick Actions (shown for returning users) ─ */}
+        {!isFirstTime && (
+          <section className="mb-lg" style={{ animation: 'fadeInUp 0.5s ease forwards', animationDelay: '0.03s' }}>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-base">
+              <button
+                onClick={() => navigate('/analysis')}
+                className="glass-card bg-surface border border-primary/20 p-lg rounded-xl flex items-center gap-md hover:-translate-y-1 hover:shadow-lg transition-all group"
+              >
+                <div className="w-12 h-12 rounded-2xl bg-primary/15 border border-primary/25 flex items-center justify-center shrink-0">
+                  <Icon name="analytics" size={24} color="text-primary" filled />
+                </div>
+                <div className="text-left">
+                  <h3 className="font-headline text-[16px] text-on-surface group-hover:text-primary transition-colors">Run Analysis</h3>
+                  <p className="text-body-sm text-on-surface-variant">Scan any subject</p>
+                </div>
+              </button>
+              
+              <button
+                onClick={() => navigate('/papers')}
+                className="glass-card bg-surface border border-outline-variant p-lg rounded-xl flex items-center gap-md hover:-translate-y-1 hover:shadow-lg hover:border-primary/30 transition-all group"
+              >
+                <div className="w-12 h-12 rounded-2xl bg-surface-container-high flex items-center justify-center shrink-0">
+                  <Icon name="library_books" size={24} color="text-on-surface-variant" />
+                </div>
+                <div className="text-left">
+                  <h3 className="font-headline text-[16px] text-on-surface group-hover:text-primary transition-colors">Browse Papers</h3>
+                  <p className="text-body-sm text-on-surface-variant">{paperCount}+ documents</p>
+                </div>
+              </button>
+
+              <button
+                onClick={() => window.open('https://forms.gle/your-feedback-form', '_blank')}
+                className="glass-card bg-surface border border-outline-variant p-lg rounded-xl flex items-center gap-md hover:-translate-y-1 hover:shadow-lg hover:border-primary/30 transition-all group"
+              >
+                <div className="w-12 h-12 rounded-2xl bg-surface-container-high flex items-center justify-center shrink-0">
+                  <Icon name="feedback" size={24} color="text-on-surface-variant" />
+                </div>
+                <div className="text-left">
+                  <h3 className="font-headline text-[16px] text-on-surface group-hover:text-primary transition-colors">Send Feedback</h3>
+                  <p className="text-body-sm text-on-surface-variant">Help us improve</p>
+                </div>
+              </button>
+            </div>
+          </section>
+        )}
+
         {/* ── Attention Banner (shown only after first analysis — top subject highlight) ─ */}
         {!isFirstTime && topSubject && (
           <section className="mb-xxl" style={{ animation: 'fadeInUp 0.5s ease forwards', animationDelay: '0.05s' }}>
@@ -488,7 +548,11 @@ export function Dashboard() {
                     <div
                       key={subject.id}
                       onClick={() => navigate(`/analysis?subject_id=${subject.id}`)}
-                      className={`glass-card bg-surface border ${border} p-lg rounded-2xl flex flex-col justify-between cursor-pointer group transition-all hover:-translate-y-1 hover:shadow-xl`}
+                      className={`glass-card bg-[#111113] border ${border} p-lg rounded-2xl flex flex-col justify-between cursor-pointer group transition-all duration-500 ease-out hover:-translate-y-1 shadow-[0_4px_30px_rgba(0,0,0,0.6),_0_0_15px_rgba(255,102,0,0.03)] hover:shadow-[0_0_25px_rgba(255,102,0,0.12)] ${
+                        border === 'border-primary/50' || border === 'border-primary/30' 
+                          ? 'hover:border-[#ff6600]/30' 
+                          : 'border-[#1e1e22] hover:border-[#ff6600]/30'
+                      }`}
                       style={{
                         animation: `fadeInUp 0.5s ease forwards`,
                         animationDelay: `${(idx + 2) * 0.07}s`,

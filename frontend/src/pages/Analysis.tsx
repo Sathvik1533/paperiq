@@ -15,6 +15,7 @@ import { Footer } from '../components/Footer'
 import { MarksBreakdown } from '../components/MarksBreakdown'
 import { FeedbackWidget } from '../components/FeedbackWidget'
 import { CustomSelect } from '../components/CustomSelect'
+import { AnalysisLoadingState } from '../components/AnalysisLoadingState'
 import type { Subject, UserProfile } from '../types'
 
 type Filter = 'all' | 'mid1' | 'mid2' | 'semester'
@@ -118,10 +119,16 @@ export function Analysis() {
   useEffect(() => {
     if (!user) return
     getUserProfile(user.id).then(async prof => {
+      console.log('👤 Profile loaded:', prof)
       setProfile(prof)
       if (prof?.current_semester && prof?.regulation) {
         const subs = await getSubjectsForSemester(prof.current_semester, prof.regulation)
+        console.log(`📚 DETAILED: Loaded ${subs?.length || 0} subjects for Semester ${prof.current_semester}, ${prof.regulation}:`)
+        console.log('📚 All subject codes:', subs?.map(s => s.code).join(', '))
+        console.log('📚 All subject names:', subs?.map(s => s.name).join(' | '))
+        console.table(subs)
         setSubjects(subs || [])
+        console.log(`📚 State updated with ${subs?.length || 0} subjects`)
       }
     }).finally(() => setProfileLoading(false))
   }, [user])
@@ -221,7 +228,7 @@ export function Analysis() {
         </header>
 
         {/* Subject picker + run button */}
-        <div className="glass-card rounded-2xl p-lg mb-xxl">
+        <div className="glass-card rounded-2xl p-lg mb-xxl" data-tour="tour-analysis-subject">
           <div className="grid sm:grid-cols-2 gap-5 mb-5">
             <div>
               <label className="text-on-surface-variant text-xs font-medium uppercase tracking-wider block mb-2">Semester</label>
@@ -235,7 +242,10 @@ export function Analysis() {
                 value={selectedSubject}
                 onChange={v => { setSelectedSubject(v); setAnalysis(null) }}
                 placeholder="Choose a subject..."
-                options={subjects.map(s => ({ value: s.id, label: s.name, sublabel: s.code }))}
+                options={subjects.map(s => {
+                  console.log(`🔍 Rendering option: ${s.code} - ${s.name}`)
+                  return { value: s.id, label: s.name, sublabel: s.code }
+                })}
               />
             </div>
           </div>
@@ -257,16 +267,7 @@ export function Analysis() {
 
         {/* ── LOADING skeleton ─────────────────────────────────────── */}
         {loading && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-3 gap-4">
-              {[1,2,3].map(i => <div key={i} className="skeleton rounded-2xl h-28" />)}
-            </div>
-            <div className="skeleton rounded-2xl h-64" />
-            <div className="grid lg:grid-cols-2 gap-6">
-              <div className="skeleton rounded-2xl h-80" />
-              <div className="skeleton rounded-2xl h-80" />
-            </div>
-          </div>
+          <AnalysisLoadingState subjectName={selectedSubjectName} />
         )}
 
         {/* ── ANALYSIS RESULTS (Screen 12) ─────────────────────────── */}
