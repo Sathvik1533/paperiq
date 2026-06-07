@@ -21,6 +21,8 @@ export interface AppPrefs {
   topicSensitivity: number
   theme: 'dark' | 'light'
   defaultLandingPage: 'dashboard' | 'analysis' | 'papers'
+  dashboardView: 'Intelligence' | 'Personal'
+  analysisLayout: 'Interactive' | 'Compact'
 }
 
 const DEFAULT_PREFS: AppPrefs = {
@@ -31,6 +33,8 @@ const DEFAULT_PREFS: AppPrefs = {
   topicSensitivity: 70,
   theme: 'dark',
   defaultLandingPage: 'dashboard',
+  dashboardView: 'Intelligence',
+  analysisLayout: 'Interactive',
 }
 
 interface PrefsStore {

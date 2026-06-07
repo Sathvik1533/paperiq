@@ -15,11 +15,13 @@ import { supabase } from '../lib/supabase'
 import { CustomSelect } from '../components/CustomSelect'
 import { motion, useReducedMotion } from 'framer-motion'
 import { PageTransition } from '../components/ui/PageTransition'
+import { usePrefsStore } from '../store/prefsStore'
 
 export function Profile() {
   const shouldReduceMotion = useReducedMotion()
   const { user, signOut } = useAuthStore()
   const navigate = useNavigate()
+  const { prefs, setPrefs: updateGlobalPrefs } = usePrefsStore()
 
   const [profile, setProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -540,16 +542,18 @@ export function Profile() {
               <div className="p-lg space-y-lg">
                 {[
                   {
+                    id: 'dashboardView',
                     label: 'Dashboard View',
                     sub: 'Data-dense intelligence or clean personal view',
                     opts: ['Intelligence', 'Personal'],
-                    active: 0,
+                    active: prefs.dashboardView,
                   },
                   {
+                    id: 'analysisLayout',
                     label: 'Analysis Layout',
                     sub: 'How paper breakdowns are displayed',
                     opts: ['Interactive', 'Compact'],
-                    active: 0,
+                    active: prefs.analysisLayout,
                   },
                 ].map((pref, pi) => (
                   <div key={pref.label}>
@@ -560,10 +564,11 @@ export function Profile() {
                         <p className="text-[12px] text-on-surface-variant mt-[2px]">{pref.sub}</p>
                       </div>
                       <div className="flex bg-white/5 border border-white/8 p-[3px] rounded-xl gap-[3px] shrink-0">
-                        {pref.opts.map((o, oi) => (
+                        {pref.opts.map((o) => (
                           <button key={o}
+                            onClick={() => updateGlobalPrefs({ [pref.id]: o as any })}
                             className={`px-md py-xs rounded-lg font-body-sm text-sm transition-all ${
-                              oi === pref.active
+                              o === pref.active
                                 ? 'bg-primary-container text-on-primary-container font-bold shadow-sm'
                                 : 'text-on-surface-variant hover:text-on-surface hover:bg-white/5'
                             }`}
@@ -579,7 +584,8 @@ export function Profile() {
                     <p className="text-body-sm font-semibold text-on-surface">Default Landing Page</p>
                     <p className="text-[12px] text-on-surface-variant mt-[2px]">First screen when you open PaperIQ</p>
                   </div>
-                  <CustomSelect value="Dashboard" onChange={() => {}}
+                  <CustomSelect value={prefs.defaultLandingPage.charAt(0).toUpperCase() + prefs.defaultLandingPage.slice(1)} 
+                    onChange={(v) => updateGlobalPrefs({ defaultLandingPage: v.toLowerCase() as any })}
                     options={['Dashboard','Analysis','Papers'].map(o => ({ value: o, label: o }))} />
                 </div>
               </div>
