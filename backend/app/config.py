@@ -57,6 +57,11 @@ class Settings(BaseSettings):
     scraper_max_retries: int = 3
     scraper_download_dir: str = "/tmp/paperiq_downloads"
 
+    # Production Performance
+    uvicorn_workers: int = 9
+    uvicorn_limit_concurrency: int = 1000
+    uvicorn_timeout_keep_alive: int = 5
+
     @property
     def cors_origins_list(self) -> List[str]:
         return [o.strip() for o in self.cors_origins.split(",")]

@@ -15,6 +15,7 @@ import { Footer } from '../components/Footer'
 import { useAuthStore } from '../store/authStore'
 import { getUserProfile, getSubjectsForSemester } from '../lib/api'
 import { supabase } from '../lib/supabase'
+import { motion } from 'framer-motion'
 
 export function UnitQuestions() {
   const { subjectId, unitId } = useParams<{ subjectId: string; unitId: string }>()
@@ -228,7 +229,7 @@ export function UnitQuestions() {
                 </h2>
               </div>
               <div className="relative pt-8">
-                <div className="absolute top-[48px] left-0 w-full h-px" style={{background:'linear-gradient(90deg, #ffb690 0%, rgba(255,182,144,0.1) 100%)'}} />
+                <div className="hidden md:block absolute top-[48px] left-[10%] w-[80%] border-t-2 border-dashed border-primary/30" />
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-xl relative z-10">
                   {unitData.top_topics.slice(0, 4).map((t: any, i: number) => (
                     <div key={i} className="flex flex-col gap-sm">
@@ -259,7 +260,15 @@ export function UnitQuestions() {
             {questions.length > 0 ? (
               <div className="space-y-base">
                 {questions.map((q, i) => (
-                  <div key={q.id || i} className="bg-surface-container border border-outline-variant rounded-xl p-lg hover:border-primary/50 transition-all">
+                  <motion.div 
+                    key={q.id || i} 
+                    className="bg-surface-container border border-outline-variant rounded-xl p-lg hover:border-primary/50 transition-all cursor-pointer"
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.05, type: 'spring', stiffness: 300, damping: 24 }}
+                    whileHover={{ scale: 1.01, boxShadow: '0 8px 30px rgba(0,0,0,0.12)' }}
+                    whileTap={{ scale: 0.99 }}
+                  >
                     <div className="flex flex-col md:flex-row justify-between gap-md mb-md">
                       <h3 className="font-headline text-on-surface max-w-2xl leading-snug">{q.question_text}</h3>
                       <div className="flex flex-wrap gap-xs h-fit shrink-0">
@@ -272,11 +281,11 @@ export function UnitQuestions() {
                     </div>
                     <div className="flex flex-wrap items-center gap-md">
                       {q.topic_name && (
-                        <span className="bg-white/5 text-on-surface-variant px-sm py-1 rounded-lg text-xs font-data-label border border-white/10">{q.topic_name}</span>
+                        <span className="bg-white/5 text-on-surface-variant px-sm py-1 rounded-lg text-xs font-data-label border border-white/10 break-words whitespace-normal line-clamp-2 md:line-clamp-none max-w-full">{q.topic_name}</span>
                       )}
-                      {q.marks && <span className="text-primary font-bold text-sm">{q.marks} Marks</span>}
+                      {q.marks && <span className="text-primary font-bold text-sm shrink-0">{q.marks} Marks</span>}
                     </div>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
             ) : (

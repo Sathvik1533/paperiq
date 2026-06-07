@@ -16,14 +16,21 @@ from app.parsers.question_parser import QuestionParser
 
 load_dotenv()
 
-# R22 CSE subject codes
+# R22 CSE subject codes — ONLY the 10 official 2nd-year subjects
+# 5 for Semester 2-1, 5 for Semester 2-2
 CSE_CODES = {
+    # Semester 2-1
     "A6CS05": "Data Structures",
-    "A6CS09": "Database Management Systems", 
+    "A6IT02": "Object Oriented Programming through Java",
+    "A6CS02": "Digital Electronics and Computer Organization",
+    "A6CS07": "Software Engineering",
+    "A6BS03": "Computer Oriented Statistical Methods",
+    # Semester 2-2
+    "A6HS08": "Business Economics and Financial Analysis",
     "A6CS08": "Discrete Mathematics",
-    "A6CS15": "Design and Analysis of Algorithms",
-    "A6CS18": "Computer Networks",
-    "A6CS28": "Digital Electronics and Computer Organization"
+    "A6CS09": "Database Management Systems",
+    "A6CS11": "Operating System",
+    "A6CS13": "Software Testing Fundamentals",
 }
 
 def extract_rar(rar_path, dest_dir):

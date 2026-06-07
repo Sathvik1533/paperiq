@@ -4,9 +4,12 @@
  *
  * All toggles/sliders are functional and persist to user_profiles.preferences JSONB.
  * Sections: Intelligence, Notifications, Analysis, Data & Privacy, Display, Experimental, About.
+ * 
+ * ENHANCED: Spring-driven animations on all interactive elements
  */
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
+import { motion, useReducedMotion } from 'framer-motion'
 import { NavBar } from '../components/NavBar'
 import { Footer } from '../components/Footer'
 import { useAuthStore } from '../store/authStore'
@@ -14,13 +17,15 @@ import { usePrefsStore } from '../store/prefsStore'
 import { getUserProfile } from '../lib/api'
 import { supabase } from '../lib/supabase'
 import { CustomSelect } from '../components/CustomSelect'
+import { PageTransition } from '../components/ui/PageTransition'
+import { hoverScale, tapScale, SPRING_SNAPPY } from '../lib/motion'
 
 interface Prefs {
   notifications: { analysisComplete: boolean; examReminders: boolean; studyPlanUpdates: boolean }
   intelligence: { topicSensitivity: number; confidenceDisplay: string; recommendationStyle: string; priorityVisibility: boolean; revisionReminders: boolean }
   analysis: { autoAnalysis: boolean; defaultExamFilter: string; minConfidence: number }
   privacy: { anonymousAnalytics: boolean; cacheResults: boolean }
-  display: { compactMode: boolean; reduceMotion: boolean }
+  display: { compactMode: boolean; reduceMotion: boolean; theme: 'dark' | 'light' }
   experimental: { newDashboard: boolean; advancedAnalysis: boolean; earlyFeatures: boolean }
 }
 
@@ -29,18 +34,33 @@ const DEFAULT_PREFS: Prefs = {
   intelligence:  { topicSensitivity: 70, confidenceDisplay:'Standard', recommendationStyle:'Balanced', priorityVisibility:true, revisionReminders:false },
   analysis:      { autoAnalysis: true, defaultExamFilter:'Semester', minConfidence:80 },
   privacy:       { anonymousAnalytics: false, cacheResults: true },
-  display:       { compactMode: false, reduceMotion: false },
+  display:       { compactMode: false, reduceMotion: false, theme: 'dark' },
   experimental:  { newDashboard: false, advancedAnalysis: false, earlyFeatures: false },
 }
 
 function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
+  const shouldReduceMotion = useReducedMotion()
+  
   return (
-    <button
+    <motion.button
       onClick={() => onChange(!checked)}
-      className={`relative w-11 h-6 rounded-full transition-colors ${checked ? 'bg-primary-container' : 'bg-surface-container-highest'}`}
+      className={`relative w-11 h-6 rounded-full transition-colors ${
+        checked ? 'bg-primary-container' : 'bg-surface-container-highest'
+      }`}
+      whileHover={shouldReduceMotion ? {} : { scale: 1.05 }}
+      whileTap={shouldReduceMotion ? {} : { scale: 0.95 }}
+      transition={SPRING_SNAPPY}
+      aria-checked={checked}
+      role="switch"
+      style={{ pointerEvents: 'auto' }}
     >
-      <span className={`absolute top-[2px] left-[2px] w-5 h-5 bg-white rounded-full transition-transform ${checked ? 'translate-x-5' : ''}`} />
-    </button>
+      <motion.span 
+        className="absolute top-[2px] left-[2px] w-5 h-5 bg-white rounded-full shadow-lg"
+        animate={{ x: checked ? 20 : 0 }}
+        transition={shouldReduceMotion ? { duration: 0 } : SPRING_SNAPPY}
+        style={{ pointerEvents: 'none' }}
+      />
+    </motion.button>
   )
 }
 
@@ -48,6 +68,7 @@ export function Settings() {
   const { user, signOut } = useAuthStore()
   const { setPrefs: setGlobalPrefs } = usePrefsStore()   // live global update
   const navigate  = useNavigate()
+  const shouldReduceMotion = useReducedMotion()
   const [prefs, setPrefs]   = useState<Prefs>(DEFAULT_PREFS)
   const [saving, setSaving] = useState(false)
   const [success, setSuccess] = useState('')
@@ -84,7 +105,7 @@ export function Settings() {
     // Push relevant prefs into global store immediately — no page reload needed.
     // Any component reading usePrefsStore() re-renders instantly.
     const filterMap: Record<string, any> = {
-      'Semester': 'semester', 'Mid-1': 'mid1', 'Mid-2': 'mid2', 'All': 'all',
+      'Semester': 'semester', 'All': 'all',
     }
     if (section === 'analysis') {
       if (field === 'defaultExamFilter') setGlobalPrefs({ defaultExamFilter: filterMap[value] ?? 'semester' })
@@ -93,6 +114,7 @@ export function Settings() {
     if (section === 'display') {
       if (field === 'compactMode')   setGlobalPrefs({ compactMode: value })
       if (field === 'reduceMotion')  setGlobalPrefs({ reduceMotion: value })
+      if (field === 'theme')         setGlobalPrefs({ theme: value })
     }
     if (section === 'intelligence') {
       if (field === 'topicSensitivity') setGlobalPrefs({ topicSensitivity: value })
@@ -119,8 +141,9 @@ export function Settings() {
   }, [user])
 
   return (
-    <div className="min-h-screen bg-background">
-      <NavBar activeTab="settings" />
+    <PageTransition>
+      <div className="min-h-screen bg-background">
+        <NavBar activeTab="settings" />
 
       <div className="flex gap-xl max-w-[1200px] mx-auto pt-32 pb-xxl px-lg">
         {/* Sidebar */}
@@ -133,18 +156,24 @@ export function Settings() {
             </div>
             <div className="flex flex-col gap-xs flex-1">
               {nav.map(section => (
-                <button
+                <motion.button
                   key={section}
                   onClick={() => setActiveSection(section)}
                   className={`flex items-center gap-sm px-sm py-md rounded-lg transition-all ${
-                    activeSection === section ? 'text-primary font-bold bg-surface-container-high' : 'text-on-surface-variant hover:bg-surface-container-highest'
+                    activeSection === section 
+                      ? 'text-primary font-bold bg-surface-container-high' 
+                      : 'text-on-surface-variant hover:bg-surface-container-highest'
                   }`}
+                  whileHover={shouldReduceMotion ? {} : hoverScale}
+                  whileTap={shouldReduceMotion ? {} : tapScale}
+                  transition={SPRING_SNAPPY}
+                  style={{ pointerEvents: 'auto' }}
                 >
                   <span className="material-symbols-outlined">
                     {section==='Notifications'?'notifications':section==='Intelligence'?'psychology':section==='Privacy'?'lock':section==='Display'?'palette':'science'}
                   </span>
                   <span className="font-body-md">{section}</span>
-                </button>
+                </motion.button>
               ))}
             </div>
             <div className="mt-auto pt-base border-t border-surface-variant">
@@ -263,7 +292,7 @@ export function Settings() {
                   <CustomSelect
                     value={prefs.analysis.defaultExamFilter}
                     onChange={v => update('analysis','defaultExamFilter', v)}
-                    options={['All','Mid-1','Mid-2','Semester'].map(o => ({ value: o, label: o }))}
+                    options={['All','Semester'].map(o => ({ value: o, label: o }))}
                   />
                 </div>
                 <div>
@@ -297,17 +326,34 @@ export function Settings() {
                   <Toggle checked={prefs.privacy.cacheResults} onChange={v => update('privacy','cacheResults',v)} />
                 </div>
                 <div className="pt-base border-t border-surface-variant">
-                  <button
-                    onClick={() => {
-                      if (confirm('Clear cached analysis results? This cannot be undone.')) {
-                        setSuccess('Cache cleared.')
-                        setTimeout(() => setSuccess(''), 3000)
-                      }
-                    }}
-                    className="text-error font-body-md hover:underline flex items-center gap-xs"
-                  >
-                    <span className="material-symbols-outlined text-[18px]">delete</span>Clear Cache
-                  </button>
+                  {shouldReduceMotion ? (
+                    <button
+                      onClick={() => {
+                        if (confirm('Clear cached analysis results? This cannot be undone.')) {
+                          setSuccess('Cache cleared.')
+                          setTimeout(() => setSuccess(''), 3000)
+                        }
+                      }}
+                      className="text-error font-body-md hover:underline flex items-center gap-xs"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">delete</span>Clear Cache
+                    </button>
+                  ) : (
+                    <motion.button
+                      onClick={() => {
+                        if (confirm('Clear cached analysis results? This cannot be undone.')) {
+                          setSuccess('Cache cleared.')
+                          setTimeout(() => setSuccess(''), 3000)
+                        }
+                      }}
+                      className="text-error font-body-md hover:underline flex items-center gap-xs"
+                      whileHover={{ scale: 1.05, x: 2 }}
+                      whileTap={tapScale}
+                      transition={SPRING_SNAPPY}
+                    >
+                      <span className="material-symbols-outlined text-[18px]">delete</span>Clear Cache
+                    </motion.button>
+                  )}
                 </div>
               </div>
             </section>
@@ -321,9 +367,15 @@ export function Settings() {
                   <h2 className="font-headline text-headline-md text-on-surface">Display</h2>
                 </div>
                 <div className="space-y-lg">
-                  <div className="flex items-center justify-between text-on-surface-variant">
-                    <span className="font-body-md">Theme: Dark</span>
-                    <span className="material-symbols-outlined text-[18px]">lock</span>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="font-body-md text-on-surface block mb-xs">Theme</span>
+                      <span className="text-body-sm text-on-surface-variant">Light mode coming soon</span>
+                    </div>
+                    <div className="flex items-center gap-xs px-md py-xs bg-surface-container-high rounded-lg">
+                      <span className="material-symbols-outlined text-[18px] text-primary">dark_mode</span>
+                      <span className="text-body-sm text-on-surface">Dark</span>
+                    </div>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="font-body-md text-on-surface">Compact Mode</span>
@@ -342,18 +394,144 @@ export function Settings() {
                   <span className="material-symbols-outlined text-primary-container">settings_suggest</span>
                   <h2 className="font-headline text-headline-md text-on-surface">Advanced</h2>
                 </div>
-                <div className="space-y-lg">
-                  <button
-                    onClick={() => {
-                      const data = { user: user?.email, profile: 'Available on request' }
-                      const blob = new Blob([JSON.stringify(data, null, 2)], { type:'application/json' })
-                      const url = URL.createObjectURL(blob)
-                      const a = document.createElement('a'); a.href = url; a.download = 'paperiq_data.json'; a.click()
-                    }}
-                    className="w-full border border-surface-variant text-on-surface font-body-md py-sm rounded-lg hover:bg-white/5 transition-all"
-                  >
-                    Export My Data
-                  </button>
+                <div className="space-y-md">
+                  {/* Reset Tutorial */}
+                  <div>
+                    <div className="flex items-center justify-between mb-xs">
+                      <span className="font-body-sm text-on-surface">Reset Tutorial</span>
+                    </div>
+                    <p className="text-[12px] text-on-surface-variant mb-sm">Show the guided tour again on next login</p>
+                    {shouldReduceMotion ? (
+                      <button
+                        onClick={() => {
+                          localStorage.setItem('paperiq_tour_completed', 'false')
+                          setSuccess('Tutorial will restart on next page load.')
+                          setTimeout(() => setSuccess(''), 3000)
+                        }}
+                        className="w-full border border-surface-variant text-on-surface font-body-sm py-xs rounded-lg hover:bg-white/5 transition-all"
+                      >
+                        <span className="flex items-center justify-center gap-xs">
+                          <span className="material-symbols-outlined text-[16px]">refresh</span>
+                          Reset
+                        </span>
+                      </button>
+                    ) : (
+                      <motion.button
+                        onClick={() => {
+                          localStorage.setItem('paperiq_tour_completed', 'false')
+                          setSuccess('Tutorial will restart on next page load.')
+                          setTimeout(() => setSuccess(''), 3000)
+                        }}
+                        className="w-full border border-surface-variant text-on-surface font-body-sm py-xs rounded-lg hover:bg-white/5 transition-all"
+                        whileHover={hoverScale}
+                        whileTap={tapScale}
+                        transition={SPRING_SNAPPY}
+                      >
+                        <span className="flex items-center justify-center gap-xs">
+                          <span className="material-symbols-outlined text-[16px]">refresh</span>
+                          Reset
+                        </span>
+                      </motion.button>
+                    )}
+                  </div>
+
+                  <div className="h-px bg-white/5" />
+
+                  {/* Clear All Data */}
+                  <div>
+                    <div className="flex items-center justify-between mb-xs">
+                      <span className="font-body-sm text-on-surface">Clear All Cache</span>
+                    </div>
+                    <p className="text-[12px] text-on-surface-variant mb-sm">Remove cached analysis results and local data</p>
+                    {shouldReduceMotion ? (
+                      <button
+                        onClick={() => {
+                          if (confirm('Clear all cached data? This will remove locally stored analysis results but won\'t delete your account or profile.')) {
+                            // Clear localStorage (except auth)
+                            const authData = localStorage.getItem('supabase.auth.token')
+                            localStorage.clear()
+                            if (authData) localStorage.setItem('supabase.auth.token', authData)
+                            
+                            // Clear sessionStorage
+                            sessionStorage.clear()
+                            
+                            setSuccess('Cache cleared successfully.')
+                            setTimeout(() => setSuccess(''), 3000)
+                          }
+                        }}
+                        className="w-full border border-error/40 text-error font-body-sm py-xs rounded-lg hover:bg-error/10 transition-all"
+                      >
+                        <span className="flex items-center justify-center gap-xs">
+                          <span className="material-symbols-outlined text-[16px]">delete_sweep</span>
+                          Clear Cache
+                        </span>
+                      </button>
+                    ) : (
+                      <motion.button
+                        onClick={() => {
+                          if (confirm('Clear all cached data? This will remove locally stored analysis results but won\'t delete your account or profile.')) {
+                            // Clear localStorage (except auth)
+                            const authData = localStorage.getItem('supabase.auth.token')
+                            localStorage.clear()
+                            if (authData) localStorage.setItem('supabase.auth.token', authData)
+                            
+                            // Clear sessionStorage
+                            sessionStorage.clear()
+                            
+                            setSuccess('Cache cleared successfully.')
+                            setTimeout(() => setSuccess(''), 3000)
+                          }
+                        }}
+                        className="w-full border border-error/40 text-error font-body-sm py-xs rounded-lg hover:bg-error/10 transition-all"
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={tapScale}
+                        transition={SPRING_SNAPPY}
+                      >
+                        <span className="flex items-center justify-center gap-xs">
+                          <span className="material-symbols-outlined text-[16px]">delete_sweep</span>
+                          Clear Cache
+                        </span>
+                      </motion.button>
+                    )}
+                  </div>
+
+                  <div className="h-px bg-white/5" />
+
+                  {/* Report Issue */}
+                  <div>
+                    <div className="flex items-center justify-between mb-xs">
+                      <span className="font-body-sm text-on-surface">Having Issues?</span>
+                    </div>
+                    <p className="text-[12px] text-on-surface-variant mb-sm">Contact support for help</p>
+                    {shouldReduceMotion ? (
+                      <button
+                        onClick={() => {
+                          window.open('mailto:support@paperiq.in?subject=PaperIQ Support Request&body=User: ' + user?.email, '_blank')
+                        }}
+                        className="w-full border border-surface-variant text-on-surface font-body-sm py-xs rounded-lg hover:bg-white/5 transition-all"
+                      >
+                        <span className="flex items-center justify-center gap-xs">
+                          <span className="material-symbols-outlined text-[16px]">mail</span>
+                          Email Support
+                        </span>
+                      </button>
+                    ) : (
+                      <motion.button
+                        onClick={() => {
+                          window.open('mailto:support@paperiq.in?subject=PaperIQ Support Request&body=User: ' + user?.email, '_blank')
+                        }}
+                        className="w-full border border-surface-variant text-on-surface font-body-sm py-xs rounded-lg hover:bg-white/5 transition-all"
+                        whileHover={hoverScale}
+                        whileTap={tapScale}
+                        transition={SPRING_SNAPPY}
+                      >
+                        <span className="flex items-center justify-center gap-xs">
+                          <span className="material-symbols-outlined text-[16px]">mail</span>
+                          Email Support
+                        </span>
+                      </motion.button>
+                    )}
+                  </div>
                 </div>
               </section>
 
@@ -423,9 +601,10 @@ export function Settings() {
         ))}
       </div>
 
-      <div className="pb-16 md:pb-0">
-        <Footer />
+        <div className="pb-16 md:pb-0">
+          <Footer />
+        </div>
       </div>
-    </div>
+    </PageTransition>
   )
 }

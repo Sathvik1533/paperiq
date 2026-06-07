@@ -200,6 +200,8 @@ def _store_paper_meta(
             "file_hash": file_hash,
             "exam_category": paper.exam_category,
             "extraction_status": "pending",
+            "max_marks": paper.max_marks or 70,  # Default to 70 marks (standard JNTUH)
+            "duration_hours": 3,  # Standard exam duration
         }).execute()
         log.info(f"[ScrapeJob] Stored paper: {paper.file_name}")
         return result.data[0]["id"] if result.data else None

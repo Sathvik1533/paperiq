@@ -18,7 +18,7 @@ class HallTicketParser:
     SUBJECT_NAMES = {
         # 2-1
         'A6IT02': 'Object Oriented Programming through Java',
-        'A6CS28': 'Digital Electronics and Computer Organization',
+        'A6CS02': 'Digital Electronics and Computer Organization',
         'A6CS05': 'Data Structures',
         'A6CS07': 'Software Engineering',
         'A6BS03': 'Computer Oriented Statistical Methods',

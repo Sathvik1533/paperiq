@@ -3,6 +3,8 @@ On-Demand DOCX Download API
 
 Extracts and serves authentic MLRIT question papers from RAR archives.
 User clicks download → gets original DOCX instantly.
+
+Performance: All blocking I/O operations offloaded to thread pool.
 """
 
 from fastapi import APIRouter, HTTPException
@@ -12,14 +14,18 @@ import tempfile
 import subprocess
 import asyncio
 from pathlib import Path
-import requests
-from datetime import datetime, timedelta
+from datetime import datetime
+from concurrent.futures import ThreadPoolExecutor
+import httpx
 
 from app.database import get_db
 from app.logger import get_logger
 
 router = APIRouter()
 log = get_logger(__name__)
+
+# Thread pool for blocking I/O operations (prevents event loop blocking)
+io_executor = ThreadPoolExecutor(max_workers=4, thread_name_prefix="docx-io")
 
 # Cache RAR archives for 24 hours to avoid repeated downloads
 RAR_CACHE_DIR = Path(tempfile.gettempdir()) / "paperiq_rar_cache"
@@ -30,8 +36,11 @@ DOCX_CACHE_DIR = Path(tempfile.gettempdir()) / "paperiq_docx_cache"
 DOCX_CACHE_DIR.mkdir(exist_ok=True)
 
 
-def extract_rar(rar_path: str, dest_dir: str) -> bool:
-    """Extract RAR using unar"""
+def _extract_rar_sync(rar_path: str, dest_dir: str) -> bool:
+    """
+    Extract RAR using unar (synchronous - runs in thread pool).
+    Separated to prevent blocking event loop during subprocess execution.
+    """
     try:
         subprocess.run(
             ['unar', '-q', '-o', dest_dir, rar_path],
@@ -45,18 +54,32 @@ def extract_rar(rar_path: str, dest_dir: str) -> bool:
         return False
 
 
+async def extract_rar(rar_path: str, dest_dir: str) -> bool:
+    """Async wrapper for RAR extraction - offloads to thread pool"""
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(io_executor, _extract_rar_sync, rar_path, dest_dir)
+
+
 def find_docx_in_directory(directory: Path, file_name: str) -> Path | None:
-    """Find DOCX file in extracted directory"""
+    """Find file in extracted directory"""
     # Exact match
     matches = list(directory.rglob(file_name))
     if matches:
         return matches[0]
     
-    # Case-insensitive match
-    for docx_file in directory.rglob("*.doc*"):
-        if docx_file.name.lower() == file_name.lower():
-            return docx_file
-    
+    # Case-insensitive match (handle doc, docx, pdf)
+    for ext in ["*.doc*", "*.pdf"]:
+        for file in directory.rglob(ext):
+            if file.name.lower() == file_name.lower():
+                return file
+            
+    # Try fuzzy match if exact name fails (e.g. if file_name missing extension)
+    base_name = os.path.splitext(file_name)[0].lower()
+    for ext in ["*.doc*", "*.pdf"]:
+        for file in directory.rglob(ext):
+            if file.stem.lower() == base_name:
+                return file
+                
     return None
 
 
@@ -81,16 +104,23 @@ async def get_rar_url_for_paper(paper: dict) -> str | None:
     return None
 
 
-def download_rar(url: str, dest_path: Path) -> bool:
-    """Download RAR archive"""
+async def download_rar(url: str, dest_path: Path) -> bool:
+    """
+    Download RAR archive using async HTTP client.
+    Non-blocking - uses httpx for async downloads.
+    """
     try:
         log.info(f"Downloading RAR from {url}")
-        response = requests.get(url, timeout=300, stream=True)
-        response.raise_for_status()
         
-        with open(dest_path, 'wb') as f:
-            for chunk in response.iter_content(chunk_size=8192):
-                f.write(chunk)
+        async with httpx.AsyncClient(timeout=300.0) as client:
+            async with client.stream('GET', url) as response:
+                response.raise_for_status()
+                
+                # Write in chunks to avoid loading entire file into memory
+                async with asyncio.Lock():  # Prevent concurrent writes to same file
+                    with open(dest_path, 'wb') as f:
+                        async for chunk in response.aiter_bytes(chunk_size=8192):
+                            f.write(chunk)
         
         return True
     except Exception as e:
@@ -140,38 +170,69 @@ async def download_original_docx(paper_id: str):
             )
     
     # Not in cache - need to download and extract
-    log.info(f"DOCX not in cache, extracting from RAR: {file_name}")
+    log.info(f"File not in cache, trying to get original: {file_name}")
     
-    # Get RAR archive URL
-    rar_url = await get_rar_url_for_paper(paper)
+    # Get archive URL
+    archive_url = paper.get('archive_url')
+    if not archive_url:
+        # Fallback to original_url if archive_url is missing
+        if paper.get('original_url') and (paper['original_url'].lower().endswith('.rar') or paper['original_url'].lower().endswith('.zip')):
+            archive_url = paper['original_url']
+        elif paper.get('original_url') and paper['original_url'].lower().endswith('.pdf'):
+            # Direct PDF case
+            archive_url = paper['original_url']
+            
+    if not archive_url:
+        # Fallback: derive from MLRIT archive catalog based on month/year
+        from app.scrapers.colleges.mlrit_r22 import R22_ARCHIVES, BASE_URL
+        exam_year = paper.get('exam_year')
+        exam_month = paper.get('exam_month')
+        
+        for archive in R22_ARCHIVES:
+            if archive['year'] == exam_year and archive['month'] == exam_month:
+                archive_url = f"{BASE_URL}/{archive['file']}"
+                log.info(f"Derived archive URL from catalog: {archive_url}")
+                break
     
-    if not rar_url:
-        # Fallback to PDF generation if we can't get original
+    if not archive_url:
+        log.error(f"No archive_url, original_url, or catalog match found for paper: {paper.get('title')}")
         raise HTTPException(
             503,
-            "Original DOCX temporarily unavailable. Please try PDF download instead."
+            "Original document temporarily unavailable. Please try PDF download instead."
         )
     
-    # Download RAR (with caching)
-    rar_name = rar_url.split('/')[-1]
-    cached_rar = RAR_CACHE_DIR / rar_name
+    # Handle direct PDF downloads
+    is_direct_pdf = archive_url.lower().endswith('.pdf')
     
-    if not cached_rar.exists():
-        log.info(f"Downloading RAR: {rar_name}")
-        if not download_rar(rar_url, cached_rar):
-            raise HTTPException(503, "Failed to download archive from college website")
+    download_name = archive_url.split('/')[-1]
+    cached_download = RAR_CACHE_DIR / download_name
+    
+    if not cached_download.exists():
+        log.info(f"Downloading file: {download_name}")
+        if not await download_rar(archive_url, cached_download):
+            raise HTTPException(503, "Failed to download file from college website")
     else:
-        log.info(f"Using cached RAR: {rar_name}")
+        log.info(f"Using cached file: {download_name}")
     
-    # Extract RAR to temp directory
+    if is_direct_pdf:
+        # If it's a PDF, just serve it directly
+        import shutil
+        shutil.copy(str(cached_download), str(cached_docx))
+        return FileResponse(
+            path=str(cached_docx),
+            filename=file_name if file_name.lower().endswith('.pdf') else file_name + '.pdf',
+            media_type="application/pdf"
+        )
+        
+    # Extract archive to temp directory
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_path = Path(temp_dir)
         
-        log.info(f"Extracting RAR: {rar_name}")
-        if not extract_rar(str(cached_rar), str(temp_path)):
+        log.info(f"Extracting archive: {download_name}")
+        if not await extract_rar(str(cached_download), str(temp_path)):
             raise HTTPException(503, "Failed to extract archive")
         
-        # Find the DOCX file
+        # Find the DOCX or PDF file
         docx_path = find_docx_in_directory(temp_path, file_name)
         
         if not docx_path:
@@ -180,13 +241,15 @@ async def download_original_docx(paper_id: str):
         # Copy to cache for next time
         import shutil
         shutil.copy(str(docx_path), str(cached_docx))
-        log.info(f"Cached DOCX for future requests: {file_name}")
+        log.info(f"Cached file for future requests: {file_name}")
+        
+        media_type = "application/pdf" if str(docx_path).lower().endswith('.pdf') else "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         
         # Serve the file
         return FileResponse(
             path=str(cached_docx),
-            filename=file_name,
-            media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            filename=docx_path.name,
+            media_type=media_type
         )
 
 

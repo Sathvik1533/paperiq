@@ -19,6 +19,8 @@ export interface AppPrefs {
   compactMode: boolean
   reduceMotion: boolean
   topicSensitivity: number
+  theme: 'dark' | 'light'
+  defaultLandingPage: 'dashboard' | 'analysis' | 'papers'
 }
 
 const DEFAULT_PREFS: AppPrefs = {
@@ -27,6 +29,8 @@ const DEFAULT_PREFS: AppPrefs = {
   compactMode: false,
   reduceMotion: false,
   topicSensitivity: 70,
+  theme: 'dark',
+  defaultLandingPage: 'dashboard',
 }
 
 interface PrefsStore {
@@ -50,6 +54,7 @@ export const usePrefsStore = create<PrefsStore>((set) => ({
     const analysis = profilePreferences?.analysis || {}
     const display  = profilePreferences?.display  || {}
     const intel    = profilePreferences?.intelligence || {}
+    const navigation = profilePreferences?.navigation || {}
 
     // Map "Semester" / "Mid-1" / "Mid-2" / "All" → our filter key
     const filterMap: Record<string, AppPrefs['defaultExamFilter']> = {
@@ -57,6 +62,13 @@ export const usePrefsStore = create<PrefsStore>((set) => ({
       'Mid-1':    'mid1',
       'Mid-2':    'mid2',
       'All':      'all',
+    }
+
+    // Map "Dashboard" / "Analysis" / "Papers" → our landing page key
+    const landingMap: Record<string, AppPrefs['defaultLandingPage']> = {
+      'Dashboard': 'dashboard',
+      'Analysis':  'analysis',
+      'Papers':    'papers',
     }
 
     set({
@@ -67,6 +79,8 @@ export const usePrefsStore = create<PrefsStore>((set) => ({
         compactMode:       display.compactMode        ?? DEFAULT_PREFS.compactMode,
         reduceMotion:      display.reduceMotion       ?? DEFAULT_PREFS.reduceMotion,
         topicSensitivity:  intel.topicSensitivity     ?? DEFAULT_PREFS.topicSensitivity,
+        theme:             display.theme              ?? DEFAULT_PREFS.theme,
+        defaultLandingPage: landingMap[navigation.defaultLandingPage] ?? DEFAULT_PREFS.defaultLandingPage,
       },
     })
   },

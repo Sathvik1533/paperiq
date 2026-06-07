@@ -13,8 +13,11 @@ import { useAuthStore } from '../store/authStore'
 import { getUserProfile, upsertUserProfile } from '../lib/api'
 import { supabase } from '../lib/supabase'
 import { CustomSelect } from '../components/CustomSelect'
+import { motion, useReducedMotion } from 'framer-motion'
+import { PageTransition } from '../components/ui/PageTransition'
 
 export function Profile() {
+  const shouldReduceMotion = useReducedMotion()
   const { user, signOut } = useAuthStore()
   const navigate = useNavigate()
 
@@ -198,6 +201,7 @@ export function Profile() {
   const prepCapitalized = prepLabel.charAt(0).toUpperCase() + prepLabel.slice(1)
 
   return (
+    <PageTransition>
     <div className="min-h-screen bg-background">
       <NavBar activeTab="profile" />
 
@@ -207,8 +211,11 @@ export function Profile() {
         {success && <div className="mb-lg px-4 py-3 bg-green-500/10 border border-green-500/30 rounded-xl text-green-400 text-sm">{success}</div>}
 
         {/* ── Hero Banner ─────────────────────────────────────────── */}
-        <div
+        <motion.div
           data-tour="tour-profile-hero"
+          initial={shouldReduceMotion ? false : { opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ type: "spring" as const, stiffness: 300, damping: 20 }}
           className="relative rounded-3xl overflow-hidden mb-xl border border-white/8"
           style={{
             background: 'linear-gradient(135deg, rgba(249,115,22,0.15) 0%, rgba(7,7,13,1) 40%, rgba(16,185,129,0.07) 100%)',
@@ -289,8 +296,14 @@ export function Profile() {
                 { label: 'Papers in DB',     value: stats.papers  || '—', icon: 'description',   color: 'text-primary-container', bg: 'bg-primary-container/10' },
                 { label: 'Analysis Runs',    value: stats.sessions || '0', icon: 'analytics',    color: 'text-emerald-400',        bg: 'bg-emerald-500/10' },
                 { label: 'Prep Level',       value: prepCapitalized,        icon: 'trending_up',  color: 'text-blue-400',           bg: 'bg-blue-500/10' },
-              ].map(s => (
-                <div key={s.label} className="flex items-center gap-md">
+              ].map((s, index) => (
+                <motion.div 
+                  key={s.label} 
+                  initial={shouldReduceMotion ? false : { opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ type: "spring" as const, stiffness: 300, damping: 20, delay: index * 0.05 }}
+                  className="flex items-center gap-md"
+                >
                   <div className={`w-10 h-10 rounded-xl ${s.bg} border border-white/8 flex items-center justify-center shrink-0`}>
                     <span className={`material-symbols-outlined text-[20px] ${s.color}`}>{s.icon}</span>
                   </div>
@@ -298,11 +311,11 @@ export function Profile() {
                     <div className={`font-headline text-[24px] leading-none ${s.color}`}>{s.value}</div>
                     <div className="text-[11px] text-on-surface-variant mt-[3px]">{s.label}</div>
                   </div>
-                </div>
+                </motion.div>
               ))}
             </div>
           </div>
-        </div>
+        </motion.div>
 
         {/* ── Two-col layout ──────────────────────────────────────── */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-lg">
@@ -483,14 +496,16 @@ export function Profile() {
                     { icon: 'description', label: 'Browse Papers', sub: 'View past papers',     to: '/papers',     color: 'text-emerald-400',        bg: 'bg-emerald-500/10',        border: 'border-emerald-500/20' },
                     { icon: 'settings',    label: 'Settings',      sub: 'Preferences',          to: '/settings',   color: 'text-blue-400',           bg: 'bg-blue-500/10',           border: 'border-blue-500/20' },
                   ].map(action => (
-                    <button key={action.label} onClick={() => navigate(action.to)}
+                    <motion.button key={action.label} onClick={() => navigate(action.to)}
+                      whileHover={shouldReduceMotion ? {} : { scale: 1.03, translateY: -2 }}
+                      whileTap={shouldReduceMotion ? {} : { scale: 0.97 }}
                       className={`flex flex-col gap-sm p-md rounded-2xl border ${action.border} ${action.bg} hover:brightness-110 transition-all group text-left`}>
                       <span className={`material-symbols-outlined text-[24px] ${action.color} group-hover:scale-110 transition-transform`}>{action.icon}</span>
                       <div>
                         <p className="text-body-sm font-bold text-on-surface">{action.label}</p>
                         <p className="text-[11px] text-on-surface-variant mt-[2px]">{action.sub}</p>
                       </div>
-                    </button>
+                    </motion.button>
                   ))}
                 </div>
               </div>
@@ -574,5 +589,6 @@ export function Profile() {
       </main>
       <Footer />
     </div>
+    </PageTransition>
   )
 }

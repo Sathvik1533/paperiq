@@ -50,6 +50,8 @@ export function BetaAnalysis() {
   // Real stats passed to loading screen — fetched from DB before analysis starts
   const [loadingQuestionCount, setLoadingQuestionCount] = useState<number | undefined>(undefined)
   const [loadingCoveragePct, setLoadingCoveragePct] = useState<number | undefined>(undefined)
+  // pendingReport: analysis result stored while loading screen is still playing
+  const [pendingReport, setPendingReport] = useState<AnalysisReport | null>(null)
 
   // "Run New Analysis" button sets ?reset=1 in the URL.
   // This effect detects it, clears all state, and removes the param so
@@ -129,6 +131,7 @@ export function BetaAnalysis() {
     setLoading(true)
     setError('')
     setAnalysis(null)
+    setPendingReport(null)
     // Reset loading stats
     setLoadingQuestionCount(undefined)
     setLoadingCoveragePct(undefined)
@@ -149,7 +152,8 @@ export function BetaAnalysis() {
       if (report?.coverage_analysis?.classification_coverage != null) {
         setLoadingCoveragePct(report.coverage_analysis.classification_coverage)
       }
-      setAnalysis(report)
+      // Store result — will be committed when the loading animation calls onComplete
+      setPendingReport(report)
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Analysis failed'
       if (msg.includes('fetch') || msg.includes('network') || msg.includes('connect')) {
@@ -157,9 +161,19 @@ export function BetaAnalysis() {
       } else {
         setError(msg)
       }
-    } finally {
       setLoading(false)
     }
+    // Note: setLoading(false) is NOT called here — it's called inside handleLoadingComplete
+    // so the loading screen stays visible until the animation finishes
+  }
+
+  // Called by AnalysisLoadingState when its animation completes
+  function handleLoadingComplete() {
+    if (pendingReport) {
+      setAnalysis(pendingReport)
+      setPendingReport(null)
+    }
+    setLoading(false)
   }
 
   const selectedSubjectName = subjects.find(s => s.id === selectedSubject)?.name || ''
@@ -181,6 +195,7 @@ export function BetaAnalysis() {
           subjectName={selectedSubjectName}
           questionCount={loadingQuestionCount}
           coveragePct={loadingCoveragePct}
+          onComplete={handleLoadingComplete}
         />
       </div>
     )
@@ -223,12 +238,17 @@ export function BetaAnalysis() {
         </div>
 
         {/* Control panel */}
-        <div className="glass-card rounded-2xl p-lg mb-xl overflow-visible" data-tour="tour-analysis-subject">
+        <div className="glass-card rounded-2xl p-lg mb-xl overflow-visible relative z-50" data-tour="tour-analysis-subject">
           <div className="grid sm:grid-cols-2 gap-lg mb-lg">
             <div>
               <label className="font-data-label text-data-label text-on-surface-variant uppercase tracking-wider block mb-sm">Semester</label>
               <div className="px-md py-md bg-surface-container border border-outline-variant rounded-xl text-on-surface font-body-md">
-                Semester {profile.current_semester} · {profile.regulation}
+                {profile.current_semester === 3
+                  ? '2-1 (Sem 3)'
+                  : profile.current_semester === 4
+                  ? '2-2 (Sem 4)'
+                  : `Semester ${profile.current_semester}`
+                } · {profile.regulation}
               </div>
             </div>
             <div>
@@ -255,14 +275,19 @@ export function BetaAnalysis() {
                     setLoading(true)
                     setError('')
                     setAnalysis(null)
+                    setPendingReport(null)
                     generateAnalysis(
                       id,
                       profile?.regulation || 'R22',
                       f.value !== 'all' ? f.value : undefined
                     )
-                      .then(report => setAnalysis(report))
-                      .catch(e => setError(e instanceof Error ? e.message : 'Analysis failed'))
-                      .finally(() => setLoading(false))
+                      .then(report => {
+                        setPendingReport(report)
+                      })
+                      .catch(e => {
+                        setError(e instanceof Error ? e.message : 'Analysis failed')
+                        setLoading(false)
+                      })
                   }
                 }}
                 className={`relative px-md py-xs rounded-xl text-body-sm font-bold border transition-all
@@ -291,6 +316,7 @@ export function BetaAnalysis() {
           </div>
 
           <button
+            data-tour="tour-run-analysis-cta"
             onClick={() => runAnalysis()}
             disabled={!selectedSubject || loading}
             className="w-full py-md bg-primary text-on-primary rounded-xl font-bold text-body-md transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-md hover:brightness-110 active:scale-[0.99]"
@@ -347,239 +373,266 @@ export function BetaAnalysis() {
             </div>
 
             {/* Unit Distribution */}
-            <div className="glass-card rounded-2xl p-6">
-              <h2 className="font-heading text-xl font-bold mb-5 flex items-center gap-2">
-                <span className="material-symbols-outlined text-[#f97316] text-[22px]" style={{fontVariationSettings:"'FILL' 1"}}>bar_chart</span> Unit Distribution
-              </h2>
-              <div className="space-y-4">
-                {Object.entries(analysis.unit_distribution_classified)
-                  .sort((a, b) => b[1].percentage - a[1].percentage)
-                  .map(([unit, data]) => (
-                    <div key={unit}>
-                      <div className="flex justify-between text-sm mb-1.5">
-                        <span className="text-gray-300 font-medium">{unit}</span>
-                        <span className="text-gray-400 font-mono text-xs">{data.count}q · {data.percentage}%</span>
-                      </div>
-                      <div className="bg-white/8 rounded-full h-2">
-                        <div
-                          className="bg-[#f97316] h-2 rounded-full transition-all"
-                          style={{ width: `${Math.min(data.percentage, 100)}%` }}
-                        />
-                      </div>
-                    </div>
-                  ))}
+            {(Object.keys(analysis.unit_distribution_classified || {}).length > 0 || (analysis as any).unit_distribution?.length > 0) && (
+              <div className="glass-card rounded-2xl p-6">
+                <h2 className="font-heading text-xl font-bold mb-5 flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[#f97316] text-[22px]" style={{fontVariationSettings:"'FILL' 1"}}>bar_chart</span> Unit Distribution
+                </h2>
+                <div className="space-y-4">
+                  {Object.keys(analysis.unit_distribution_classified || {}).length > 0 ? (
+                    Object.entries(analysis.unit_distribution_classified)
+                      .sort((a, b) => b[1].percentage - a[1].percentage)
+                      .map(([unit, data]) => (
+                        <div key={unit}>
+                          <div className="flex justify-between text-sm mb-1.5">
+                            <span className="text-gray-300 font-medium">{unit}</span>
+                            <span className="text-gray-400 font-mono text-xs">{data.count}q · {data.percentage}%</span>
+                          </div>
+                          <div className="bg-white/8 rounded-full h-2">
+                            <div
+                              className="bg-[#f97316] h-2 rounded-full transition-all"
+                              style={{ width: `${Math.min(data.percentage, 100)}%` }}
+                            />
+                          </div>
+                        </div>
+                      ))
+                  ) : (
+                    ((analysis as any).unit_distribution || [])
+                      .sort((a: any, b: any) => b.pct - a.pct)
+                      .map((data: any) => (
+                        <div key={data.unit_name}>
+                          <div className="flex justify-between text-sm mb-1.5">
+                            <span className="text-gray-300 font-medium">{data.unit_name}</span>
+                            <span className="text-gray-400 font-mono text-xs">{data.question_count}q · {data.pct}%</span>
+                          </div>
+                          <div className="bg-white/8 rounded-full h-2">
+                            <div
+                              className="bg-[#f97316] h-2 rounded-full transition-all"
+                              style={{ width: `${Math.min(data.pct, 100)}%` }}
+                            />
+                          </div>
+                        </div>
+                      ))
+                  )}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* 2-col grid: Most Asked + High Probability */}
             <div className="grid lg:grid-cols-2 gap-6">
               {/* Most Asked Topics */}
-              <div className="glass-card rounded-2xl p-6">
-                <h2 className="font-heading text-xl font-bold mb-5 flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[#f97316] text-[22px]" style={{fontVariationSettings:"'FILL' 1"}}>target</span> Most Asked Topics
-                </h2>
-                <div className="space-y-2.5">
-                  {analysis.most_asked_topics.slice(0, 8).map((topic, idx) => (
-                    <div key={idx} className="flex items-center justify-between p-3 bg-white/4 hover:bg-white/7 rounded-xl transition-colors">
-                      <div className="flex-1 min-w-0 mr-3">
-                        <div className="text-white text-sm font-medium truncate">{topic.topic}</div>
-                        <div className="text-gray-500 text-xs mt-0.5">{topic.unit}</div>
+              {(analysis.most_asked_topics?.length > 0 || (analysis as any).topic_frequency?.length > 0) && (
+                <div className="glass-card rounded-2xl p-6">
+                  <h2 className="font-heading text-xl font-bold mb-5 flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[#f97316] text-[22px]" style={{fontVariationSettings:"'FILL' 1"}}>target</span> Most Asked Topics
+                  </h2>
+                  <div className="space-y-2.5">
+                    {(analysis.most_asked_topics?.length > 0 ? analysis.most_asked_topics : (analysis as any).topic_frequency || []).slice(0, 8).map((topic: any, idx: number) => (
+                      <div key={idx} className="flex items-center justify-between p-3 bg-white/4 hover:bg-white/7 rounded-xl transition-colors">
+                        <div className="flex-1 min-w-0 mr-3">
+                          <div className="text-white text-sm font-medium truncate">{topic.topic}</div>
+                          <div className="text-gray-500 text-xs mt-0.5">{topic.unit || `Unit ${topic.unit_number || '?'}`}</div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          {topic.priority && <PriorityBadge priority={topic.priority} />}
+                          <span className="text-gray-400 text-xs font-mono w-10 text-right">{topic.percentage != null ? `${topic.percentage}%` : `${topic.count}q`}</span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <PriorityBadge priority={topic.priority} />
-                        <span className="text-gray-400 text-xs font-mono w-10 text-right">{topic.percentage}%</span>
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* High Probability Topics */}
-              <div className="glass-card rounded-2xl p-6">
-                <h2 className="font-heading text-xl font-bold mb-5 flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[#10b981] text-[22px]" style={{fontVariationSettings:"'FILL' 1"}}>trending_up</span> High Probability
-                </h2>
-                <div className="space-y-3">
-                  {analysis.high_probability_topics_classified.slice(0, 6).map((topic, idx) => (
-                    <div key={idx} className="p-3 bg-white/4 rounded-xl">
-                      <div className="flex justify-between items-start mb-2">
-                        <span className="text-white text-sm font-medium">{topic.topic}</span>
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-semibold shrink-0 ml-2 ${
-                          topic.probability === 'Very High' ? 'bg-[#10b981]/20 text-[#10b981] border border-[#10b981]/30'
-                          : topic.probability === 'High' ? 'bg-[#f97316]/20 text-[#f97316] border border-[#f97316]/30'
-                          : 'bg-white/8 text-gray-300 border border-white/10'
-                        }`}>
-                          {topic.probability}
-                        </span>
+              {(analysis.high_probability_topics_classified?.length > 0 || (analysis as any).high_probability_topics?.length > 0) && (
+                <div className="glass-card rounded-2xl p-6">
+                  <h2 className="font-heading text-xl font-bold mb-5 flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[#10b981] text-[22px]" style={{fontVariationSettings:"'FILL' 1"}}>trending_up</span> High Probability
+                  </h2>
+                  <div className="space-y-3">
+                    {(analysis.high_probability_topics_classified?.length > 0 ? analysis.high_probability_topics_classified : (analysis as any).high_probability_topics || []).slice(0, 6).map((topic: any, idx: number) => (
+                      <div key={idx} className="p-3 bg-white/4 rounded-xl">
+                        <div className="flex justify-between items-start mb-2">
+                          <span className="text-white text-sm font-medium">{topic.topic}</span>
+                          <span className={`text-xs px-2 py-0.5 rounded-full font-semibold shrink-0 ml-2 ${
+                            (topic.probability || 'Medium') === 'Very High' ? 'bg-[#10b981]/20 text-[#10b981] border border-[#10b981]/30'
+                            : (topic.probability || 'Medium') === 'High' ? 'bg-[#f97316]/20 text-[#f97316] border border-[#f97316]/30'
+                            : 'bg-white/8 text-gray-300 border border-white/10'
+                          }`}>
+                            {topic.probability || 'High'}
+                          </span>
+                        </div>
+                        <div className="text-gray-500 text-xs mb-2">
+                          {topic.question_count || topic.count || 0}q · {topic.paper_count || (topic.evidence_papers ? topic.evidence_papers.length : 0)} papers
+                        </div>
+                        <div className="bg-white/8 rounded-full h-1">
+                          <div
+                            className="bg-[#10b981] h-1 rounded-full"
+                            style={{ width: `${(topic.confidence || 0.8) * 100}%` }}
+                          />
+                        </div>
                       </div>
-                      <div className="text-gray-500 text-xs mb-2">
-                        {topic.question_count}q · {topic.paper_count} papers
-                      </div>
-                      <div className="bg-white/8 rounded-full h-1">
-                        <div
-                          className="bg-[#10b981] h-1 rounded-full"
-                          style={{ width: `${topic.confidence * 100}%` }}
-                        />
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Study Priority Order */}
-            <div className="space-y-0">
-              {/* Section header */}
-              <div className="relative py-8 text-center mb-2">
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div style={{ width: 600, height: 200, background: 'radial-gradient(circle, rgba(249,115,22,0.08) 0%, transparent 70%)' }} />
+            {analysis.study_priority_order?.length > 0 && (
+              <div className="space-y-0">
+                {/* Section header */}
+                <div className="relative py-8 text-center mb-2">
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div style={{ width: 600, height: 200, background: 'radial-gradient(circle, rgba(249,115,22,0.08) 0%, transparent 70%)' }} />
+                  </div>
+                  <h2 className="relative font-heading text-3xl font-bold text-white flex items-center justify-center gap-3">
+                    <span className="material-symbols-outlined text-[#f97316] text-[30px]" style={{fontVariationSettings:"'FILL' 1"}}>bolt</span> Study Priority Order
+                  </h2>
+                  <p className="relative text-gray-400 mt-1 text-base">Ranked by exam frequency — start from #1 and work down</p>
                 </div>
-                <h2 className="relative font-heading text-3xl font-bold text-white flex items-center justify-center gap-3">
-                  <span className="material-symbols-outlined text-[#f97316] text-[30px]" style={{fontVariationSettings:"'FILL' 1"}}>bolt</span> Study Priority Order
-                </h2>
-                <p className="relative text-gray-400 mt-1 text-base">Ranked by exam frequency — start from #1 and work down</p>
-              </div>
 
-              {/* Intelligence banner — dynamic */}
-              <div className="px-5 py-4 rounded-xl border border-[#f97316]/30 mb-6" style={{ background: 'rgba(249,115,22,0.07)' }}>
-                <p className="text-white text-sm leading-relaxed">
-                  <span className="inline-flex items-center gap-1"><span className="material-symbols-outlined text-[#f97316] text-[16px] align-middle" style={{fontVariationSettings:"'FILL' 1"}}>bolt</span></span>{' '}PaperIQ analysed <span className="font-bold text-[#f97316]">{analysis.question_count} questions</span> from past papers — here's{' '}
-                  <span className="text-[#f97316] font-semibold">exactly</span> where to focus. {(() => {
-                    const top = analysis.study_priority_order[0]
-                    const top2 = analysis.study_priority_order[1]
-                    const topPct = (top?.percentage ?? 0) + (top2?.percentage ?? 0)
-                    return top && top2
-                      ? `${top.unit} and ${top2.unit} account for ${topPct.toFixed(0)}% of all exam questions — start there.`
-                      : top
-                      ? `${top.unit} is your highest-weight unit at ${top.percentage}%.`
-                      : ''
-                  })()}
-                </p>
-              </div>
-
-              {/* Sticky priority nav */}
-              <div className="sticky top-[57px] z-20 py-2 px-4 rounded-full border border-white/8 mb-6 overflow-x-auto"
-                style={{ background: 'rgba(7,7,13,0.92)', backdropFilter: 'blur(12px)' }}>
-                <div className="flex items-center gap-5 whitespace-nowrap justify-center">
-                  <span className="font-mono text-xs uppercase tracking-widest text-gray-500">Priority:</span>
-                  {analysis.study_priority_order.slice(0, 5).map((item, i) => (
-                    <span key={item.unit} className={`font-mono text-sm font-bold transition-colors ${
-                      i === 0 ? 'text-[#f97316]' : i === 1 ? 'text-white/80' : i === 2 ? 'text-white/60' : 'text-white/35'
-                    }`}>
-                      #{item.priority} {item.unit}
-                    </span>
-                  ))}
+                {/* Intelligence banner — dynamic */}
+                <div className="px-5 py-4 rounded-xl border border-[#f97316]/30 mb-6" style={{ background: 'rgba(249,115,22,0.07)' }}>
+                  <p className="text-white text-sm leading-relaxed">
+                    <span className="inline-flex items-center gap-1"><span className="material-symbols-outlined text-[#f97316] text-[16px] align-middle" style={{fontVariationSettings:"'FILL' 1"}}>bolt</span></span>{' '}PaperIQ analysed <span className="font-bold text-[#f97316]">{analysis.question_count} questions</span> from past papers — here's{' '}
+                    <span className="text-[#f97316] font-semibold">exactly</span> where to focus. {(() => {
+                      const top = analysis.study_priority_order[0]
+                      const top2 = analysis.study_priority_order[1]
+                      const topPct = (top?.percentage ?? 0) + (top2?.percentage ?? 0)
+                      return top && top2
+                        ? `${top.unit} and ${top2.unit} account for ${topPct.toFixed(0)}% of all exam questions — start there.`
+                        : top
+                        ? `${top.unit} is your highest-weight unit at ${top.percentage}%.`
+                        : ''
+                    })()}
+                  </p>
                 </div>
-              </div>
 
-              {/* Priority cards */}
-              <div className="space-y-5">
-                {analysis.study_priority_order.slice(0, 5).map((item) => {
-                  const isTop = item.priority === 1
-                  const isSecond = item.priority === 2
-                  const borderColor = isTop
-                    ? '#f97316'
-                    : isSecond
-                    ? 'rgba(249,115,22,0.6)'
-                    : item.priority === 3
-                    ? 'rgba(255,255,255,0.25)'
-                    : item.priority === 4
-                    ? 'rgba(255,255,255,0.15)'
-                    : 'rgba(255,255,255,0.08)'
-                  const cardBg = isTop
-                    ? 'linear-gradient(90deg, rgba(249,115,22,0.07) 0%, rgba(15,15,15,0.75) 60%)'
-                    : 'rgba(15,15,15,0.75)'
-                  const glowStyle = isTop
-                    ? { boxShadow: '0 0 20px rgba(249,115,22,0.18)', borderColor: '#f97316' }
-                    : {}
+                {/* Sticky priority nav */}
+                <div className="sticky top-[57px] z-20 py-2 px-4 rounded-full border border-white/8 mb-6 overflow-x-auto"
+                  style={{ background: 'rgba(7,7,13,0.92)', backdropFilter: 'blur(12px)' }}>
+                  <div className="flex items-center gap-5 whitespace-nowrap justify-center">
+                    <span className="font-mono text-xs uppercase tracking-widest text-gray-500">Priority:</span>
+                    {analysis.study_priority_order.slice(0, 5).map((item, i) => (
+                      <span key={item.unit} className={`font-mono text-sm font-bold transition-colors ${
+                        i === 0 ? 'text-[#f97316]' : i === 1 ? 'text-white/80' : i === 2 ? 'text-white/60' : 'text-white/35'
+                      }`}>
+                        #{item.priority} {item.unit}
+                      </span>
+                    ))}
+                  </div>
+                </div>
 
-                  return (
-                    <div
-                      key={item.unit}
-                      className="rounded-2xl overflow-hidden border transition-all duration-200 hover:border-white/20 group"
-                      style={{
-                        borderLeft: `6px solid ${borderColor}`,
-                        background: cardBg,
-                        backdropFilter: 'blur(16px)',
-                        borderTop: '1px solid rgba(255,255,255,0.07)',
-                        borderRight: '1px solid rgba(255,255,255,0.07)',
-                        borderBottom: '1px solid rgba(255,255,255,0.07)',
-                        ...glowStyle,
-                      }}
-                    >
-                      <div className="p-6 space-y-5">
-                        {/* Row 1: badge + name + % */}
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                          <div className="flex items-center gap-4">
-                            {/* Priority badge */}
-                            <div className={`w-11 h-11 rounded-full flex items-center justify-center font-mono font-bold text-lg shrink-0 ${
-                              isTop
-                                ? 'bg-[#f97316] text-white'
-                                : isSecond
-                                ? 'border-2 border-[#f97316] text-[#f97316]'
-                                : 'border-2 border-white/20 text-gray-400'
-                            }`}
-                            style={isTop ? { boxShadow: '0 0 14px rgba(249,115,22,0.5)' } : {}}>
-                              {item.priority}
-                            </div>
-                            <div>
-                              <h3 className="font-heading text-xl font-bold text-white">{item.unit}</h3>
-                              <p className="text-gray-300 text-[15px] leading-relaxed mt-0.5">{item.recommendation}</p>
-                            </div>
-                          </div>
-                          {/* Big % */}
-                          <div className="text-right shrink-0 sm:pl-6">
-                            <div className={`font-mono font-bold leading-none ${
-                              isTop ? 'text-5xl text-[#f97316]'
-                              : isSecond ? 'text-4xl text-[#f97316]/80'
-                              : 'text-3xl text-white/60'
-                            }`}>
-                              {item.percentage.toFixed(1)}%
-                            </div>
-                            <div className="font-mono text-xs text-gray-500 mt-1">of exam</div>
-                            <div className="font-mono text-xs text-gray-500">{item.question_count} questions</div>
-                          </div>
-                        </div>
+                {/* Priority cards */}
+                <div className="space-y-5">
+                  {analysis.study_priority_order.slice(0, 5).map((item) => {
+                    const isTop = item.priority === 1
+                    const isSecond = item.priority === 2
+                    const borderColor = isTop
+                      ? '#f97316'
+                      : isSecond
+                      ? 'rgba(249,115,22,0.6)'
+                      : item.priority === 3
+                      ? 'rgba(255,255,255,0.25)'
+                      : item.priority === 4
+                      ? 'rgba(255,255,255,0.15)'
+                      : 'rgba(255,255,255,0.08)'
+                    const cardBg = isTop
+                      ? 'linear-gradient(90deg, rgba(249,115,22,0.07) 0%, rgba(15,15,15,0.75) 60%)'
+                      : 'rgba(15,15,15,0.75)'
+                    const glowStyle = isTop
+                      ? { boxShadow: '0 0 20px rgba(249,115,22,0.18)', borderColor: '#f97316' }
+                      : {}
 
-                        {/* Divider */}
-                        <div className="border-t border-white/6" />
-
-                        {/* Focus topics */}
-                        <div>
-                          <p className="text-xs uppercase tracking-widest text-gray-500 font-medium mb-3 flex items-center gap-1"><span className="material-symbols-outlined text-[14px] text-[#f97316]" style={{fontVariationSettings:"'FILL' 1"}}>target</span> Focus Topics</p>
-                          <div className="flex flex-wrap gap-2.5">
-                            {item.top_topics.map((t, i) => (
-                              <div
-                                key={i}
-                                className="flex items-center gap-0 rounded-lg overflow-hidden border transition-all hover:border-[#f97316]/40"
-                                style={{
-                                  background: isTop ? 'rgba(249,115,22,0.08)' : 'rgba(255,255,255,0.06)',
-                                  borderColor: isTop ? 'rgba(249,115,22,0.25)' : 'rgba(255,255,255,0.12)',
-                                }}
-                              >
-                                <span className="px-4 py-2 text-[14px] font-medium text-white leading-snug"
-                                  style={{ maxWidth: 320, wordBreak: 'break-word', whiteSpace: 'normal' }}>
-                                  {t.topic}
-                                </span>
-                                <div className="h-8 w-px mx-0" style={{ background: 'rgba(255,255,255,0.1)' }} />
-                                <span className="px-3 py-2 font-mono text-[13px] font-bold text-[#f97316]">{t.count}</span>
+                    return (
+                      <div
+                        key={item.unit}
+                        className="rounded-2xl overflow-hidden border transition-all duration-200 hover:border-white/20 group"
+                        style={{
+                          borderLeft: `6px solid ${borderColor}`,
+                          background: cardBg,
+                          backdropFilter: 'blur(16px)',
+                          borderTop: '1px solid rgba(255,255,255,0.07)',
+                          borderRight: '1px solid rgba(255,255,255,0.07)',
+                          borderBottom: '1px solid rgba(255,255,255,0.07)',
+                          ...glowStyle,
+                        }}
+                      >
+                        <div className="p-6 space-y-5">
+                          {/* Row 1: badge + name + % */}
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div className="flex items-center gap-4">
+                              {/* Priority badge */}
+                              <div className={`w-11 h-11 rounded-full flex items-center justify-center font-mono font-bold text-lg shrink-0 ${
+                                isTop
+                                  ? 'bg-[#f97316] text-white'
+                                  : isSecond
+                                  ? 'border-2 border-[#f97316] text-[#f97316]'
+                                  : 'border-2 border-white/20 text-gray-400'
+                              }`}
+                              style={isTop ? { boxShadow: '0 0 14px rgba(249,115,22,0.5)' } : {}}>
+                                {item.priority}
                               </div>
-                            ))}
-                            {/* CTA */}
-                            <button
-                              onClick={() => navigate(`/analysis/${selectedSubject}/unit/${encodeURIComponent(item.unit)}/questions`)}
-                              className="px-4 py-2 text-sm font-semibold text-[#f97316] border border-[#f97316]/30 rounded-lg hover:bg-[#f97316]/10 transition-all"
-                            >
-                              View Important Questions ({item.question_count}) →
-                            </button>
+                              <div>
+                                <h3 className="font-heading text-xl font-bold text-white">{item.unit}</h3>
+                                <p className="text-gray-300 text-[15px] leading-relaxed mt-0.5">{item.recommendation}</p>
+                              </div>
+                            </div>
+                            {/* Big % */}
+                            <div className="text-right shrink-0 sm:pl-6">
+                              <div className={`font-mono font-bold leading-none ${
+                                isTop ? 'text-5xl text-[#f97316]'
+                                : isSecond ? 'text-4xl text-[#f97316]/80'
+                                : 'text-3xl text-white/60'
+                              }`}>
+                                {item.percentage.toFixed(1)}%
+                              </div>
+                              <div className="font-mono text-xs text-gray-500 mt-1">of exam</div>
+                              <div className="font-mono text-xs text-gray-500">{item.question_count} questions</div>
+                            </div>
+                          </div>
+
+                          {/* Divider */}
+                          <div className="border-t border-white/6" />
+
+                          {/* Focus topics */}
+                          <div>
+                            <p className="text-xs uppercase tracking-widest text-gray-500 font-medium mb-3 flex items-center gap-1"><span className="material-symbols-outlined text-[14px] text-[#f97316]" style={{fontVariationSettings:"'FILL' 1"}}>target</span> Focus Topics</p>
+                            <div className="flex flex-wrap gap-2.5">
+                              {item.top_topics.map((t, i) => (
+                                <div
+                                  key={i}
+                                  className="flex items-center gap-0 rounded-lg overflow-hidden border transition-all hover:border-[#f97316]/40"
+                                  style={{
+                                    background: isTop ? 'rgba(249,115,22,0.08)' : 'rgba(255,255,255,0.06)',
+                                    borderColor: isTop ? 'rgba(249,115,22,0.25)' : 'rgba(255,255,255,0.12)',
+                                  }}
+                                >
+                                  <span className="px-4 py-2 text-[14px] font-medium text-white leading-snug"
+                                    style={{ maxWidth: 320, wordBreak: 'break-word', whiteSpace: 'normal' }}>
+                                    {t.topic}
+                                  </span>
+                                  <div className="h-8 w-px mx-0" style={{ background: 'rgba(255,255,255,0.1)' }} />
+                                  <span className="px-3 py-2 font-mono text-[13px] font-bold text-[#f97316]">{t.count}</span>
+                                </div>
+                              ))}
+                              {/* CTA */}
+                              <button
+                                onClick={() => navigate(`/analysis/${selectedSubject}/unit/${encodeURIComponent(item.unit)}/questions`)}
+                                className="px-4 py-2 text-sm font-semibold text-[#f97316] border border-[#f97316]/30 rounded-lg hover:bg-[#f97316]/10 transition-all"
+                              >
+                                View Important Questions ({item.question_count}) →
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  )
-                })}
+                    )
+                  })}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Marks Distribution — 1M / 5M / 10M */}
             {analysis.marks_distribution && (

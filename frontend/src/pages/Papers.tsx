@@ -7,6 +7,8 @@
  */
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { motion, useReducedMotion } from 'framer-motion'
+import { PageTransition } from '../components/ui/PageTransition'
 import { NavBar } from '../components/NavBar'
 import { Footer } from '../components/Footer'
 import { useAuthStore } from '../store/authStore'
@@ -40,6 +42,7 @@ interface Paper {
 }
 
 export function Papers() {
+  const shouldReduceMotion = useReducedMotion()
   const { user } = useAuthStore()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
@@ -173,12 +176,10 @@ export function Papers() {
   }
 
   const getDownloadUrl = (paper: Paper): string | null => {
-    // Priority 1: Original source URL stored during scraping
-    if (paper.original_url && paper.original_url.startsWith('http')) {
-      return paper.original_url
-    }
-    // storage_path/storage_bucket intentionally skipped — the "papers" bucket
-    // doesn't exist in Supabase. Downloads go through the backend PDF endpoint.
+    // We intentionally ignore paper.original_url here so that ALL downloads
+    // route through our backend /api/v1/papers/{id}/download endpoint.
+    // The backend handles downloading the RAR, parsing it internally,
+    // and serving the exact PDF/DOCX file directly to the user.
     return null
   }
 
@@ -206,13 +207,22 @@ export function Papers() {
   }
   
   // CRITICAL: Semester Segregation Filter
-  // Apply strict semester-based filtering first, then other filters
+  // ALWAYS restrict to our canonical 2nd-year subject codes — no 1st/3rd/4th year papers ever.
+  const ALL_ALLOWED_CODES = new Set([
+    ...SEMESTER_SUBJECTS['2-1'].map(s => s.code),
+    ...SEMESTER_SUBJECTS['2-2'].map(s => s.code),
+  ])
+
   const semesterFilteredBase = papers.filter(paper => {
-    if (!debouncedSemester) return true
-    const semesterSubjectCodes = SEMESTER_SUBJECTS[debouncedSemester].map(s => s.code)
     const subject = subjects.find(s => s.id === paper.subject_id)
-    if (!subject) return false
-    return semesterSubjectCodes.includes(subject.code)
+    // Drop any paper whose subject isn't in our canonical 10-subject list
+    if (!subject || !ALL_ALLOWED_CODES.has(subject.code)) return false
+    // If a specific semester is chosen, further restrict to that semester's subjects
+    if (debouncedSemester) {
+      const semesterCodes = SEMESTER_SUBJECTS[debouncedSemester].map(s => s.code)
+      return semesterCodes.includes(subject.code)
+    }
+    return true
   })
 
   // Deduplication: collapse papers that share the same subject + year + category.
@@ -282,12 +292,13 @@ export function Papers() {
   }
 
   return (
+    <PageTransition>
     <div className="min-h-screen bg-background">
       <NavBar activeTab="papers" />
 
       <div className="flex pt-[80px] min-h-screen">
         {/* ── Filter Sidebar ──────────────────────────────────────── */}
-        <aside className="w-72 bg-surface-container border-r border-outline-variant h-full p-base hidden md:block overflow-y-auto fixed top-[80px] bottom-0 left-0 z-30" data-tour="tour-papers-filters">
+        <aside className="w-72 bg-surface-container border-r border-outline-variant h-full p-base hidden md:block overflow-visible fixed top-[80px] bottom-0 left-0 z-30" data-tour="tour-papers-filters">
           <div className="flex items-center gap-sm mb-lg">
             <span className="material-symbols-outlined text-primary" style={{fontVariationSettings:"'FILL' 1"}}>filter_list</span>
             <span className="font-headline text-body-lg font-bold">Filters</span>
@@ -310,7 +321,7 @@ export function Papers() {
                   </span>
                 </button>
                 {subjectDropdownOpen && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-surface-container border border-outline-variant rounded-xl shadow-2xl z-50 overflow-hidden">
+                  <div className="absolute z-50 w-full mt-2 bg-[#121214] border border-[#1e1e24] rounded-xl shadow-2xl max-h-60 overflow-y-auto py-1.5 scrollbar-thin scrollbar-thumb-neutral-800">
                     {/* All Subjects option */}
                     <button
                       onClick={() => { setSelectedSubject(''); setSubjectDropdownOpen(false) }}
@@ -359,7 +370,7 @@ export function Papers() {
                   </span>
                 </button>
                 {semesterDropdownOpen && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-surface-container border border-outline-variant rounded-xl shadow-2xl z-50 overflow-hidden">
+                  <div className="absolute z-50 w-full mt-2 bg-[#121214] border border-[#1e1e24] rounded-xl shadow-2xl max-h-60 overflow-y-auto py-1.5 scrollbar-thin scrollbar-thumb-neutral-800">
                     {/* All Semesters option */}
                     <button
                       onClick={() => { setSelectedSemester(''); setSemesterDropdownOpen(false) }}
@@ -413,10 +424,12 @@ export function Papers() {
                 {['R22','R20','R18','R16'].map(r => {
                   const isLocked = r !== 'R22'
                   return (
-                    <button
+                    <motion.button
                       key={r}
                       onClick={() => !isLocked && setSelectedReg(r)}
                       disabled={isLocked}
+                      whileHover={shouldReduceMotion ? {} : { scale: 1.03 }}
+                      whileTap={shouldReduceMotion ? {} : { scale: 0.97 }}
                       className={`px-sm py-xs rounded-lg font-data-value text-data-label border transition-colors relative ${
                         selectedReg === r && !isLocked
                           ? 'bg-primary-container/10 text-primary border-primary/20'
@@ -432,7 +445,7 @@ export function Papers() {
                           lock
                         </span>
                       )}
-                    </button>
+                    </motion.button>
                   )
                 })}
               </div>
@@ -533,22 +546,28 @@ export function Papers() {
             {/* ── Paper Cards ─────────────────────────────────────── */}
             {semesterFilteredPapers && semesterFilteredPapers.length > 0 && (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-lg">
-                {semesterFilteredPapers.map(paper => {
+                {semesterFilteredPapers.map((paper, index) => {
                   // ── Strict marks (regulation + category driven, never raw DB sum) ──
-                  const trueQuestionCount = paper.parsed_questions ? paper.parsed_questions.length : 0
+                  // Use questions length if available; otherwise fall back to the stored question_count from the API
+                  const qArray = (paper as any).questions || paper.parsed_questions || []
+                  const trueQuestionCount = qArray.length > 0 ? qArray.length : (paper.question_count || 0)
                   const isR22Card = paper.regulation?.toUpperCase() === 'R22'
                   const catCard = (paper.exam_category || paper.exam_type || '').toLowerCase()
                   const isMidCard = catCard.includes('mid')
-                  const absoluteTotalMarks = isR22Card
-                    ? (isMidCard ? 30 : 60)
-                    : 70
+                  
+                  const trueTotalMarks = paper.max_marks || (paper.regulation === 'R22' || paper.exam_year === 2025 ? 60 : 70);
                   
                   const hasQuestions = trueQuestionCount > 0
                   const downloadUrl = getDownloadUrl(paper)
                   
                   return (
-                    <div
+                    <motion.div
                       key={paper.id}
+                      initial={shouldReduceMotion ? false : { opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ type: 'spring' as const, stiffness: 300, damping: 20, delay: index * 0.04 }}
+                      whileHover={shouldReduceMotion ? {} : { scale: 1.01, boxShadow: '0 0 20px rgba(249,115,22,0.12)' }}
+                      whileTap={shouldReduceMotion ? {} : { scale: 0.99 }}
                       onClick={() => navigate(`/papers/${paper.id}`)}
                       className="relative bg-surface border border-outline-variant p-lg rounded-2xl transition-all duration-300 group overflow-hidden cursor-pointer hover:-translate-y-1"
                       style={{transition:'all 0.3s'}}
@@ -598,7 +617,7 @@ export function Papers() {
                             <div className="flex flex-col items-center text-center border-x border-outline-variant/50">
                               <span className="text-outline text-data-label font-data-label mb-xs uppercase tracking-wider">Total Marks</span>
                               <span className="font-data-value text-data-value font-bold text-emerald-500">
-                                {absoluteTotalMarks}
+                                {trueTotalMarks}
                               </span>
                             </div>
                             <div className="flex flex-col items-center text-center">
@@ -661,7 +680,7 @@ export function Papers() {
                           </button>
                         </div>
                       </div>
-                    </div>
+                    </motion.div>
                   )
                 })}
               </div>
@@ -707,5 +726,6 @@ export function Papers() {
         </main>
       </div>
     </div>
+    </PageTransition>
   )
 }

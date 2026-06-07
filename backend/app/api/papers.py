@@ -1,15 +1,23 @@
 """
 Papers API — B7 fix: GET /papers now includes parsed questions per paper.
+Dynamic marks calculation based on regulation and year.
 """
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import Response
 from typing import Optional
 from io import BytesIO
+from concurrent.futures import ThreadPoolExecutor
+import asyncio
 from app.database import get_db
 from app.logger import get_logger
+from app.utils.marks_calculator import calculate_max_marks_by_regulation, validate_paper_marks
 
 router = APIRouter()
 log = get_logger(__name__)
+
+# Thread pool for CPU-bound PDF generation (prevents event loop blocking)
+# Max 4 workers to avoid CPU saturation while handling concurrent PDF generation
+pdf_executor = ThreadPoolExecutor(max_workers=4, thread_name_prefix="pdf-gen")
 
 
 @router.get("/papers")
@@ -24,12 +32,20 @@ async def list_papers(
     """
     Returns papers with their parsed questions included.
     B7 fix: joins questions so the Paper Viewer can display them.
+    
+    CRITICAL: Uses relational join to ensure questions are never clipped before hitting client.
     """
     db = get_db()
+    
+    # Build base query with all needed paper fields
     q = db.table("papers").select(
         "id, title, exam_year, exam_month, exam_type, exam_category, regulation, "
-        "max_marks, btech_year, file_type, extraction_status, subject_id, created_at"
+        "max_marks, btech_year, file_type, extraction_status, subject_id, created_at, "
+        "storage_path, storage_bucket, original_url, duration_hours, "
+        "questions(*)"
     )
+    
+    # Apply filters
     if subject_id:
         q = q.eq("subject_id", subject_id)
     if year:
@@ -46,24 +62,50 @@ async def list_papers(
     result = q.order("exam_year", desc=True).execute()
     papers = result.data or []
 
-    # Attach parsed questions for each paper (B7 fix)
-    if papers:
-        paper_ids = [p["id"] for p in papers]
-        try:
-            q_result = db.table("questions").select(
-                "id, paper_id, question_number, part, question_text, "
-                "question_type, marks, unit_number, co, is_or_question"
-            ).in_("paper_id", paper_ids).execute()
-            questions_by_paper: dict[str, list] = {}
-            for q in (q_result.data or []):
-                pid = q["paper_id"]
-                questions_by_paper.setdefault(pid, []).append(q)
-            for paper in papers:
-                paper["parsed_questions"] = questions_by_paper.get(paper["id"], [])
-        except Exception as e:
-            log.warning(f"Could not fetch questions for papers: {e}")
-            for paper in papers:
-                paper["parsed_questions"] = []
+    # Post-process questions for frontend compatibility
+    for paper in papers:
+        qs = paper.get("questions", [])
+        
+        # Normalize part values and classify if missing
+        for q in qs:
+            part = q.get("part") or ""
+            part_upper = part.upper()
+            
+            # Normalize to single letter format
+            if part_upper in ("A", "PART A"):
+                q["part"] = "A"
+            elif part_upper in ("B", "PART B"):
+                q["part"] = "B"
+            elif not q["part"]:
+                # Auto-classify based on marks if part is missing
+                marks = q.get("marks", 0) or 0
+                if marks <= 3:
+                    q["part"] = "A"  # Short answer questions
+                elif marks >= 5:
+                    q["part"] = "B"  # Long answer questions
+                else:
+                    q["part"] = "A"  # Default to Part A
+        
+        # Keep 'questions' but also expose 'parsed_questions' for frontend backward compatibility
+        paper["parsed_questions"] = qs
+        paper["questions"] = qs
+        
+        # Add computed counts for frontend
+        paper["question_count"] = len(qs)
+        paper["part_a_count"] = sum(1 for q in qs if q.get("part") in ("A", "Part A"))
+        paper["part_b_count"] = sum(1 for q in qs if q.get("part") in ("B", "Part B"))
+        
+        # Calculate max_marks dynamically using regulation and year
+        calculated_marks = sum((q.get("marks", 0) or 0) for q in qs) if qs else 0
+        paper["max_marks"] = calculate_max_marks_by_regulation(
+            regulation=paper.get("regulation"),
+            exam_year=paper.get("exam_year"),
+            calculated_marks=calculated_marks
+        )
+        
+        # Add duration_hours default if missing (for consistency)
+        if "duration_hours" not in paper or paper["duration_hours"] is None:
+            paper["duration_hours"] = 3  # Default 3 hours
 
     return {
         "success": True,
@@ -88,56 +130,18 @@ async def get_paper_questions(paper_id: str):
     return {"success": True, "data": result.data}
 
 
-@router.get("/papers/{paper_id}/download")
-async def download_paper(paper_id: str):
+def _generate_pdf_sync(paper: dict, subject_name: str, questions: list) -> bytes:
     """
-    Generate and download paper as PDF from questions in database.
-    Fast, on-demand generation - no file storage needed.
+    Synchronous PDF generation function - runs in thread pool.
+    Separated from async route handler to prevent event loop blocking.
     """
-    try:
-        from reportlab.lib.pagesizes import A4
-        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-        from reportlab.lib.units import inch
-        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak
-        from reportlab.lib import colors
-        from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_JUSTIFY
-    except ImportError:
-        raise HTTPException(
-            500, 
-            "PDF generation not available. Install reportlab: pip install reportlab"
-        )
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import inch
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+    from reportlab.lib import colors
+    from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY
     
-    db = get_db()
-    
-    # Get paper metadata
-    paper_result = db.table("papers").select(
-        "id, title, exam_type, exam_year, exam_month, exam_category, "
-        "regulation, max_marks, duration_hours, subject_id"
-    ).eq("id", paper_id).single().execute()
-    
-    if not paper_result.data:
-        raise HTTPException(404, "Paper not found")
-    
-    paper = paper_result.data
-    
-    # Get subject name
-    subject_name = "Subject"
-    if paper.get("subject_id"):
-        sub_result = db.table("subjects").select("name").eq("id", paper["subject_id"]).single().execute()
-        if sub_result.data:
-            subject_name = sub_result.data["name"]
-    
-    # Get questions ordered by question_number
-    questions_result = db.table("questions").select(
-        "question_number, question_text, marks, part, unit_name, topic_name, question_type"
-    ).eq("paper_id", paper_id).order("question_number", desc=False).execute()
-    
-    questions = questions_result.data or []
-    
-    if not questions:
-        raise HTTPException(404, "No questions found for this paper")
-    
-    # Generate PDF
     buffer = BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=0.75*inch, bottomMargin=0.75*inch)
     story = []
@@ -207,10 +211,17 @@ async def download_paper(paper_id: str):
     info_data = []
     if paper.get('regulation'):
         info_data.append(['Regulation:', paper['regulation']])
-    if paper.get('max_marks'):
-        info_data.append(['Max Marks:', str(paper['max_marks'])])
+    
+    # R22 mark scheme: Semester = 60M, Mid = 30M
+    is_r22 = (paper.get('regulation') or '').upper() == 'R22'
+    cat_lower = (paper.get('exam_category') or paper.get('exam_type') or '').lower()
+    is_mid = 'mid' in cat_lower
+    academic_marks = 30 if (is_r22 and is_mid) else (60 if is_r22 else 70)
+    info_data.append(['Max Marks:', f'{academic_marks} Marks'])
+
     if paper.get('duration_hours'):
         info_data.append(['Duration:', f"{paper['duration_hours']} Hour{'s' if paper['duration_hours'] > 1 else ''}"])
+    info_data.append(['Source:', 'MLRIT Official Past Papers — exams.mlrinstitutions.ac.in'])
     
     if info_data:
         info_table = Table(info_data, colWidths=[1.5*inch, 4*inch])
@@ -255,8 +266,7 @@ async def download_paper(paper_id: str):
             if marks:
                 q_line += f" <b>[{marks}M]</b>"
             
-            story.append(Paragraph(q_line, question_style))
-            
+            story.append(Paragraph(q_line, question_style))            
             # Metadata (unit, topic)
             meta_parts = []
             if q.get('unit_name'):
@@ -292,11 +302,73 @@ async def download_paper(paper_id: str):
     footer_text = f"Generated by PaperIQ | {len(questions)} Questions"
     story.append(Paragraph(footer_text, meta_style))
     
-    # Build PDF
+    # Build PDF (synchronous - runs in thread pool)
     doc.build(story)
     buffer.seek(0)
     
+    return buffer.getvalue()
+
+
+@router.get("/papers/{paper_id}/download")
+async def download_paper(paper_id: str):
+    """
+    Generate and download paper as PDF from questions in database.
+    Fast, on-demand generation - no file storage needed.
+    
+    Performance: PDF generation offloaded to thread pool to prevent blocking event loop.
+    """
+    try:
+        from reportlab.lib.pagesizes import A4
+    except ImportError:
+        raise HTTPException(
+            500, 
+            "PDF generation not available. Install reportlab: pip install reportlab"
+        )
+    
+    db = get_db()
+    
+    # Get paper metadata (async database query)
+    paper_result = db.table("papers").select(
+        "id, title, exam_type, exam_year, exam_month, exam_category, "
+        "regulation, max_marks, duration_hours, subject_id"
+    ).eq("id", paper_id).single().execute()
+    
+    if not paper_result.data:
+        raise HTTPException(404, "Paper not found")
+    
+    paper = paper_result.data
+    
+    # Get subject name (async database query)
+    subject_name = "Subject"
+    if paper.get("subject_id"):
+        sub_result = db.table("subjects").select("name").eq("id", paper["subject_id"]).single().execute()
+        if sub_result.data:
+            subject_name = sub_result.data["name"]
+    
+    # Get questions ordered by question_number (async database query)
+    questions_result = db.table("questions").select(
+        "question_number, question_text, marks, part, unit_name, topic_name, question_type"
+    ).eq("paper_id", paper_id).order("question_number", desc=False).execute()
+    
+    questions = questions_result.data or []
+    
+    if not questions:
+        raise HTTPException(404, "No questions found for this paper")
+    
+    # Offload CPU-intensive PDF generation to thread pool (prevents blocking event loop)
+    log.info(f"Generating PDF for paper {paper_id} in thread pool")
+    loop = asyncio.get_event_loop()
+    pdf_bytes = await loop.run_in_executor(
+        pdf_executor,
+        _generate_pdf_sync,
+        paper,
+        subject_name,
+        questions
+    )
+    
     # Create filename
+    exam_cat = paper.get('exam_category') or paper.get('exam_type') or ''
+    exam_year = paper.get('exam_year') or ''
     filename_parts = [subject_name.replace(' ', '_')]
     if exam_cat and exam_cat != 'Unknown':
         filename_parts.append(exam_cat.replace(' ', '_'))
@@ -305,7 +377,7 @@ async def download_paper(paper_id: str):
     filename = '_'.join(filename_parts) + '.pdf'
     
     return Response(
-        content=buffer.getvalue(),
+        content=pdf_bytes,
         media_type='application/pdf',
         headers={
             'Content-Disposition': f'attachment; filename="{filename}"'

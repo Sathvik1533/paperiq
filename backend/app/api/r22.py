@@ -1,13 +1,12 @@
 """
-R22 2-2 Auto-Pipeline API.
+R22 Auto-Pipeline API.
 
 Single endpoint: POST /r22/analyze
   - User provides: subject_code (e.g. "A6CS09")
   - System does everything: crawl → extract → parse → analyze → return report_id
   - No file uploads required
-  - No manual pipeline steps
 
-GET /r22/subjects  — list all R22 2-2 subjects
+GET /r22/subjects  — list all R22 subjects (both 2-1 and 2-2)
 GET /r22/status/{subject_code}  — papers and questions found so far
 """
 import asyncio
@@ -33,32 +32,25 @@ class AnalyzeRequest(BaseModel):
 
 
 @router.get("/r22/subjects")
-async def list_r22_subjects(branch: Optional[str] = None):
+async def list_r22_subjects(branch: Optional[str] = None, semester: Optional[int] = None):
     """
-    List all R22 2-2 subjects known to PaperIQ.
-    Optionally filter by branch (CSE, IT, ECE, EEE, MECH, AI, DS, CY, ALL).
+    List all R22 subjects (both 2-1 and 2-2).
+    Optionally filter by branch (CSE, IT, BS, HS) or semester (1 or 2).
     """
     subjects = []
     for code, info in R22_SUBJECTS.items():
         if branch and info["branch"] not in (branch.upper(), "ALL") and branch.upper() != "ALL":
             continue
-        # Check how many papers we already have
-        db = get_db()
-        try:
-            pcount = db.table("papers").select("id", count="exact").eq("regulation", "R22").execute()
-            qcount = db.table("questions").select("id", count="exact").eq("regulation", "R22").execute()
-        except Exception:
-            pcount = None
-            qcount = None
-
+        if semester is not None and info["semester"] != semester:
+            continue
         subjects.append({
-            "code"        : code,
-            "name"        : info["name"],
-            "branch"      : info["branch"],
-            "short"       : info["short"],
-            "regulation"  : "R22",
-            "semester"    : 2,
-            "btech_year"  : 2,
+            "code"       : code,
+            "name"       : info["name"],
+            "branch"     : info["branch"],
+            "short"      : info["short"],
+            "regulation" : "R22",
+            "semester"   : info["semester"],
+            "btech_year" : 2,
         })
 
     return {"success": True, "data": subjects, "meta": {"total": len(subjects)}}
@@ -88,16 +80,16 @@ async def get_r22_subject(subject_code: str):
     return {
         "success": True,
         "data": {
-            "code"          : code,
-            "name"          : info["name"],
-            "branch"        : info["branch"],
-            "short"         : info["short"],
-            "regulation"    : "R22",
-            "semester"      : 2,
-            "btech_year"    : 2,
-            "subject_id"    : subject_id,
-            "papers_available": paper_count,
-            "questions_parsed": question_count,
+            "code"             : code,
+            "name"             : info["name"],
+            "branch"           : info["branch"],
+            "short"            : info["short"],
+            "regulation"       : "R22",
+            "semester"         : info["semester"],
+            "btech_year"       : 2,
+            "subject_id"       : subject_id,
+            "papers_available" : paper_count,
+            "questions_parsed" : question_count,
             "ready_for_analysis": question_count > 0,
         }
     }

@@ -160,12 +160,16 @@ export function OnboardingNew() {
       setError('')
       
       try {
+        // Clamp year/semester to only 2-1 (Sem 3) or 2-2 (Sem 4) — only supported range
+        const clampedSemester = extracted.semester === 4 ? 4 : 3
+        const clampedYear = 2
+
         // Save all extracted fields including branch
         await upsertUserProfile(user.id, {
           full_name:        user.user_metadata?.full_name || null,
           regulation:       extracted.regulation,
-          current_year:     extracted.year,
-          current_semester: extracted.semester,
+          current_year:     clampedYear,
+          current_semester: clampedSemester,
           branch:           extracted.branch || 'CSE',
           onboarding_complete: true,
         })
@@ -206,12 +210,22 @@ export function OnboardingNew() {
               </div>
               <div>
                 <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">Year</div>
-                <div className="font-semibold text-lg">Year {extracted.year}</div>
+                <div className="font-semibold text-lg">2nd Year</div>
               </div>
               <div>
                 <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">Semester</div>
-                <div className="font-semibold text-lg">{extracted.semester_display || `Semester ${extracted.semester}`}</div>
+                <div className="font-semibold text-lg">
+                  {extracted.semester === 4 ? '2-2 (Sem 4)' : '2-1 (Sem 3)'}
+                </div>
               </div>
+            </div>
+
+            {/* Locked semesters notice */}
+            <div className="flex items-start gap-2 px-4 py-3 rounded-xl bg-white/5 border border-white/10">
+              <span className="material-symbols-outlined text-[16px] text-[#f97316] mt-0.5 shrink-0">info</span>
+              <p className="text-xs text-gray-400 leading-relaxed">
+                PaperIQ currently supports <span className="text-white font-semibold">2nd Year (2-1 & 2-2)</span> only. Your semester has been set accordingly. More years unlocking soon.
+              </p>
             </div>
 
             <div className="h-px bg-white/10" />
@@ -361,28 +375,36 @@ export function OnboardingNew() {
 
               {/* Year & Semester */}
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">Year</label>
-                  <CustomSelect
-                    value={String(manualForm.year)}
-                    onChange={(v) => setManualForm({...manualForm, year: Number(v)})}
-                    options={[
-                      { value: '2', label: '2nd Year' },
-                    ]}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">Semester</label>
-                  <CustomSelect
-                    value={String(manualForm.semester)}
-                    onChange={(v) => setManualForm({...manualForm, semester: Number(v)})}
-                    options={[
-                      { value: '3', label: '2-1 (Sem 3)' },
-                      { value: '4', label: '2-2 (Sem 4)' },
-                    ]}
-                  />
-                </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">Year</label>
+                <CustomSelect
+                  value={String(manualForm.year)}
+                  onChange={(v) => setManualForm({...manualForm, year: Number(v)})}
+                  options={[
+                    { value: '2', label: '2nd Year' },
+                  ]}
+                />
               </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">Semester</label>
+                <CustomSelect
+                  value={String(manualForm.semester)}
+                  onChange={(v) => setManualForm({...manualForm, semester: Number(v)})}
+                  options={[
+                    { value: '3', label: '2-1 (Sem 3)' },
+                    { value: '4', label: '2-2 (Sem 4)' },
+                  ]}
+                />
+              </div>
+            </div>
+            
+            {/* Locked semesters notice */}
+            <div className="flex items-start gap-2 px-4 py-3 rounded-xl bg-white/5 border border-white/10">
+              <span className="material-symbols-outlined text-[16px] text-[#f97316] mt-0.5 shrink-0">info</span>
+              <p className="text-xs text-gray-400 leading-relaxed">
+                PaperIQ currently supports <span className="text-white font-semibold">2nd Year (2-1 & 2-2)</span> only. More years unlocking soon.
+              </p>
+            </div>
             </div>
 
             {error && (

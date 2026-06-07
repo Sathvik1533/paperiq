@@ -3,12 +3,45 @@
  * Route: /
  * "The Exam Isn't Random. Neither Is Your Preparation."
  * Scroll-triggered reveals, hero stats (live from DB), 3-step flow, final CTA.
+ * Enhanced with Framer Motion for god-level interactions
  */
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { motion, useInView, useMotionValue, useTransform } from 'framer-motion'
 import { useAuthStore } from '../store/authStore'
 import { Footer } from '../components/Footer'
 import { supabase } from '../lib/supabase'
+
+// Spring config for snappy, responsive animations
+const SPRING_SNAPPY = { type: 'spring' as const, stiffness: 300, damping: 20 }
+const SPRING_SMOOTH = { type: 'spring' as const, stiffness: 150, damping: 25 }
+
+// Counter animation hook for stats
+function useCountUp(target: number, isVisible: boolean, duration = 1500) {
+  const [count, setCount] = useState(0)
+  
+  useEffect(() => {
+    if (!isVisible) return
+    let startTime: number
+    let animationFrame: number
+    
+    const animate = (currentTime: number) => {
+      if (!startTime) startTime = currentTime
+      const progress = Math.min((currentTime - startTime) / duration, 1)
+      const easeProgress = 1 - Math.pow(1 - progress, 3) // ease out cubic
+      setCount(Math.floor(easeProgress * target))
+      
+      if (progress < 1) {
+        animationFrame = requestAnimationFrame(animate)
+      }
+    }
+    
+    animationFrame = requestAnimationFrame(animate)
+    return () => cancelAnimationFrame(animationFrame)
+  }, [target, isVisible, duration])
+  
+  return count
+}
 
 // Live stats pulled from Supabase — no hardcoded numbers
 function useLiveStats() {
@@ -217,61 +250,93 @@ export function Landing() {
             </div>
           </div>
 
-          {/* Transformation visual */}
+          {/* Transformation visual with Framer Motion god-level interactions */}
           <div className="max-w-[1200px] mx-auto mt-huge reveal-hidden">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 rounded-3xl overflow-hidden border border-white/10 glass-card">
-              {/* Left: chaos */}
-              <div className="p-xl md:p-huge border-r border-white/5 bg-black/40 relative overflow-hidden">
+              {/* Left: The Old Chaos - Staggered frustrated skeleton state */}
+              <motion.div
+                initial={{ opacity: 0.3 }}
+                whileInView={{ opacity: 0.5 }}
+                transition={{ duration: 0.6 }}
+                viewport={{ once: true, amount: 0.5 }}
+                className="p-xl md:p-huge border-r border-white/5 bg-black/40 relative overflow-hidden"
+              >
                 <div className="flex items-center gap-2 text-red-400/80 mb-base">
                   <span className="material-symbols-outlined text-sm">block</span>
                   <span className="text-xs font-bold uppercase tracking-widest">The Old Chaos</span>
                 </div>
-                <div className="space-y-sm opacity-40 grayscale blur-[1px]">
+                
+                {/* Staggered skeleton rows with faint pulse/flicker */}
+                <motion.div
+                  initial="hidden"
+                  whileInView="visible"
+                  variants={{
+                    visible: {
+                      transition: {
+                        staggerChildren: 0.1
+                      }
+                    }
+                  }}
+                  viewport={{ once: true, amount: 0.5 }}
+                  className="space-y-sm opacity-40 grayscale blur-[1px]"
+                >
                   {[1,2,3].map(i => (
-                    <div key={i} className="bg-white/5 p-4 rounded-xl border border-white/5 flex items-center gap-3">
+                    <motion.div
+                      key={i}
+                      variants={{
+                        hidden: { opacity: 0.2, x: -10 },
+                        visible: { opacity: 0.4, x: 0 }
+                      }}
+                      transition={SPRING_SMOOTH}
+                      className="bg-white/5 p-4 rounded-xl border border-white/5 flex items-center gap-3"
+                      style={{
+                        animation: `pulse ${2 + i * 0.3}s ease-in-out infinite alternate`
+                      }}
+                    >
                       <div className="w-8 h-8 rounded-full bg-white/10" />
                       <div className="space-y-1 flex-1">
-                        <div className="h-2 bg-white/10 rounded w-3/4" />
-                        <div className="h-2 bg-white/5 rounded w-1/2" />
+                        <motion.div
+                          className="h-2 bg-white/10 rounded w-3/4"
+                          animate={{ opacity: [0.1, 0.3, 0.1] }}
+                          transition={{ duration: 2, repeat: Infinity, delay: i * 0.2 }}
+                        />
+                        <motion.div
+                          className="h-2 bg-white/5 rounded w-1/2"
+                          animate={{ opacity: [0.05, 0.15, 0.05] }}
+                          transition={{ duration: 2.5, repeat: Infinity, delay: i * 0.3 }}
+                        />
                       </div>
-                    </div>
+                    </motion.div>
                   ))}
-                </div>
-                <p className="text-xl font-headline font-bold text-white/40 italic mt-xl">
+                </motion.div>
+                
+                {/* Frustrated quote with slow flicker */}
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  whileInView={{ opacity: 0.4 }}
+                  transition={{ delay: 0.3, duration: 1 }}
+                  viewport={{ once: true }}
+                  className="text-xl font-headline font-bold text-white/40 italic mt-xl"
+                  animate={{ opacity: [0.3, 0.4, 0.35, 0.4] }}
+                  style={{ 
+                    animationDuration: '4s',
+                    animationIterationCount: 'infinite'
+                  }}
+                >
                   "Does anyone have the Unit 3 notes? I can't find them in the scroll..."
-                </p>
+                </motion.p>
                 <p className="text-xs font-mono mt-2 text-white/20 uppercase tracking-widest">Manual Hunting: 6+ Hours</p>
-              </div>
-              {/* Right: PaperIQ */}
+              </motion.div>
+              
+              {/* Right: PaperIQ Clarity - 3D card with spring animations */}
               <div className="p-xl md:p-huge bg-gradient-to-br from-primary-container/10 to-transparent relative overflow-hidden">
                 <div className="flex items-center gap-2 text-primary-container mb-base">
                   <span className="material-symbols-outlined text-sm">verified</span>
                   <span className="text-xs font-bold uppercase tracking-widest">The PaperIQ Clarity</span>
                 </div>
-                <div className="bg-background border border-primary-container/30 p-base rounded-2xl shadow-2xl animate-float">
-                  <div className="flex justify-between items-center mb-base border-b border-white/5 pb-2">
-                    <span className="text-xs font-bold">Data Structures</span>
-                    <span className="text-[10px] bg-primary-container/20 text-primary-container px-2 py-0.5 rounded uppercase font-bold">AI Priority 1</span>
-                  </div>
-                  <div className="space-y-3">
-                    <div>
-                      <div className="flex justify-between text-[10px] font-mono opacity-60 mb-1">
-                        <span>Unit 1: Introduction</span><span>85% Probable</span>
-                      </div>
-                      <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                        <div className="h-full bg-primary-container w-[85%]" />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-3 gap-2 pt-2">
-                      {[{l:'Analyzed',v:'514 Qs'},{l:'Success',v:'92%',c:'text-success'},{l:'Saved',v:'4.5h'}].map(s => (
-                        <div key={s.l} className="bg-white/5 p-2 rounded text-center">
-                          <div className="text-[10px] text-white/40 uppercase">{s.l}</div>
-                          <div className={`text-sm font-bold ${s.c||''}`}>{s.v}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
+                
+                {/* Interactive analytics card with god-level hover */}
+                <PaperIQCard />
               </div>
             </div>
           </div>
@@ -432,5 +497,184 @@ export function Landing() {
 
       <Footer />
     </div>
+  )
+}
+
+// PaperIQ Analytics Card Component with God-Level Interactions
+function PaperIQCard() {
+  const ref = useRef<HTMLDivElement>(null)
+  const isInView = useInView(ref, { once: true, amount: 0.5 })
+  const [isHovered, setIsHovered] = useState(false)
+  
+  // 3D mouse tracking
+  const mouseX = useMotionValue(0)
+  const mouseY = useMotionValue(0)
+  
+  // Transform mouse position to rotation values
+  const rotateX = useTransform(mouseY, [-0.5, 0.5], [5, -5])
+  const rotateY = useTransform(mouseX, [-0.5, 0.5], [-5, 5])
+  
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!ref.current) return
+    const rect = ref.current.getBoundingClientRect()
+    const x = (e.clientX - rect.left) / rect.width - 0.5
+    const y = (e.clientY - rect.top) / rect.height - 0.5
+    mouseX.set(x)
+    mouseY.set(y)
+  }
+  
+  const handleMouseLeave = () => {
+    mouseX.set(0)
+    mouseY.set(0)
+    setIsHovered(false)
+  }
+  
+  // Counter animations
+  const analyzedCount = useCountUp(514, isInView, 1200)
+  const successPercent = useCountUp(92, isInView, 1400)
+  const savedHours = useCountUp(45, isInView, 1300) / 10 // 4.5h
+  
+  return (
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, y: 30, scale: 0.95 }}
+      whileInView={{ opacity: 1, y: 0, scale: 1 }}
+      viewport={{ once: true, amount: 0.5 }}
+      transition={SPRING_SNAPPY}
+      whileHover={{ 
+        scale: 1.02, 
+        translateY: -4,
+        transition: SPRING_SNAPPY
+      }}
+      style={{
+        perspective: 1000,
+        rotateX,
+        rotateY,
+        transformStyle: 'preserve-3d',
+        boxShadow: isHovered 
+          ? '0 4px 30px rgba(0,0,0,0.6), 0 0 15px rgba(255,102,0,0.03), 0 0 25px rgba(255,102,0,0.12)' 
+          : '0 4px 30px rgba(0,0,0,0.6), 0 0 15px rgba(255,102,0,0.03)'
+      }}
+      onMouseMove={handleMouseMove}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={handleMouseLeave}
+      className="bg-[#111113] border border-[#1e1e22] p-base rounded-2xl cursor-pointer transition-all duration-500 ease-out hover:border-[#ff6600]/30"
+    >
+      <motion.div
+        transition={SPRING_SNAPPY}
+        className="rounded-2xl"
+        style={{ transformStyle: 'preserve-3d' }}
+      >
+        {/* Header with pulsing AI Priority badge */}
+        <div className="flex justify-between items-center mb-base border-b border-white/5 pb-2">
+          <span className="text-xs font-bold">Data Structures</span>
+          <motion.span
+            initial={{ scale: 0.9, opacity: 0 }}
+            whileInView={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.2, ...SPRING_SNAPPY }}
+            whileHover={{ scale: 1.05 }}
+            className="text-[10px] bg-primary-container/20 text-primary-container px-2 py-0.5 rounded uppercase font-bold relative"
+            animate={isHovered ? {
+              boxShadow: '0 0 20px rgba(249, 115, 22, 0.4), 0 0 40px rgba(249, 115, 22, 0.2)'
+            } : {
+              boxShadow: '0 0 0px rgba(249, 115, 22, 0)'
+            }}
+          >
+            AI Priority 1
+            {/* Pulsing ring on hover */}
+            <motion.span
+              initial={{ scale: 1, opacity: 0 }}
+              animate={isHovered ? {
+                scale: [1, 1.5],
+                opacity: [0.4, 0]
+              } : { scale: 1, opacity: 0 }}
+              transition={{ duration: 1, repeat: Infinity }}
+              className="absolute inset-0 border border-primary-container rounded"
+            />
+          </motion.span>
+        </div>
+        
+        <div className="space-y-3">
+          {/* Interactive Progress Bar with width animation */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+            viewport={{ once: true }}
+          >
+            <div className="flex justify-between text-[10px] font-mono opacity-60 mb-1">
+              <span>Unit 1: Introduction</span>
+              <motion.span
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                transition={{ delay: 0.5 }}
+              >
+                85% Probable
+              </motion.span>
+            </div>
+            
+            {/* Animated progress bar */}
+            <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+              <motion.div
+                initial={{ width: '0%' }}
+                whileInView={{ width: '85%' }}
+                transition={{ delay: 0.4, duration: 1, type: 'spring', stiffness: 100, damping: 15 }}
+                viewport={{ once: true }}
+                className="h-full bg-primary-container rounded-full"
+                whileHover={{ opacity: 0.9 }}
+                style={{
+                  boxShadow: isHovered ? '0 0 12px rgba(249, 115, 22, 0.6)' : '0 0 8px rgba(249, 115, 22, 0.4)'
+                }}
+              />
+            </div>
+          </motion.div>
+          
+          {/* Live Stat Counter Upgrades */}
+          <motion.div
+            className="grid grid-cols-3 gap-2 pt-2"
+            initial="hidden"
+            whileInView="visible"
+            variants={{
+              visible: {
+                transition: {
+                  staggerChildren: 0.1
+                }
+              }
+            }}
+            viewport={{ once: true, amount: 0.5 }}
+          >
+            {[
+              { l: 'Analyzed', v: `${analyzedCount} Qs`, delay: 0 },
+              { l: 'Success', v: `${successPercent}%`, c: 'text-success', delay: 0.1 },
+              { l: 'Saved', v: `${savedHours.toFixed(1)}h`, delay: 0.2 }
+            ].map((s, i) => (
+              <motion.div
+                key={s.l}
+                variants={{
+                  hidden: { opacity: 0, y: 10, scale: 0.9 },
+                  visible: { opacity: 1, y: 0, scale: 1 }
+                }}
+                transition={{ ...SPRING_SNAPPY, delay: s.delay }}
+                whileHover={{ scale: 1.05, y: -2 }}
+                className="bg-white/5 p-2 rounded text-center transition-all"
+                style={{
+                  boxShadow: isHovered ? '0 0 10px rgba(249, 115, 22, 0.1)' : '0 0 0px rgba(0, 0, 0, 0)'
+                }}
+              >
+                <div className="text-[10px] text-white/40 uppercase">{s.l}</div>
+                <motion.div
+                  className={`text-sm font-bold ${s.c || 'text-primary-container'}`}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.6 + s.delay }}
+                >
+                  {s.v}
+                </motion.div>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </motion.div>
+    </motion.div>
   )
 }

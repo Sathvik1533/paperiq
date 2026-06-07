@@ -6,6 +6,8 @@
  *
  * Accepts real stats (questionCount, coveragePct) so the numbers shown
  * are authentic to the subject being analysed — not hardcoded fiction.
+ *
+ * When all steps complete, calls onComplete() so the parent can reveal results.
  */
 import { useState, useEffect, useRef } from 'react'
 
@@ -16,13 +18,13 @@ interface Step {
 }
 
 const STEPS: Step[] = [
-  { id: 'loading',     label: 'Loading question papers…',          duration: 1800 },
-  { id: 'analyzing',   label: 'Analyzing questions by unit…',       duration: 2200 },
-  { id: 'calculating', label: 'Calculating topic frequency…',        duration: 1800 },
+  { id: 'loading',     label: 'Loading question papers…',           duration: 1800 },
+  { id: 'analyzing',   label: 'Analyzing questions by unit…',        duration: 2200 },
+  { id: 'calculating', label: 'Calculating topic frequency…',         duration: 1800 },
   { id: 'identifying', label: 'Identifying high-probability topics…', duration: 1800 },
-  { id: 'building',    label: 'Building study priority order…',      duration: 1400 },
-  { id: 'generating',  label: 'Generating exam insights…',           duration: 1200 },
-  { id: 'done',        label: 'Finalising your report…',             duration: 900 },
+  { id: 'building',    label: 'Building study priority order…',       duration: 1400 },
+  { id: 'generating',  label: 'Generating exam insights…',            duration: 1200 },
+  { id: 'done',        label: 'Finalising your report…',              duration: 900 },
 ]
 
 interface Props {
@@ -31,48 +33,84 @@ interface Props {
   questionCount?: number
   /** Real classification coverage 0–1 (optional) */
   coveragePct?: number
+  /** True if the backend generateAnalysis request has completed */
+  isBackendDone?: boolean
+  /** Called when all steps finish and fade-out is complete — parent reveals results */
+  onComplete?: () => void
 }
 
-export function AnalysisLoadingState({ subjectName, questionCount, coveragePct }: Props) {
+export function AnalysisLoadingState({ subjectName, questionCount, coveragePct, isBackendDone, onComplete }: Props) {
   const [stepIndex, setStepIndex] = useState(0)
   const [done, setDone] = useState<string[]>([])
+  const [allDone, setAllDone] = useState(false)
+  const [revealing, setRevealing] = useState(false)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const completedRef = useRef(false)
 
+  // Core progression timer
   useEffect(() => {
+    // If backend isn't done, pause at the second-to-last step (index 5: "Generating insights")
+    if (stepIndex === 5 && !isBackendDone) return
     if (stepIndex >= STEPS.length) return
+
     timerRef.current = setTimeout(() => {
-      setDone(prev => [...prev, STEPS[stepIndex].id])
-      setStepIndex(i => i + 1)
+      const currentStep = STEPS[stepIndex]
+      setDone(prev => [...prev, currentStep.id])
+      const nextIndex = stepIndex + 1
+      setStepIndex(nextIndex)
+      
+      // All steps done (index 7)
+      if (nextIndex >= STEPS.length && !completedRef.current) {
+        completedRef.current = true
+        setAllDone(true)
+        // Brief celebration pause, then fade-out transition into results
+        setTimeout(() => {
+          setRevealing(true)
+          setTimeout(() => {
+            onComplete?.()
+          }, 600)
+        }, 800)
+      }
     }, STEPS[stepIndex].duration)
+    
     return () => { if (timerRef.current) clearTimeout(timerRef.current) }
-  }, [stepIndex])
+  }, [stepIndex, isBackendDone, onComplete])
 
-  const progress = Math.min(((stepIndex + 1) / STEPS.length) * 100, 100)
+  const progress = Math.min(((stepIndex) / STEPS.length) * 100, 100)
+  const finalProgress = allDone ? 100 : progress
 
-  // Display values — real if available, sensible placeholders otherwise
-  const displayCount   = questionCount  != null ? questionCount.toLocaleString() : '—'
-  const displayCovPct  = coveragePct    != null ? `${Math.round(coveragePct * 100)}%` : '—'
-  // Hours saved: rough heuristic = 1 hour per 100 questions (minimum 1h)
-  const hoursSaved     = questionCount  != null ? Math.max(1, Math.round(questionCount / 100) * 0.5).toFixed(1) : '—'
+  // Hours saved: rough heuristic — minimum 1h
+  const hoursSaved = questionCount != null ? Math.max(1, Math.round(questionCount / 100) * 0.5).toFixed(1) : '—'
 
   return (
-    <div className="min-h-[80vh] flex items-center justify-center px-lg">
+    <div
+      className={`min-h-[80vh] pt-32 pb-xl flex items-center justify-center px-lg transition-all duration-500 ${
+        revealing ? 'opacity-0 scale-[0.98]' : 'opacity-100 scale-100'
+      }`}
+    >
       <div className="w-full max-w-[1000px]">
 
         {/* ── Heading ─────────────────────────────────────────────────── */}
         <div className="text-center mb-xxl">
           <div className="inline-flex items-center gap-sm mb-base">
-            <div className="w-3 h-3 rounded-full bg-primary animate-pulse"
-              style={{ boxShadow: '0 0 20px rgba(249,115,22,0.6)' }} />
+            <div
+              className={`w-3 h-3 rounded-full bg-primary ${allDone ? '' : 'animate-pulse'}`}
+              style={{ boxShadow: '0 0 20px rgba(249,115,22,0.6)' }}
+            />
             <span className="font-data-label text-data-label text-primary uppercase tracking-widest">
-              AI Analysis in Progress
+              {allDone ? 'Analysis Complete' : 'AI Analysis in Progress'}
             </span>
           </div>
           <h1 className="font-headline text-[42px] md:text-[56px] font-bold text-on-surface leading-tight mb-sm">
-            Analyzing papers
+            {allDone ? 'Report Ready' : 'Analyzing papers'}
           </h1>
           <p className="text-on-surface-variant text-body-lg">
-            {subjectName ? `Scanning ${subjectName} question papers…` : 'Loading question papers…'}
+            {allDone
+              ? `${subjectName ? `${subjectName} — ` : ''}Loading your results…`
+              : subjectName
+                ? `Scanning ${subjectName} question papers…`
+                : 'Loading question papers…'
+            }
           </p>
         </div>
 
@@ -106,15 +144,21 @@ export function AnalysisLoadingState({ subjectName, questionCount, coveragePct }
           </div>
 
           {/* THE PAPERIQ CLARITY — real numbers */}
-          <div className="relative overflow-hidden rounded-2xl p-xl border border-primary/30"
+          <div
+            className={`relative overflow-hidden rounded-2xl p-xl border transition-all duration-500 ${
+              allDone ? 'border-primary/60' : 'border-primary/30'
+            }`}
             style={{
               background: 'linear-gradient(135deg, rgba(249,115,22,0.08) 0%, rgba(15,15,15,0.9) 100%)',
-              boxShadow: '0 0 40px rgba(249,115,22,0.1)',
+              boxShadow: allDone ? '0 0 60px rgba(249,115,22,0.2)' : '0 0 40px rgba(249,115,22,0.1)',
             }}>
             <div className="absolute top-0 right-0 w-40 h-40 bg-primary/10 blur-3xl" />
             <div className="relative z-10">
               <div className="flex items-center gap-xs mb-lg">
-                <span className="material-symbols-outlined text-primary text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>
+                <span
+                  className="material-symbols-outlined text-primary text-[20px]"
+                  style={{ fontVariationSettings: "'FILL' 1" }}
+                >
                   check_circle
                 </span>
                 <h3 className="font-headline text-body-lg text-primary uppercase tracking-wider">
@@ -142,7 +186,7 @@ export function AnalysisLoadingState({ subjectName, questionCount, coveragePct }
                     <div
                       className="h-full bg-gradient-to-r from-primary to-orange-400 rounded-full transition-all duration-1000"
                       style={{
-                        width: coveragePct != null ? `${Math.round(coveragePct * 100)}%` : `${progress}%`,
+                        width: coveragePct != null ? `${Math.round(coveragePct * 100)}%` : `${finalProgress}%`,
                         boxShadow: '0 0 8px rgba(249,115,22,0.6)',
                       }}
                     />
@@ -192,17 +236,18 @@ export function AnalysisLoadingState({ subjectName, questionCount, coveragePct }
           <div className="mb-xl">
             <div className="flex justify-between items-center mb-sm">
               <span className="text-body-sm text-on-surface-variant">
-                Step {stepIndex + 1} of {STEPS.length}
+                {allDone ? 'All steps complete' : `Step ${stepIndex + 1} of ${STEPS.length}`}
               </span>
-              <span className="font-data-value text-primary">{Math.round(progress)}%</span>
+              <span className="font-data-value text-primary">{Math.round(finalProgress)}%</span>
             </div>
             <div className="h-2 bg-surface-container-highest rounded-full overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-primary via-orange-400 to-primary rounded-full transition-all duration-500 ease-out"
+                className={`h-full bg-gradient-to-r from-primary via-orange-400 to-primary rounded-full transition-all duration-500 ease-out ${allDone ? '' : ''}`}
                 style={{
-                  width: `${progress}%`,
+                  width: `${finalProgress}%`,
                   backgroundSize: '200% 100%',
-                  animation: 'shimmer 2s infinite',
+                  animation: allDone ? 'none' : 'shimmer 2s infinite',
+                  boxShadow: allDone ? '0 0 12px rgba(249,115,22,0.6)' : 'none',
                 }}
               />
             </div>
@@ -210,12 +255,12 @@ export function AnalysisLoadingState({ subjectName, questionCount, coveragePct }
 
           <div className="space-y-sm">
             {STEPS.map((step, i) => {
-              const isActive    = i === stepIndex
+              const isActive    = i === stepIndex && !allDone
               const isCompleted = done.includes(step.id)
               return (
                 <div
                   key={step.id}
-                  className={`flex items-center gap-base py-sm px-base rounded-lg transition-all ${
+                  className={`flex items-center gap-base py-sm px-base rounded-lg transition-all duration-300 ${
                     isActive    ? 'bg-primary/10 border border-primary/20' :
                     isCompleted ? 'bg-surface-container' :
                     'opacity-40'
@@ -235,8 +280,7 @@ export function AnalysisLoadingState({ subjectName, questionCount, coveragePct }
                     )}
                   </div>
 
-                  <span className={`text-body-sm flex-1 ${isActive ? 'text-on-surface font-medium' : 'text-on-surface-variant'}`}>
-                    {/* Inject real question count into the "analyzing" step label */}
+                  <span className={`text-body-sm flex-1 ${isActive ? 'text-on-surface font-medium' : isCompleted ? 'text-on-surface-variant' : 'text-on-surface-variant'}`}>
                     {step.id === 'analyzing' && questionCount != null
                       ? `Analyzing ${questionCount.toLocaleString()} questions…`
                       : step.label}
@@ -245,26 +289,49 @@ export function AnalysisLoadingState({ subjectName, questionCount, coveragePct }
                   {isActive && (
                     <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
                   )}
+                  {isCompleted && (
+                    <span className="text-[10px] font-mono text-primary/60 uppercase tracking-wider">done</span>
+                  )}
                 </div>
               )
             })}
           </div>
+
+          {/* All-done celebration row */}
+          {allDone && (
+            <div className="mt-lg pt-lg border-t border-white/8 flex items-center justify-center gap-md">
+              <span
+                className="material-symbols-outlined text-[28px] text-primary"
+                style={{ fontVariationSettings: "'FILL' 1", animation: 'pop 0.4s cubic-bezier(0.175,0.885,0.32,1.275)' }}
+              >
+                check_circle
+              </span>
+              <span className="text-on-surface font-bold text-body-md">Report generated — loading results…</span>
+            </div>
+          )}
         </div>
 
         {/* ── Fun fact ────────────────────────────────────────────────── */}
-        <div className="mt-xl text-center">
-          <p className="text-body-sm text-on-surface-variant">
-            <span className="material-symbols-outlined text-[14px] text-primary align-middle mr-xs">lightbulb</span>
-            <span className="italic">Did you know?</span> PaperIQ has analyzed over{' '}
-            <span className="font-bold text-on-surface">10,000+ questions</span> from 10 years of MLRIT past papers
-          </p>
-        </div>
+        {!allDone && (
+          <div className="mt-xl text-center">
+            <p className="text-body-sm text-on-surface-variant">
+              <span className="material-symbols-outlined text-[14px] text-primary align-middle mr-xs">lightbulb</span>
+              <span className="italic">Did you know?</span> PaperIQ has analyzed over{' '}
+              <span className="font-bold text-on-surface">10,000+ questions</span> from 10 years of MLRIT past papers
+            </p>
+          </div>
+        )}
       </div>
 
       <style>{`
         @keyframes shimmer {
           0%   { background-position: 200% 0; }
           100% { background-position: -200% 0; }
+        }
+        @keyframes pop {
+          0%   { transform: scale(0); opacity: 0; }
+          80%  { transform: scale(1.2); }
+          100% { transform: scale(1); opacity: 1; }
         }
       `}</style>
     </div>

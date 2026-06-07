@@ -1,283 +1,457 @@
 /**
- * About Page
- * Shows the development story, timeline, and technical details
+ * About Page - Developer Story
+ * Honest, student-built product. No fake metrics.
  * Route: /about
  */
 
+import { motion, useReducedMotion, AnimatePresence } from 'framer-motion'
 import { NavBar } from '../components/NavBar'
 import { Footer } from '../components/Footer'
-import { Icon } from '../components/Icon'
+import { PageTransition } from '../components/ui/PageTransition'
+import sathvikAvatar from '../assets/avatar-sathvik.jpg'
+
+const SPRING_SNAPPY = { type: 'spring', stiffness: 300, damping: 20 } as const
 
 export function About() {
-  const developmentTimeline = [
-    {
-      date: 'October 2024',
-      title: 'Concept & Research',
-      description: 'Initial research into exam patterns, student pain points, and existing solutions. Defined the core problem statement: "Students waste time studying low-probability topics."',
-      icon: 'lightbulb' as const,
-      color: 'text-blue-400',
-      bg: 'bg-blue-400/10',
-    },
-    {
-      date: 'November 2024',
-      title: 'Prototype Development',
-      description: 'Built first prototype with basic paper parsing and question frequency analysis. Validated the core hypothesis that question patterns are predictable.',
-      icon: 'rocket' as const,
-      color: 'text-orange-400',
-      bg: 'bg-orange-400/10',
-    },
-    {
-      date: 'December 2024',
-      title: 'Data Pipeline & Infrastructure',
-      description: 'Developed full data ingestion pipeline for 10+ years of question papers. Built database schemas, scrapers, and classification systems.',
-      icon: 'database' as const,
-      color: 'text-green-400',
-      bg: 'bg-green-400/10',
-    },
-    {
-      date: 'January 2025',
-      title: 'AI Analysis Engine',
-      description: 'Implemented machine learning models for topic classification and question pattern recognition. Built the core analysis algorithms.',
-      icon: 'psychology' as const,
-      color: 'text-purple-400',
-      bg: 'bg-purple-400/10',
-    },
-    {
-      date: 'February 2025',
-      title: 'Frontend Platform',
-      description: 'Designed and built the complete React frontend with real-time dashboards, interactive visualizations, and student workflow.',
-      icon: 'code' as const,
-      color: 'text-cyan-400',
-      bg: 'bg-cyan-400/10',
-    },
-    {
-      date: 'March 2025',
-      title: 'Beta Testing & Refinement',
-      description: 'Tested with real students, collected feedback, and refined algorithms. Improved accuracy from 72% to 89% prediction rate.',
-      icon: 'science' as const,
-      color: 'text-yellow-400',
-      bg: 'bg-yellow-400/10',
-    },
-    {
-      date: 'Present',
-      title: 'Production Deployment',
-      description: 'Deployed to production with monitoring, analytics, and continuous improvement. Currently serving thousands of data points daily.',
-      icon: 'check_circle' as const,
-      color: 'text-emerald-400',
-      bg: 'bg-emerald-400/10',
-    },
-  ]
+  const shouldReduceMotion = useReducedMotion()
 
   const techStack = [
-    { category: 'Frontend', items: ['React 18', 'TypeScript', 'Tailwind CSS', 'Vite', 'React Router'] },
-    { category: 'Backend', items: ['Python FastAPI', 'Supabase', 'PostgreSQL', 'Redis', 'Celery'] },
-    { category: 'AI/ML', items: ['Scikit-learn', 'NLP Libraries', 'Custom Classifiers', 'Feature Engineering'] },
-    { category: 'Infrastructure', items: ['Docker', 'GitHub Actions', 'Vercel', 'Monitoring & Logging'] },
-    { category: 'Data', items: ['10+ Years Question Papers', '500K+ Questions', 'Real-time Processing', 'Automated Updates'] },
+    { icon: 'code', label: 'React 18 + TS' },
+    { icon: 'bolt', label: 'Tailwind + Vite' },
+    { icon: 'terminal', label: 'Python FastAPI' },
+    { icon: 'database', label: 'Supabase + PG' },
+    { icon: 'psychology', label: 'Gemini AI' },
   ]
 
-  const stats = [
-    { label: 'Days in Development', value: '180+', icon: 'calendar_today' as const },
-    { label: 'Question Papers', value: '70+', icon: 'library_books' as const },
-    { label: 'Questions Analyzed', value: '500K+', icon: 'analytics' as const },
-    { label: 'Accuracy Rate', value: '89%', icon: 'target' as const },
-    { label: 'Code Commits', value: '420+', icon: 'code' as const },
-    { label: 'Students Helped', value: '1,000+', icon: 'school' as const },
+  const asideItems = [
+    'avatar',
+    'devinfo',
+    'techstack',
+    'quote',
+  ]
+
+  const cardSections = [
+    {
+      index: 0,
+      id: 'origin',
+    },
+    {
+      index: 1,
+      id: 'whatitis',
+    },
+    {
+      index: 2,
+      id: 'howbuilt',
+    },
+    {
+      index: 3,
+      id: 'social',
+    },
   ]
 
   return (
-    <div className="min-h-screen bg-background">
-      <NavBar activeTab="about" />
+    <PageTransition>
+      <div className="min-h-screen bg-[#050507] text-on-background">
+        <NavBar activeTab="about" />
 
-      <main className="max-w-[1200px] mx-auto px-lg pt-32 pb-huge">
-        {/* Hero Section */}
-        <section className="mb-xxl text-center">
-          <div className="inline-flex items-center gap-xs px-md py-sm bg-primary/10 border border-primary/20 rounded-xl mb-lg">
-            <Icon name="rocket" size={20} color="text-primary" filled />
-            <span className="font-data-label text-data-label text-primary uppercase tracking-widest">
-              The PaperIQ Story
-            </span>
-          </div>
-          
-          <h1 className="font-headline text-headline-xl text-on-surface mb-md">
-            Building Smarter Exam Preparation
-          </h1>
-          
-          <p className="text-on-surface-variant text-body-lg max-w-3xl mx-auto mb-xl">
-            PaperIQ started with a simple question: "Why do students waste time studying topics that rarely appear in exams?" 
-            Over 180 days of development, we've built an AI-powered platform that analyzes 10+ years of question papers to 
-            give students laser-focused study recommendations.
-          </p>
+        <main className="max-w-[1400px] mx-auto px-6 md:px-12 pt-32 pb-24">
+          <div className="grid grid-cols-1 lg:grid-cols-[35%_65%] gap-8">
 
-          {/* Stats Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-base mb-xxl">
-            {stats.map((stat, idx) => (
-              <div 
-                key={stat.label}
-                className="glass-card p-lg rounded-2xl text-center"
-                style={{ animation: `fadeInUp 0.5s ease forwards`, animationDelay: `${idx * 0.05}s`, opacity: 0 }}
-              >
-                <div className="flex justify-center mb-sm">
-                  <div className="w-12 h-12 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
-                    <Icon name={stat.icon} size={24} color="text-primary" filled />
+            {/* LEFT COLUMN: Profile */}
+            <aside className="lg:sticky lg:top-32 h-fit flex flex-col gap-8">
+
+              {/* Avatar */}
+              {shouldReduceMotion ? (
+                <div className="relative w-60 group cursor-pointer">
+                  <div className="w-60 h-60 rounded-full overflow-hidden border-[3px] border-[#1e1e24] transition-all duration-500 shadow-[0_4px_20px_rgba(0,0,0,0.6)] hover:shadow-[0_4px_32px_rgba(249,115,22,0.4)] hover:border-[#ff6600]/50 bg-surface-container will-change-transform transform-gpu">
+                    <img
+                      src={sathvikAvatar}
+                      alt="Sathvik - PaperIQ Developer"
+                      width="240"
+                      height="240"
+                      loading="eager"
+                      className="w-60 h-60 object-cover grayscale brightness-75 contrast-125 transition-transform duration-700 ease-out group-hover:scale-105 will-change-transform transform-gpu"
+                    />
                   </div>
                 </div>
-                <div className="font-headline text-headline-lg text-on-surface mb-xs">{stat.value}</div>
-                <div className="text-on-surface-variant text-body-sm">{stat.label}</div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* Development Timeline */}
-        <section className="mb-xxl">
-          <h2 className="font-headline text-headline-lg text-on-surface mb-xl text-center">
-            Development Journey
-          </h2>
-          
-          <div className="relative">
-            {/* Timeline line */}
-            <div className="absolute left-1/2 transform -translate-x-1/2 w-px h-full bg-gradient-to-b from-primary/30 via-primary/15 to-transparent" />
-            
-            <div className="space-y-xl">
-              {developmentTimeline.map((item, idx) => (
-                <div 
-                  key={item.date}
-                  className={`flex ${idx % 2 === 0 ? 'flex-row' : 'flex-row-reverse'} items-center gap-xl`}
+              ) : (
+                <motion.div
+                  className="relative w-60 group cursor-pointer"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ ...SPRING_SNAPPY, delay: 0 }}
+                  whileHover={{ scale: 1.04 }}
                 >
-                  {/* Date & Content */}
-                  <div className={`flex-1 ${idx % 2 === 0 ? 'text-right pr-xl' : 'text-left pl-xl'}`}>
-                    <div className="inline-block">
-                      <div className={`inline-flex items-center gap-xs px-sm py-xs rounded-lg ${item.bg} border ${item.color}/20 mb-sm`}>
-                        <Icon name={item.icon} size={16} color={item.color} />
-                        <span className="font-data-label text-data-label text-on-surface-variant">{item.date}</span>
-                      </div>
-                      <h3 className="font-headline text-headline-md text-on-surface mb-xs">{item.title}</h3>
-                      <p className="text-on-surface-variant text-body-md">{item.description}</p>
+                  <div className="w-60 h-60 rounded-full overflow-hidden border-[3px] border-[#1e1e24] transition-all duration-500 shadow-[0_4px_20px_rgba(0,0,0,0.6)] hover:shadow-[0_4px_32px_rgba(249,115,22,0.4)] hover:border-[#ff6600]/50 bg-surface-container will-change-transform transform-gpu">
+                    <img
+                      src={sathvikAvatar}
+                      alt="Sathvik - PaperIQ Developer"
+                      width="240"
+                      height="240"
+                      loading="eager"
+                      className="w-60 h-60 object-cover grayscale brightness-75 contrast-125 transition-transform duration-700 ease-out group-hover:scale-105 will-change-transform transform-gpu"
+                    />
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Developer Info */}
+              {shouldReduceMotion ? (
+                <div className="space-y-2">
+                  <h1 className="text-white font-headline text-headline-lg font-bold tracking-tight">
+                    Sathvik
+                  </h1>
+                  <p className="text-neutral-400 font-body-md font-medium tracking-wide">
+                    2nd Year CSE Student · MLRIT
+                  </p>
+                </div>
+              ) : (
+                <motion.div
+                  className="space-y-2"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ ...SPRING_SNAPPY, delay: 0.07 }}
+                >
+                  <h1 className="text-white font-headline text-headline-lg font-bold tracking-tight">
+                    Sathvik
+                  </h1>
+                  <p className="text-neutral-400 font-body-md font-medium tracking-wide">
+                    2nd Year CSE Student · MLRIT
+                  </p>
+                </motion.div>
+              )}
+
+              {/* Tech Stack Chips */}
+              {shouldReduceMotion ? (
+                <div className="flex flex-wrap gap-3">
+                  {techStack.map((tech) => (
+                    <div
+                      key={tech.label}
+                      className="flex items-center gap-2 px-3 py-2 bg-[#121214] border border-[#1e1e24] rounded-lg cursor-default transition-all hover:-translate-y-0.5 hover:border-[#ff6600]/40"
+                    >
+                      <span className="material-symbols-outlined text-[16px] text-primary">{tech.icon}</span>
+                      <span className="text-xs font-mono text-on-surface">{tech.label}</span>
                     </div>
-                  </div>
-
-                  {/* Timeline Dot */}
-                  <div className="relative z-10">
-                    <div className="w-4 h-4 rounded-full bg-primary border-4 border-background" />
-                  </div>
-
-                  {/* Empty spacer for alternating layout */}
-                  <div className="flex-1" />
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Tech Stack */}
-        <section className="mb-xxl">
-          <h2 className="font-headline text-headline-lg text-on-surface mb-xl text-center">
-            Technology Stack
-          </h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-xl">
-            {techStack.map((category) => (
-              <div key={category.category} className="glass-card p-xl rounded-2xl">
-                <div className="flex items-center gap-sm mb-lg">
-                  <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
-                    <Icon name="code" size={20} color="text-primary" filled />
-                  </div>
-                  <h3 className="font-headline text-headline-md text-on-surface">{category.category}</h3>
-                </div>
-                
-                <ul className="space-y-sm">
-                  {category.items.map((item) => (
-                    <li key={item} className="flex items-center gap-sm text-on-surface-variant text-body-md">
-                      <Icon name="chevron_right" size={16} color="text-primary" />
-                      {item}
-                    </li>
                   ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* Mission & Values */}
-        <section className="glass-card p-xxl rounded-2xl text-center mb-xxl">
-          <div className="max-w-3xl mx-auto">
-            <div className="inline-flex items-center gap-xs px-md py-sm bg-primary/10 border border-primary/20 rounded-xl mb-lg">
-              <Icon name="auto_stories" size={20} color="text-primary" filled />
-              <span className="font-data-label text-data-label text-primary uppercase tracking-widest">
-                Our Mission
-              </span>
-            </div>
-            
-            <h2 className="font-headline text-headline-lg text-on-surface mb-md">
-              Revolutionizing How Students Prepare
-            </h2>
-            
-            <p className="text-on-surface-variant text-body-lg mb-xl">
-              We believe exam preparation should be data-driven, not guesswork. By analyzing historical patterns, 
-              we help students focus on what actually matters — reducing study time by 40% while improving scores by 25%.
-            </p>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-lg">
-              {[
-                {
-                  icon: 'target' as const,
-                  title: 'Laser Focus',
-                  description: 'Identify high-probability topics with 89% accuracy'
-                },
-                {
-                  icon: 'speed' as const,
-                  title: 'Efficiency',
-                  description: 'Reduce study time by focusing only on what matters'
-                },
-                {
-                  icon: 'insights' as const,
-                  title: 'Data-Driven',
-                  description: '10+ years of question paper analysis powering recommendations'
-                }
-              ].map((value) => (
-                <div key={value.title} className="p-lg rounded-xl bg-surface-container">
-                  <div className="w-12 h-12 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto mb-md">
-                    <Icon name={value.icon} size={24} color="text-primary" filled />
-                  </div>
-                  <h3 className="font-headline text-headline-sm text-on-surface mb-xs">{value.title}</h3>
-                  <p className="text-on-surface-variant text-body-sm">{value.description}</p>
                 </div>
-              ))}
+              ) : (
+                <motion.div
+                  className="flex flex-wrap gap-3"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ ...SPRING_SNAPPY, delay: 0.14 }}
+                >
+                  {techStack.map((tech) => (
+                    <motion.div
+                      key={tech.label}
+                      className="flex items-center gap-2 px-3 py-2 bg-[#121214] border border-[#1e1e24] rounded-lg cursor-default"
+                      whileHover={{ scale: 1.03, translateY: -2, boxShadow: '0 0 20px rgba(255,102,0,0.12)' }}
+                      whileTap={{ scale: 0.97 }}
+                      transition={SPRING_SNAPPY}
+                    >
+                      <span className="material-symbols-outlined text-[16px] text-primary">{tech.icon}</span>
+                      <span className="text-xs font-mono text-on-surface">{tech.label}</span>
+                    </motion.div>
+                  ))}
+                </motion.div>
+              )}
+
+              {/* Quote */}
+              {shouldReduceMotion ? (
+                <div className="pt-6 border-t border-outline-variant">
+                  <p className="text-neutral-400 text-sm italic leading-relaxed">
+                    "I built this because I was frustrated. Every student at MLRIT has the same problem — past papers are scattered, hard to find, and impossible to analyse. So I fixed it."
+                  </p>
+                </div>
+              ) : (
+                <motion.div
+                  className="pt-6 border-t border-outline-variant"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ ...SPRING_SNAPPY, delay: 0.21 }}
+                >
+                  <p className="text-neutral-400 text-sm italic leading-relaxed">
+                    "I built this because I was frustrated. Every student at MLRIT has the same problem — past papers are scattered, hard to find, and impossible to analyse. So I fixed it."
+                  </p>
+                </motion.div>
+              )}
+            </aside>
+
+            {/* RIGHT COLUMN: Content */}
+            <div className="flex flex-col gap-6">
+
+              {/* Origin Story Card */}
+              {shouldReduceMotion ? (
+                <section className="bg-[#111113] border border-[#1e1e22] p-6 md:p-10 rounded-2xl shadow-[0_4px_30px_rgba(0,0,0,0.6),_0_0_15px_rgba(255,102,0,0.03)] hover:border-[#ff6600]/30 hover:shadow-[0_0_25px_rgba(255,102,0,0.12)] transition-all duration-500">
+                  <div className="space-y-4">
+                    <span className="text-[#ff6600] text-xs font-mono tracking-[0.2em] uppercase">
+                      Origin Story
+                    </span>
+                    <h2 className="text-white font-headline text-headline-md">Why I Built This</h2>
+                    <p className="text-[#9ca3af] text-lg leading-[1.7]">
+                      I'm a 2nd year CSE student at MLRIT. Before every exam, I'd spend hours hunting for past papers
+                      across college portals, WhatsApp groups, and random drives. Half the time the files were corrupt,
+                      missing, or in some RAR archive nobody knew how to open.
+                    </p>
+                    <p className="text-[#9ca3af] text-lg leading-[1.7]">
+                      I thought — there has to be a better way. So I scraped the college website, extracted every paper,
+                      parsed the questions, and built an analysis engine on top of it. PaperIQ is the result: one place
+                      to find, read, download, and understand what actually comes in your exams.
+                    </p>
+                    <p className="text-[#9ca3af] text-lg leading-[1.7]">
+                      This is a student project. Not a startup, not a company. Just a tool I needed, built properly,
+                      and shared with everyone who has the same problem.
+                    </p>
+                  </div>
+                </section>
+              ) : (
+                <motion.section
+                  className="bg-[#111113] border border-[#1e1e22] p-6 md:p-10 rounded-2xl shadow-[0_4px_30px_rgba(0,0,0,0.6),_0_0_15px_rgba(255,102,0,0.03)] hover:border-[#ff6600]/30 hover:shadow-[0_0_25px_rgba(255,102,0,0.12)] transition-all duration-500"
+                  initial={{ opacity: 0, y: 12 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.15 }}
+                  transition={{ ...SPRING_SNAPPY, delay: 0 * 0.05 }}
+                >
+                  <div className="space-y-4">
+                    <span className="text-[#ff6600] text-xs font-mono tracking-[0.2em] uppercase">
+                      Origin Story
+                    </span>
+                    <h2 className="text-white font-headline text-headline-md">Why I Built This</h2>
+                    <p className="text-[#9ca3af] text-lg leading-[1.7]">
+                      I'm a 2nd year CSE student at MLRIT. Before every exam, I'd spend hours hunting for past papers
+                      across college portals, WhatsApp groups, and random drives. Half the time the files were corrupt,
+                      missing, or in some RAR archive nobody knew how to open.
+                    </p>
+                    <p className="text-[#9ca3af] text-lg leading-[1.7]">
+                      I thought — there has to be a better way. So I scraped the college website, extracted every paper,
+                      parsed the questions, and built an analysis engine on top of it. PaperIQ is the result: one place
+                      to find, read, download, and understand what actually comes in your exams.
+                    </p>
+                    <p className="text-[#9ca3af] text-lg leading-[1.7]">
+                      This is a student project. Not a startup, not a company. Just a tool I needed, built properly,
+                      and shared with everyone who has the same problem.
+                    </p>
+                  </div>
+                </motion.section>
+              )}
+
+              {/* What it actually is */}
+              {shouldReduceMotion ? (
+                <section className="bg-[#111113] border border-[#1e1e22] p-6 md:p-10 rounded-2xl shadow-[0_4px_30px_rgba(0,0,0,0.6),_0_0_15px_rgba(255,102,0,0.03)] hover:border-[#ff6600]/30 hover:shadow-[0_0_25px_rgba(255,102,0,0.12)] transition-all duration-500">
+                  <div className="mb-6">
+                    <h2 className="text-white font-headline text-headline-md">What PaperIQ Actually Is</h2>
+                    <p className="text-on-surface-variant text-sm mt-1">
+                      No hype. Just what it does.
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {[
+                      { icon: 'search', title: '80+ Papers Scraped', desc: 'All MLRIT R22 CSE semester papers, extracted from the college website and parsed into individual questions.' },
+                      { icon: 'analytics', title: 'Topic Frequency Analysis', desc: 'Find which topics appear most in past papers so you know exactly where to focus before an exam.' },
+                      { icon: 'download', title: 'One-Click Downloads', desc: 'Get a clean PDF of any paper instantly. No RAR files, no broken links, no WhatsApp group digging.' },
+                      { icon: 'school', title: 'R22 Regulation Only (for now)', desc: 'Started with what I needed — 2nd year CSE. More regulations and branches coming as I build.' },
+                    ].map((item) => (
+                      <div key={item.title} className="flex items-start gap-4 p-4 bg-[#0d0d0f] rounded-xl border border-[#1e1e22]">
+                        <span className="material-symbols-outlined text-[22px] text-primary-container mt-0.5 shrink-0" style={{ fontVariationSettings: "'FILL' 1" }}>{item.icon}</span>
+                        <div>
+                          <p className="text-white font-medium text-sm">{item.title}</p>
+                          <p className="text-on-surface-variant text-sm mt-1 leading-relaxed">{item.desc}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              ) : (
+                <motion.section
+                  className="bg-[#111113] border border-[#1e1e22] p-6 md:p-10 rounded-2xl shadow-[0_4px_30px_rgba(0,0,0,0.6),_0_0_15px_rgba(255,102,0,0.03)] hover:border-[#ff6600]/30 hover:shadow-[0_0_25px_rgba(255,102,0,0.12)] transition-all duration-500"
+                  initial={{ opacity: 0, y: 12 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.15 }}
+                  transition={{ ...SPRING_SNAPPY, delay: 1 * 0.05 }}
+                >
+                  <div className="mb-6">
+                    <h2 className="text-white font-headline text-headline-md">What PaperIQ Actually Is</h2>
+                    <p className="text-on-surface-variant text-sm mt-1">
+                      No hype. Just what it does.
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {[
+                      { icon: 'search', title: '80+ Papers Scraped', desc: 'All MLRIT R22 CSE semester papers, extracted from the college website and parsed into individual questions.' },
+                      { icon: 'analytics', title: 'Topic Frequency Analysis', desc: 'Find which topics appear most in past papers so you know exactly where to focus before an exam.' },
+                      { icon: 'download', title: 'One-Click Downloads', desc: 'Get a clean PDF of any paper instantly. No RAR files, no broken links, no WhatsApp group digging.' },
+                      { icon: 'school', title: 'R22 Regulation Only (for now)', desc: 'Started with what I needed — 2nd year CSE. More regulations and branches coming as I build.' },
+                    ].map((item) => (
+                      <div key={item.title} className="flex items-start gap-4 p-4 bg-[#0d0d0f] rounded-xl border border-[#1e1e22]">
+                        <span className="material-symbols-outlined text-[22px] text-primary-container mt-0.5 shrink-0" style={{ fontVariationSettings: "'FILL' 1" }}>{item.icon}</span>
+                        <div>
+                          <p className="text-white font-medium text-sm">{item.title}</p>
+                          <p className="text-on-surface-variant text-sm mt-1 leading-relaxed">{item.desc}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </motion.section>
+              )}
+
+              {/* Technical stack */}
+              {shouldReduceMotion ? (
+                <section className="bg-[#111113] border border-[#1e1e22] p-6 md:p-10 rounded-2xl overflow-hidden relative shadow-[0_4px_30px_rgba(0,0,0,0.6),_0_0_15px_rgba(255,102,0,0.03)] hover:border-[#ff6600]/30 hover:shadow-[0_0_25px_rgba(255,102,0,0.12)] transition-all duration-500">
+                  <h2 className="text-white font-headline text-headline-md mb-2">How It's Built</h2>
+                  <p className="text-on-surface-variant text-sm mb-8">A solo student project — one frontend, one backend, one database.</p>
+                  <div className="relative flex flex-col md:flex-row items-center justify-between gap-8 md:gap-0 h-fit md:h-[300px]">
+                    <svg className="absolute top-1/2 left-0 w-full h-0.5 hidden md:block -translate-y-1/2 z-0" style={{ overflow: 'visible' }}>
+                      <line x1="15%" y1="0" x2="85%" y2="0" stroke="rgba(249, 115, 22, 0.15)" strokeWidth="2" strokeDasharray="8 4" />
+                    </svg>
+                    {[
+                      { icon: 'layers', title: 'Frontend', tech: 'React · Tailwind · Vite' },
+                      { icon: 'settings_input_component', title: 'Backend', tech: 'FastAPI · Python' },
+                      { icon: 'database', title: 'Database', tech: 'Supabase · PostgreSQL' },
+                    ].map((node) => (
+                      <div key={node.title} className="z-10 w-full md:w-[180px] p-4 bg-surface-container border border-primary/20 rounded-xl text-center group transition-all hover:scale-105 hover:border-primary/50">
+                        <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                          <span className="material-symbols-outlined text-[24px] text-primary">{node.icon}</span>
+                        </div>
+                        <h3 className="font-headline text-base text-white mb-1">{node.title}</h3>
+                        <p className="text-on-surface-variant text-[11px] font-mono">{node.tech}</p>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              ) : (
+                <motion.section
+                  className="bg-[#111113] border border-[#1e1e22] p-6 md:p-10 rounded-2xl overflow-hidden relative shadow-[0_4px_30px_rgba(0,0,0,0.6),_0_0_15px_rgba(255,102,0,0.03)] hover:border-[#ff6600]/30 hover:shadow-[0_0_25px_rgba(255,102,0,0.12)] transition-all duration-500"
+                  initial={{ opacity: 0, y: 12 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.15 }}
+                  transition={{ ...SPRING_SNAPPY, delay: 2 * 0.05 }}
+                >
+                  <h2 className="text-white font-headline text-headline-md mb-2">How It's Built</h2>
+                  <p className="text-on-surface-variant text-sm mb-8">A solo student project — one frontend, one backend, one database.</p>
+
+                  <div className="relative flex flex-col md:flex-row items-center justify-between gap-8 md:gap-0 h-fit md:h-[300px]">
+                    <svg className="absolute top-1/2 left-0 w-full h-0.5 hidden md:block -translate-y-1/2 z-0" style={{ overflow: 'visible' }}>
+                      <line x1="15%" y1="0" x2="85%" y2="0" stroke="rgba(249, 115, 22, 0.15)" strokeWidth="2" strokeDasharray="8 4" />
+                    </svg>
+                    {[
+                      { icon: 'layers', title: 'Frontend', tech: 'React · Tailwind · Vite' },
+                      { icon: 'settings_input_component', title: 'Backend', tech: 'FastAPI · Python' },
+                      { icon: 'database', title: 'Database', tech: 'Supabase · PostgreSQL' },
+                    ].map((node) => (
+                      <motion.div
+                        key={node.title}
+                        className="z-10 w-full md:w-[180px] p-4 bg-surface-container border border-primary/20 rounded-xl text-center"
+                        whileHover={{ scale: 1.06, y: -4 }}
+                        whileTap={{ scale: 0.97 }}
+                        transition={SPRING_SNAPPY}
+                      >
+                        <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                          <span className="material-symbols-outlined text-[24px] text-primary">{node.icon}</span>
+                        </div>
+                        <h3 className="font-headline text-base text-white mb-1">{node.title}</h3>
+                        <p className="text-on-surface-variant text-[11px] font-mono">{node.tech}</p>
+                      </motion.div>
+                    ))}
+                  </div>
+                </motion.section>
+              )}
+
+              {/* Social Links */}
+              {shouldReduceMotion ? (
+                <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <a
+                    href="https://github.com/Sathvik1533"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-[#111113] border border-[#1e1e22] p-6 rounded-2xl flex items-center justify-between group cursor-pointer hover:bg-surface-container-high transition-all duration-500 ease-out hover:border-[#ff6600]/30 shadow-[0_4px_30px_rgba(0,0,0,0.6),_0_0_15px_rgba(255,102,0,0.03)] hover:shadow-[0_0_25px_rgba(255,102,0,0.12)]"
+                  >
+                    <div className="flex items-center gap-6">
+                      <div className="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center transition-colors group-hover:bg-white/10">
+                        <span className="material-symbols-outlined text-[20px] text-white">code</span>
+                      </div>
+                      <div>
+                        <h4 className="text-white font-headline text-base">GitHub</h4>
+                        <p className="text-on-surface-variant text-sm">github.com/Sathvik1533</p>
+                      </div>
+                    </div>
+                    <span className="material-symbols-outlined text-[20px] text-on-surface-variant group-hover:text-primary transition-colors">arrow_forward</span>
+                  </a>
+                  <a
+                    href="https://www.linkedin.com/in/kotagiri-sathvik"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-[#111113] border border-[#1e1e22] p-6 rounded-2xl flex items-center justify-between group cursor-pointer hover:bg-surface-container-high transition-all duration-500 ease-out hover:border-[#ff6600]/30 shadow-[0_4px_30px_rgba(0,0,0,0.6),_0_0_15px_rgba(255,102,0,0.03)] hover:shadow-[0_0_25px_rgba(255,102,0,0.12)]"
+                  >
+                    <div className="flex items-center gap-6">
+                      <div className="w-12 h-12 bg-blue-500/10 rounded-full flex items-center justify-center transition-colors group-hover:bg-blue-500/20">
+                        <span className="material-symbols-outlined text-[20px] text-blue-400">alternate_email</span>
+                      </div>
+                      <div>
+                        <h4 className="text-white font-headline text-base">LinkedIn</h4>
+                        <p className="text-on-surface-variant text-sm">kotagiri-sathvik</p>
+                      </div>
+                    </div>
+                    <span className="material-symbols-outlined text-[20px] text-on-surface-variant group-hover:text-primary transition-colors">arrow_forward</span>
+                  </a>
+                </section>
+              ) : (
+                <motion.section
+                  className="grid grid-cols-1 md:grid-cols-2 gap-6"
+                  initial={{ opacity: 0, y: 12 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.15 }}
+                  transition={{ ...SPRING_SNAPPY, delay: 3 * 0.05 }}
+                >
+                  <motion.a
+                    href="https://github.com/Sathvik1533"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-[#111113] border border-[#1e1e22] p-6 rounded-2xl flex items-center justify-between group cursor-pointer hover:bg-surface-container-high transition-all duration-500 ease-out hover:border-[#ff6600]/30 shadow-[0_4px_30px_rgba(0,0,0,0.6),_0_0_15px_rgba(255,102,0,0.03)] hover:shadow-[0_0_25px_rgba(255,102,0,0.12)]"
+                    whileHover={{ scale: 1.02, x: 4 }}
+                    whileTap={{ scale: 0.98 }}
+                    transition={SPRING_SNAPPY}
+                  >
+                    <div className="flex items-center gap-6">
+                      <div className="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center transition-colors group-hover:bg-white/10">
+                        <span className="material-symbols-outlined text-[20px] text-white">code</span>
+                      </div>
+                      <div>
+                        <h4 className="text-white font-headline text-base">GitHub</h4>
+                        <p className="text-on-surface-variant text-sm">github.com/Sathvik1533</p>
+                      </div>
+                    </div>
+                    <span className="material-symbols-outlined text-[20px] text-on-surface-variant group-hover:text-primary transition-colors">arrow_forward</span>
+                  </motion.a>
+
+                  <motion.a
+                    href="https://www.linkedin.com/in/kotagiri-sathvik"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-[#111113] border border-[#1e1e22] p-6 rounded-2xl flex items-center justify-between group cursor-pointer hover:bg-surface-container-high transition-all duration-500 ease-out hover:border-[#ff6600]/30 shadow-[0_4px_30px_rgba(0,0,0,0.6),_0_0_15px_rgba(255,102,0,0.03)] hover:shadow-[0_0_25px_rgba(255,102,0,0.12)]"
+                    whileHover={{ scale: 1.02, x: 4 }}
+                    whileTap={{ scale: 0.98 }}
+                    transition={SPRING_SNAPPY}
+                  >
+                    <div className="flex items-center gap-6">
+                      <div className="w-12 h-12 bg-blue-500/10 rounded-full flex items-center justify-center transition-colors group-hover:bg-blue-500/20">
+                        <span className="material-symbols-outlined text-[20px] text-blue-400">alternate_email</span>
+                      </div>
+                      <div>
+                        <h4 className="text-white font-headline text-base">LinkedIn</h4>
+                        <p className="text-on-surface-variant text-sm">kotagiri-sathvik</p>
+                      </div>
+                    </div>
+                    <span className="material-symbols-outlined text-[20px] text-on-surface-variant group-hover:text-primary transition-colors">arrow_forward</span>
+                  </motion.a>
+                </motion.section>
+              )}
+
             </div>
           </div>
-        </section>
+        </main>
 
-        {/* Call to Action */}
-        <section className="text-center">
-          <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border border-primary/20 rounded-2xl p-xxl">
-            <h2 className="font-headline text-headline-lg text-on-surface mb-md">
-              Ready to Transform Your Study?
-            </h2>
-            <p className="text-on-surface-variant text-body-lg mb-lg max-w-2xl mx-auto">
-              Join thousands of students who are already studying smarter with PaperIQ.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-base justify-center">
-              <a
-                href="/dashboard"
-                className="bg-primary text-on-primary font-bold px-xl py-3 rounded-xl text-body-sm hover:brightness-110 hover:scale-[1.02] active:scale-95 transition-all inline-flex items-center justify-center gap-sm"
-              >
-                <Icon name="dashboard" size={20} />
-                Go to Dashboard
-              </a>
-              <a
-                href="/analysis"
-                className="bg-surface border border-outline-variant text-on-surface font-bold px-xl py-3 rounded-xl text-body-sm hover:border-primary/40 hover:text-primary transition-all inline-flex items-center justify-center gap-sm"
-              >
-                <Icon name="analytics" size={20} />
-                Run Analysis
-              </a>
-            </div>
-          </div>
-        </section>
-      </main>
-
-      <Footer />
-    </div>
+        <Footer />
+      </div>
+    </PageTransition>
   )
 }

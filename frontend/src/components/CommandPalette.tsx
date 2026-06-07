@@ -1,280 +1,319 @@
 /**
- * CommandPalette — Global search / navigation overlay
- * Triggered by Cmd+K (Mac) / Ctrl+K (Win/Linux) or the search button in NavBar.
- * Lists all pages + quick actions + searches papers by title.
+ * CommandPalette — Global floating search modal
+ *
+ * Trigger: Cmd+K / Ctrl+K keyboard shortcut OR dispatching the custom
+ * 'cmd-palette:open' event from anywhere in the app (e.g. NavBar search button).
+ *
+ * Design: glassmorphic backdrop, Framer Motion spring slide-down, premium input.
  */
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
+import { supabase } from '../lib/supabase'
+import { useAuthStore } from '../store/authStore'
+import { SPRING_SNAPPY } from '../lib/motion'
 
-interface CommandItem {
+interface SearchResult {
   id: string
-  type: 'page' | 'action' | 'paper'
-  label: string
-  description?: string
+  type: 'page' | 'paper' | 'subject'
+  title: string
+  subtitle?: string
   icon: string
-  to?: string
-  action?: () => void
-  keywords?: string[]
+  path: string
 }
 
-interface CommandPaletteProps {
-  open: boolean
-  onClose: () => void
-}
-
-const STATIC_ITEMS: CommandItem[] = [
-  {
-    id: 'dashboard',
-    type: 'page',
-    label: 'Dashboard',
-    description: 'Your subject overview and quick links',
-    icon: 'dashboard',
-    to: '/dashboard',
-    keywords: ['home', 'subjects', 'overview'],
-  },
-  {
-    id: 'analysis',
-    type: 'page',
-    label: 'Exam Analysis',
-    description: 'AI insights — topic priorities & repeat patterns',
-    icon: 'bolt',
-    to: '/analysis',
-    keywords: ['analyze', 'exam', 'topics', 'study', 'priority', 'predict'],
-  },
-  {
-    id: 'papers',
-    type: 'page',
-    label: 'Past Papers',
-    description: 'Browse all MLRIT past exam papers',
-    icon: 'description',
-    to: '/papers',
-    keywords: ['questions', 'exam papers', 'previous', 'past'],
-  },
-  {
-    id: 'profile',
-    type: 'page',
-    label: 'Profile',
-    description: 'Your college, branch and semester details',
-    icon: 'person',
-    to: '/profile',
-    keywords: ['account', 'college', 'branch', 'semester'],
-  },
-  {
-    id: 'settings',
-    type: 'page',
-    label: 'Settings',
-    description: 'Preferences, theme and default filters',
-    icon: 'settings',
-    to: '/settings',
-    keywords: ['preferences', 'theme', 'dark', 'notifications'],
-  },
-  {
-    id: 'run-analysis',
-    type: 'action',
-    label: 'Run New Analysis',
-    description: 'Start a fresh analysis for any subject',
-    icon: 'add_circle',
-    to: '/analysis?reset=1',
-    keywords: ['new', 'start', 'analyse', 'fresh'],
-  },
-  {
-    id: 'onboarding',
-    type: 'action',
-    label: 'Re-run Onboarding',
-    description: 'Update your college, branch or semester',
-    icon: 'school',
-    to: '/onboarding',
-    keywords: ['setup', 'change college', 'change semester', 'mlrit'],
-  },
+const PAGES: SearchResult[] = [
+  { id: 'dashboard', type: 'page', title: 'Dashboard',       subtitle: 'Your subject hub',          icon: 'dashboard',     path: '/dashboard' },
+  { id: 'analysis',  type: 'page', title: 'Analysis',        subtitle: 'AI exam insights',           icon: 'analytics',     path: '/analysis'  },
+  { id: 'papers',    type: 'page', title: 'Papers',          subtitle: 'Browse past papers',         icon: 'library_books', path: '/papers'    },
+  { id: 'about',     type: 'page', title: 'About Creator',   subtitle: 'Meet the developer',        icon: 'info',          path: '/about'     },
+  { id: 'profile',   type: 'page', title: 'Profile',         subtitle: 'Your account & semester',   icon: 'person',        path: '/profile'   },
+  { id: 'settings',  type: 'page', title: 'Settings',        subtitle: 'Preferences & behaviour',   icon: 'settings',      path: '/settings'  },
 ]
 
-export function CommandPalette({ open, onClose }: CommandPaletteProps) {
-  const navigate = useNavigate()
-  const [query, setQuery] = useState('')
-  const [activeIdx, setActiveIdx] = useState(0)
+export default function CommandPalette() {
+  const [open, setOpen] = useState(false)
+  const [search, setSearch] = useState('')
+  const [papers, setPapers] = useState<SearchResult[]>([])
+  const [subjects, setSubjects] = useState<SearchResult[]>([])
+  const [loading, setLoading] = useState(false)
+  const [focusedIdx, setFocusedIdx] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
-  const listRef = useRef<HTMLDivElement>(null)
+  const navigate = useNavigate()
+  const { user } = useAuthStore()
+  const shouldReduceMotion = useReducedMotion()
 
-  // Reset on open
+  // ── Open via Cmd+K / Ctrl+K ──────────────────────────────────────────────
+  useEffect(() => {
+    const down = (e: KeyboardEvent) => {
+      if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault()
+        setOpen(o => !o)
+      }
+    }
+    document.addEventListener('keydown', down)
+    return () => document.removeEventListener('keydown', down)
+  }, [])
+
+  // ── Open via custom event (dispatched from NavBar search button) ─────────
+  useEffect(() => {
+    const handler = () => setOpen(true)
+    window.addEventListener('cmd-palette:open', handler)
+    return () => window.removeEventListener('cmd-palette:open', handler)
+  }, [])
+
+  // ── Auto-focus input when opened ─────────────────────────────────────────
   useEffect(() => {
     if (open) {
-      setQuery('')
-      setActiveIdx(0)
-      setTimeout(() => inputRef.current?.focus(), 50)
+      setFocusedIdx(0)
+      setTimeout(() => inputRef.current?.focus(), 80)
+    } else {
+      setSearch('')
+      setPapers([])
+      setSubjects([])
     }
   }, [open])
 
-  // Filter items by query
-  const filtered = query.trim()
-    ? STATIC_ITEMS.filter(item => {
-        const q = query.toLowerCase()
-        return (
-          item.label.toLowerCase().includes(q) ||
-          item.description?.toLowerCase().includes(q) ||
-          item.keywords?.some(k => k.includes(q))
-        )
-      })
-    : STATIC_ITEMS
-
-  // Scroll active item into view
+  // ── Live search (300ms debounce) ─────────────────────────────────────────
   useEffect(() => {
-    const el = listRef.current?.querySelector(`[data-idx="${activeIdx}"]`)
-    el?.scrollIntoView({ block: 'nearest' })
-  }, [activeIdx])
-
-  const execute = useCallback(
-    (item: CommandItem) => {
-      onClose()
-      if (item.action) {
-        item.action()
-      } else if (item.to) {
-        navigate(item.to)
-      }
-    },
-    [navigate, onClose]
-  )
-
-  function handleKey(e: React.KeyboardEvent) {
-    if (e.key === 'ArrowDown') {
-      e.preventDefault()
-      setActiveIdx(i => Math.min(i + 1, filtered.length - 1))
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault()
-      setActiveIdx(i => Math.max(i - 1, 0))
-    } else if (e.key === 'Enter') {
-      const item = filtered[activeIdx]
-      if (item) execute(item)
-    } else if (e.key === 'Escape') {
-      onClose()
+    if (!search || search.length < 2) {
+      setPapers([])
+      setSubjects([])
+      return
     }
+    const timer = setTimeout(async () => {
+      setLoading(true)
+      try {
+        const [{ data: papersData }, { data: subjectsData }] = await Promise.all([
+          supabase
+            .from('papers')
+            .select('id, title, exam_category, exam_year')
+            .ilike('title', `%${search}%`)
+            .limit(5),
+          supabase
+            .from('subjects')
+            .select('id, name, code')
+            .ilike('name', `%${search}%`)
+            .limit(5),
+        ])
+        setPapers(
+          (papersData || []).map(p => ({
+            id: p.id, type: 'paper' as const,
+            title: p.title || 'Untitled Paper',
+            subtitle: `${p.exam_category || 'Exam'} ${p.exam_year || ''}`,
+            icon: 'description', path: `/papers/${p.id}`,
+          }))
+        )
+        setSubjects(
+          (subjectsData || []).map(s => ({
+            id: s.id, type: 'subject' as const,
+            title: s.name,
+            subtitle: s.code,
+            icon: 'book', path: `/analysis?subject_id=${s.id}`,
+          }))
+        )
+      } catch (err) {
+        console.error('CommandPalette search error:', err)
+      } finally {
+        setLoading(false)
+      }
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [search])
+
+  const allResults: SearchResult[] = search.length < 2
+    ? PAGES
+    : [...papers, ...subjects]
+
+  const handleSelect = useCallback((path: string) => {
+    setOpen(false)
+    navigate(path)
+  }, [navigate])
+
+  // ── Keyboard navigation inside palette ───────────────────────────────────
+  useEffect(() => {
+    if (!open) return
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        setOpen(false)
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault()
+        setFocusedIdx(i => Math.min(i + 1, allResults.length - 1))
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault()
+        setFocusedIdx(i => Math.max(i - 1, 0))
+      } else if (e.key === 'Enter') {
+        e.preventDefault()
+        const item = allResults[focusedIdx]
+        if (item) handleSelect(item.path)
+      }
+    }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [open, allResults, focusedIdx, handleSelect])
+
+  if (!user) return null
+
+  const backdropVariants = {
+    hidden:  { opacity: 0 },
+    visible: { opacity: 1 },
+    exit:    { opacity: 0 },
   }
 
-  if (!open) return null
-
-  const pages = filtered.filter(i => i.type === 'page')
-  const actions = filtered.filter(i => i.type === 'action')
-
-  function renderGroup(items: CommandItem[], label: string) {
-    if (!items.length) return null
-    return (
-      <div className="mb-1">
-        <div className="px-md py-xs text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/50">
-          {label}
-        </div>
-        {items.map(item => {
-          const globalIdx = filtered.indexOf(item)
-          const isActive = globalIdx === activeIdx
-          return (
-            <button
-              key={item.id}
-              data-idx={globalIdx}
-              onClick={() => execute(item)}
-              onMouseEnter={() => setActiveIdx(globalIdx)}
-              className={`w-full flex items-center gap-sm px-md py-[10px] rounded-xl text-left transition-colors ${
-                isActive
-                  ? 'bg-primary-container/15 text-on-surface'
-                  : 'text-on-surface-variant hover:text-on-surface hover:bg-white/5'
-              }`}
-            >
-              <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
-                isActive ? 'bg-primary-container/20' : 'bg-white/6'
-              }`}>
-                <span className={`material-symbols-outlined text-[18px] ${isActive ? 'text-primary-container' : 'text-on-surface-variant'}`}>
-                  {item.icon}
-                </span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className={`text-body-sm font-semibold ${isActive ? 'text-on-surface' : ''}`}>
-                  {item.label}
-                </div>
-                {item.description && (
-                  <div className="text-[11px] text-on-surface-variant/60 truncate mt-[1px]">
-                    {item.description}
-                  </div>
-                )}
-              </div>
-              {isActive && (
-                <span className="material-symbols-outlined text-[14px] text-primary-container/60 shrink-0">
-                  keyboard_return
-                </span>
-              )}
-            </button>
-          )
-        })}
-      </div>
-    )
+  const panelVariants = {
+    hidden:  { opacity: 0, y: -24, scale: 0.96 },
+    visible: { opacity: 1, y: 0,   scale: 1    },
+    exit:    { opacity: 0, y: -16, scale: 0.97 },
   }
 
   return (
-    <>
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 z-[400] bg-black/60 backdrop-blur-sm"
-        onClick={onClose}
-      />
-
-      {/* Panel */}
-      <div
-        className="fixed top-[15vh] left-1/2 -translate-x-1/2 z-[401] w-full max-w-lg mx-auto px-sm"
-        role="dialog"
-        aria-label="Command palette"
-        aria-modal="true"
-      >
-        <div
-          className="rounded-2xl border border-white/10 overflow-hidden"
-          style={{
-            background: 'rgba(12,12,18,0.97)',
-            backdropFilter: 'blur(32px)',
-            boxShadow: '0 32px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.06), 0 0 40px rgba(249,115,22,0.06)',
-          }}
-        >
-          {/* Search input */}
-          <div className="flex items-center gap-sm px-md border-b border-white/8">
-            <span className="material-symbols-outlined text-[22px] text-on-surface-variant">search</span>
-            <input
-              ref={inputRef}
-              value={query}
-              onChange={e => { setQuery(e.target.value); setActiveIdx(0) }}
-              onKeyDown={handleKey}
-              placeholder="Search pages, actions…"
-              className="flex-1 bg-transparent py-[18px] text-body-md text-on-surface placeholder:text-on-surface-variant/40 outline-none"
-              autoComplete="off"
-              spellCheck={false}
-            />
-            <kbd className="hidden sm:flex items-center gap-[2px] text-[10px] text-on-surface-variant/50 border border-white/8 rounded px-[5px] py-[2px] font-mono">
-              ESC
-            </kbd>
-          </div>
-
-          {/* Results */}
-          <div ref={listRef} className="max-h-[360px] overflow-y-auto p-xs">
-            {filtered.length === 0 ? (
-              <div className="py-xl text-center">
-                <span className="material-symbols-outlined text-[40px] text-on-surface-variant/30 block mb-sm">search_off</span>
-                <p className="text-body-sm text-on-surface-variant">No results for "{query}"</p>
+    <AnimatePresence>
+      {open && (
+        <>
+          {/* ── Backdrop ────────────────────────────────────────────── */}
+          <motion.div
+            key="cmd-backdrop"
+            variants={backdropVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            transition={{ duration: 0.18 }}
+            className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-md bg-black/50"
+            onClick={() => setOpen(false)}
+          >
+            {/* ── Panel ───────────────────────────────────────────── */}
+            <motion.div
+              key="cmd-panel"
+              variants={panelVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              transition={shouldReduceMotion ? { duration: 0 } : { type: 'spring', stiffness: 300, damping: 20 }}
+              className="relative w-full max-w-xl mx-4 rounded-2xl overflow-hidden"
+              style={{
+                background: 'rgba(12,12,18,0.97)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                boxShadow: '0 32px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(249,115,22,0.12), 0 0 60px rgba(249,115,22,0.06)',
+                backdropFilter: 'blur(32px)',
+              }}
+              onClick={e => e.stopPropagation()}
+            >
+              {/* ── Search input ──────────────────────────────────── */}
+              <div className="flex items-center gap-3 px-5 py-4 border-b border-white/[0.07]">
+                <span
+                  className="material-symbols-outlined text-[22px] shrink-0"
+                  style={{ color: 'rgba(249,115,22,0.8)' }}
+                >
+                  search
+                </span>
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={search}
+                  onChange={e => { setSearch(e.target.value); setFocusedIdx(0) }}
+                  placeholder="Search screens, papers, subjects…"
+                  className="flex-1 bg-transparent text-white text-[15px] placeholder:text-white/30 outline-none font-medium"
+                />
+                {search && (
+                  <button
+                    onClick={() => setSearch('')}
+                    className="text-white/30 hover:text-white/70 transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">close</span>
+                  </button>
+                )}
+                <kbd className="hidden sm:flex items-center gap-[2px] text-[10px] border border-white/10 rounded px-1.5 py-0.5 font-mono text-white/30">
+                  ESC
+                </kbd>
               </div>
-            ) : (
-              <>
-                {renderGroup(pages, 'Pages')}
-                {renderGroup(actions, 'Quick Actions')}
-              </>
-            )}
-          </div>
 
-          {/* Footer hint */}
-          <div className="border-t border-white/6 px-md py-sm flex items-center gap-lg text-[10px] text-on-surface-variant/40">
-            <span className="flex items-center gap-xs">
-              <kbd className="border border-white/10 rounded px-[4px] py-[1px] font-mono">↑↓</kbd> navigate
-            </span>
-            <span className="flex items-center gap-xs">
-              <kbd className="border border-white/10 rounded px-[4px] py-[1px] font-mono">↵</kbd> open
-            </span>
-            <span className="flex items-center gap-xs">
-              <kbd className="border border-white/10 rounded px-[4px] py-[1px] font-mono">Esc</kbd> close
-            </span>
-          </div>
-        </div>
-      </div>
-    </>
+              {/* ── Results list ────────────────────────────────────── */}
+              <div className="max-h-[360px] overflow-y-auto py-2">
+                {loading && (
+                  <div className="py-8 flex justify-center">
+                    <div className="w-5 h-5 border-2 border-white/10 border-t-[#f97316] rounded-full animate-spin" />
+                  </div>
+                )}
+
+                {!loading && allResults.length === 0 && search.length >= 2 && (
+                  <div className="py-8 text-center text-white/30 text-sm">
+                    No results for "{search}"
+                  </div>
+                )}
+
+                {!loading && allResults.length > 0 && (
+                  <div className="px-2">
+                    {/* Section label */}
+                    <p className="px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-white/25 mb-1">
+                      {search.length < 2 ? 'Navigate to' : 'Results'}
+                    </p>
+                    {allResults.map((item, idx) => {
+                      const isFocused = idx === focusedIdx
+                      return (
+                        <motion.button
+                          key={item.id}
+                          type="button"
+                          onClick={() => handleSelect(item.path)}
+                          onMouseEnter={() => setFocusedIdx(idx)}
+                          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-colors"
+                          style={{
+                            background: isFocused ? 'rgba(249,115,22,0.1)' : 'transparent',
+                            border: isFocused ? '1px solid rgba(249,115,22,0.2)' : '1px solid transparent',
+                          }}
+                          initial={false}
+                          animate={{
+                            backgroundColor: isFocused ? 'rgba(249,115,22,0.1)' : 'rgba(0,0,0,0)',
+                          }}
+                          transition={{ duration: 0.12 }}
+                        >
+                          {/* Icon */}
+                          <div
+                            className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                            style={{
+                              background: isFocused ? 'rgba(249,115,22,0.2)' : 'rgba(255,255,255,0.06)',
+                            }}
+                          >
+                            <span
+                              className="material-symbols-outlined text-[17px]"
+                              style={{ color: isFocused ? '#f97316' : 'rgba(255,255,255,0.5)', fontVariationSettings: "'FILL' 1" }}
+                            >
+                              {item.icon}
+                            </span>
+                          </div>
+                          {/* Text */}
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-sm font-semibold truncate ${isFocused ? 'text-white' : 'text-white/80'}`}>
+                              {item.title}
+                            </p>
+                            {item.subtitle && (
+                              <p className="text-xs text-white/30 truncate mt-0.5">{item.subtitle}</p>
+                            )}
+                          </div>
+                          {/* Arrow hint for focused item */}
+                          {isFocused && (
+                            <span className="material-symbols-outlined text-[15px] text-[#f97316] shrink-0">
+                              arrow_forward
+                            </span>
+                          )}
+                        </motion.button>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* ── Footer hints ────────────────────────────────────── */}
+              <div className="px-5 py-3 border-t border-white/[0.05] flex items-center gap-4 text-[10px] text-white/20 font-mono">
+                <span><kbd className="bg-white/5 border border-white/10 px-1 rounded">↑↓</kbd> navigate</span>
+                <span><kbd className="bg-white/5 border border-white/10 px-1 rounded">↵</kbd> open</span>
+                <span><kbd className="bg-white/5 border border-white/10 px-1 rounded">esc</kbd> close</span>
+                <span className="ml-auto text-[#f97316]/40">⌘K</span>
+              </div>
+            </motion.div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
   )
 }

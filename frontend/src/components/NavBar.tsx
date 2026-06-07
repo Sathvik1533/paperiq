@@ -2,16 +2,20 @@
  * NavBar — shared across all authenticated screens.
  * Matches the Stitch design exactly: logo + nav links + search + actions + avatar.
  * All links are real React Router <Link> elements.
+ * 
+ * ENHANCED: Spring-driven micro-interactions on ALL interactive elements
+ * Per interaction-patterns.md: stiffness 300, damping 20, max 800ms
  */
 import { useState, useRef, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { useAuthStore } from '../store/authStore'
 import { Icon } from './Icon'
-import { CommandPalette } from './CommandPalette'
+import { hoverScale, tapScale, SPRING_SNAPPY } from '../lib/motion'
 
 interface NavBarProps {
   /** Override which nav item is highlighted (defaults to path detection) */
-  activeTab?: 'dashboard' | 'analysis' | 'papers' | 'profile' | 'settings' | 'about'
+  activeTab?: 'dashboard' | 'analysis' | 'papers' | 'about' | 'profile' | 'settings'
 }
 
 export function NavBar({ activeTab }: NavBarProps) {
@@ -20,8 +24,8 @@ export function NavBar({ activeTab }: NavBarProps) {
   const { user, signOut } = useAuthStore()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [dropdownOpen, setDropdownOpen] = useState(false)
-  const [paletteOpen, setPaletteOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const shouldReduceMotion = useReducedMotion()
   // Hover state — beam follows hover, falls back to active route
   const [hoveredKey, setHoveredKey] = useState<string | null>(null)
 
@@ -37,19 +41,10 @@ export function NavBar({ activeTab }: NavBarProps) {
   }, [dropdownOpen])
 
   // Close dropdown on route change
-  useEffect(() => { setDropdownOpen(false) }, [location.pathname])
-
-  // Cmd+K / Ctrl+K global shortcut for command palette
-  useEffect(() => {
-    function handleGlobal(e: KeyboardEvent) {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault()
-        setPaletteOpen(o => !o)
-      }
-    }
-    document.addEventListener('keydown', handleGlobal)
-    return () => document.removeEventListener('keydown', handleGlobal)
-  }, [])
+  useEffect(() => { 
+    setDropdownOpen(false)
+    setMobileOpen(false)
+  }, [location.pathname])
 
   // Derive active tab from path if not overridden
   const path = location.pathname
@@ -67,8 +62,9 @@ export function NavBar({ activeTab }: NavBarProps) {
     { key: 'dashboard', label: 'Dashboard',  to: '/dashboard', tourAttr: 'tour-nav-dashboard' },
     { key: 'analysis',  label: 'Analysis',   to: '/analysis',  tourAttr: 'tour-nav-analysis' },
     { key: 'papers',    label: 'Papers',      to: '/papers',   tourAttr: 'tour-nav-papers' },
+    { key: 'about',     label: 'About',       to: '/about',    tourAttr: 'tour-nav-about' },
     { key: 'profile',   label: 'Profile',     to: '/profile',  tourAttr: 'tour-nav-profile' },
-    { key: 'about',     label: 'About',       to: '/about',    tourAttr: undefined },
+    { key: 'settings',  label: 'Settings',    to: '/settings', tourAttr: 'tour-nav-settings' },
   ]
 
   const initials = user?.user_metadata?.full_name
@@ -79,20 +75,34 @@ export function NavBar({ activeTab }: NavBarProps) {
   const firstName = user?.user_metadata?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'Student'
 
   return (
-    <header className="fixed top-0 left-0 w-full z-50 bg-background/80 backdrop-blur-xl border-b border-outline-variant">
+    <header className="fixed top-0 left-0 w-full z-[100] bg-background/80 backdrop-blur-xl border-b border-outline-variant">
       <div className="max-w-[1200px] mx-auto flex justify-between items-center px-base md:px-xl h-20 gap-xl">
         {/* Logo */}
         <div className="flex items-center gap-huge">
-          <Link to="/" className="font-headline text-headline-md font-bold text-on-surface tracking-tight">
-            Paper<span className="text-primary-container">IQ</span>
-          </Link>
+          {shouldReduceMotion ? (
+            <Link to="/" className="font-headline text-headline-md font-bold text-on-surface tracking-tight">
+              Paper<span className="text-primary-container">IQ</span>
+            </Link>
+          ) : (
+            <motion.div
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.96 }}
+              transition={SPRING_SNAPPY}
+            >
+              <Link to="/" className="font-headline text-headline-md font-bold text-on-surface tracking-tight">
+                Paper<span className="text-primary-container">IQ</span>
+              </Link>
+            </motion.div>
+          )}
 
           {/* Desktop nav */}
           <nav className="hidden md:flex gap-xl">
             {navLinks.map(link => {
               const isBeam = (hoveredKey ?? active) === link.key
+              const NavLink = shouldReduceMotion ? Link : motion(Link)
+              
               return (
-                <Link
+                <NavLink
                   key={link.key}
                   to={link.to}
                   data-tour={link.tourAttr}
@@ -103,6 +113,11 @@ export function NavBar({ activeTab }: NavBarProps) {
                       ? 'text-primary-container font-bold'
                       : 'text-on-surface-variant hover:text-primary-container'
                   }`}
+                  {...(!shouldReduceMotion && {
+                    whileHover: { scale: 1.03, translateY: -2 },
+                    whileTap: { scale: 0.97 },
+                    transition: SPRING_SNAPPY
+                  })}
                 >
                   {link.label}
                   {/* beam — follows hover, snaps back to active route on mouse leave */}
@@ -112,7 +127,7 @@ export function NavBar({ activeTab }: NavBarProps) {
                     }`}
                     style={{ transformOrigin: 'left' }}
                   />
-                </Link>
+                </NavLink>
               )
             })}
           </nav>
@@ -120,46 +135,96 @@ export function NavBar({ activeTab }: NavBarProps) {
 
         {/* Right side */}
         <div className="flex items-center gap-base">
+          {/* Mobile menu button */}
+          <button
+            onClick={() => setMobileOpen(!mobileOpen)}
+            className="md:hidden p-2 text-on-surface hover:text-primary-container transition-colors"
+            aria-label="Menu"
+          >
+            <Icon name={mobileOpen ? 'close' : 'menu'} size={24} />
+          </button>
+
           {/* Search / Command Palette trigger */}
           <div className="relative hidden sm:block">
-            <button
-              onClick={() => setPaletteOpen(true)}
-              className="flex items-center gap-sm bg-surface border border-outline-variant rounded-xl pl-3 pr-4 py-2 text-body-sm text-on-surface-variant hover:border-primary-container/60 hover:text-on-surface transition-all w-48 group"
-              aria-label="Search (⌘K)"
-            >
-              <Icon name="search" size={20} />
-              <span className="flex-1 text-left text-on-surface-variant/60">Search…</span>
-              <kbd className="hidden lg:flex items-center gap-[2px] text-[9px] border border-outline-variant rounded px-[4px] py-[1px] font-mono opacity-60 group-hover:opacity-100 transition-opacity">
-                ⌘K
-              </kbd>
-            </button>
+            {shouldReduceMotion ? (
+              <button
+                onClick={() => window.dispatchEvent(new Event('cmd-palette:open'))}
+                className="flex items-center gap-sm bg-surface border border-outline-variant rounded-xl pl-3 pr-4 py-2 text-body-sm text-on-surface-variant hover:border-primary-container/60 hover:text-on-surface transition-all w-48 group"
+                aria-label="Search (⌘K)"
+              >
+                <Icon name="search" size={20} />
+                <span className="flex-1 text-left text-on-surface-variant/60">Search…</span>
+                <kbd className="hidden lg:flex items-center gap-[2px] text-[9px] border border-outline-variant rounded px-[4px] py-[1px] font-mono opacity-60 group-hover:opacity-100 transition-opacity">⌘K</kbd>
+              </button>
+            ) : (
+              <motion.button
+                onClick={() => window.dispatchEvent(new Event('cmd-palette:open'))}
+                className="flex items-center gap-sm bg-surface border border-outline-variant rounded-xl pl-3 pr-4 py-2 text-body-sm text-on-surface-variant hover:border-primary-container/60 hover:text-on-surface transition-all w-48 group"
+                aria-label="Search (⌘K)"
+                whileHover={{ scale: 1.02, boxShadow: '0 0 16px rgba(255,102,0,0.10)' }}
+                whileTap={{ scale: 0.97 }}
+                transition={SPRING_SNAPPY}
+              >
+                <Icon name="search" size={20} />
+                <span className="flex-1 text-left text-on-surface-variant/60">Search…</span>
+                <kbd className="hidden lg:flex items-center gap-[2px] text-[9px] border border-outline-variant rounded px-[4px] py-[1px] font-mono opacity-60 group-hover:opacity-100 transition-opacity">⌘K</kbd>
+              </motion.button>
+            )}
           </div>
 
           {/* Run New Analysis CTA */}
-          <button
-            data-tour="tour-run-analysis-cta"
-            onClick={() => navigate('/analysis?reset=1')}
-            className="hidden md:flex items-center gap-sm bg-primary-container text-on-primary-container font-bold px-base py-2 rounded-xl text-body-sm hover:brightness-110 transition-all active:scale-95 glow-orange"
-          >
-            <Icon name="add" size={18} />
-            Run New Analysis
-          </button>
+          {shouldReduceMotion ? (
+            <button
+              data-tour="tour-run-analysis-cta"
+              onClick={() => navigate('/analysis?reset=1')}
+              className="hidden md:flex items-center gap-sm bg-primary-container text-on-primary-container font-bold px-base py-2 rounded-xl text-body-sm hover:brightness-110 transition-all active:scale-95 glow-orange"
+            >
+              <Icon name="add" size={18} />
+              Run New Analysis
+            </button>
+          ) : (
+            <motion.button
+              data-tour="tour-run-analysis-cta"
+              onClick={() => navigate('/analysis?reset=1')}
+              className="hidden md:flex items-center gap-sm bg-primary-container text-on-primary-container font-bold px-base py-2 rounded-xl text-body-sm hover:brightness-110 transition-all glow-orange"
+              whileHover={{ ...hoverScale, boxShadow: "0 0 20px rgba(249, 115, 22, 0.4)" }}
+              whileTap={tapScale}
+              transition={SPRING_SNAPPY}
+            >
+              <Icon name="add" size={18} />
+              Run New Analysis
+            </motion.button>
+          )}
 
           {/* Avatar / dropdown — click-controlled, no hover jank */}
+          {/* Student placeholder - personal avatar only on About page */}
           <div className="relative" ref={dropdownRef}>
-            <button
-              onClick={() => setDropdownOpen(o => !o)}
-              className={`w-9 h-9 rounded-full border-2 overflow-hidden bg-surface-container flex items-center justify-center text-sm font-bold text-primary-container transition-all ${
-                dropdownOpen
-                  ? 'border-primary-container shadow-[0_0_16px_rgba(249,115,22,0.4)]'
-                  : 'border-primary-container/40 hover:border-primary-container'
-              }`}
-            >
-              {avatarUrl
-                ? <img src={avatarUrl} alt="avatar" className="w-full h-full object-cover" />
-                : initials
-              }
-            </button>
+            {shouldReduceMotion ? (
+              <button
+                onClick={() => setDropdownOpen(o => !o)}
+                className={`w-9 h-9 rounded-full border-2 overflow-hidden bg-neutral-800 flex items-center justify-center text-xs font-mono font-bold text-neutral-400 transition-all ${
+                  dropdownOpen
+                    ? 'border-primary-container shadow-[0_0_16px_rgba(249,115,22,0.4)]'
+                    : 'border-neutral-700 hover:border-primary-container'
+                }`}
+              >
+                {initials}
+              </button>
+            ) : (
+              <motion.button
+                onClick={() => setDropdownOpen(o => !o)}
+                className={`w-9 h-9 rounded-full border-2 overflow-hidden bg-neutral-800 flex items-center justify-center text-xs font-mono font-bold text-neutral-400 transition-all ${
+                  dropdownOpen
+                    ? 'border-primary-container shadow-[0_0_16px_rgba(249,115,22,0.4)]'
+                    : 'border-neutral-700 hover:border-primary-container'
+                }`}
+                whileHover={{ scale: 1.1, boxShadow: '0 0 20px rgba(249,115,22,0.35)' }}
+                whileTap={{ scale: 0.93 }}
+                transition={SPRING_SNAPPY}
+              >
+                {initials}
+              </motion.button>
+            )}
 
             {/* Dropdown — click-triggered, z-[200] over all page content */}
             {dropdownOpen && (
@@ -175,14 +240,12 @@ export function NavBar({ activeTab }: NavBarProps) {
                 <div className="absolute -top-[6px] right-3 w-3 h-3 rotate-45 border-l border-t border-white/10"
                   style={{ background: 'rgba(14,14,20,0.98)' }} />
 
-                {/* User identity */}
+                {/* User identity - student placeholder */}
                 <div className="px-md pt-md pb-sm">
                   <div className="flex items-center gap-sm">
-                    <div className="w-9 h-9 rounded-xl overflow-hidden border border-primary-container/30 bg-surface-container flex items-center justify-center text-sm font-bold text-primary-container shrink-0">
-                      {avatarUrl
-                        ? <img src={avatarUrl} alt="avatar" className="w-full h-full object-cover" />
-                        : initials
-                      }
+                    <div className="w-9 h-9 rounded-xl overflow-hidden border border-neutral-700 bg-neutral-800 flex items-center justify-center text-xs font-mono font-bold text-neutral-400 shrink-0">
+                      {/* Student initials only - no personal photo */}
+                      {initials}
                     </div>
                     <div className="min-w-0">
                       <p className="text-body-sm font-bold text-on-surface truncate leading-tight">
@@ -238,24 +301,39 @@ export function NavBar({ activeTab }: NavBarProps) {
                 {/* Sign out — separated visually */}
                 <div className="mx-md mt-xs mb-md h-px bg-white/6" />
                 <div className="px-xs pb-xs">
-                  <button
-                    onClick={() => signOut().then(() => navigate('/'))}
-                    className="w-full flex items-center gap-sm px-sm py-[10px] rounded-xl text-body-sm text-on-surface-variant hover:bg-error/8 hover:text-error transition-colors group/sign"
-                  >
-                    <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center shrink-0 group-hover/sign:bg-error/15 transition-colors">
-                      <span className="material-symbols-outlined text-[15px]">logout</span>
-                    </div>
-                    Sign out
-                  </button>
+                  {shouldReduceMotion ? (
+                    <button
+                      onClick={() => signOut().then(() => navigate('/'))}
+                      className="w-full flex items-center gap-sm px-sm py-[10px] rounded-xl text-body-sm text-on-surface-variant hover:bg-error/8 hover:text-error transition-colors group/sign"
+                    >
+                      <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center shrink-0 group-hover/sign:bg-error/15 transition-colors">
+                        <span className="material-symbols-outlined text-[15px]">logout</span>
+                      </div>
+                      Sign out
+                    </button>
+                  ) : (
+                    <motion.button
+                      onClick={() => signOut().then(() => navigate('/'))}
+                      className="w-full flex items-center gap-sm px-sm py-[10px] rounded-xl text-body-sm text-on-surface-variant hover:bg-error/8 hover:text-error transition-colors group/sign"
+                      whileHover={{ x: 3 }}
+                      whileTap={{ scale: 0.97 }}
+                      transition={SPRING_SNAPPY}
+                    >
+                      <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center shrink-0 group-hover/sign:bg-error/15 transition-colors">
+                        <span className="material-symbols-outlined text-[15px]">logout</span>
+                      </div>
+                      Sign out
+                    </motion.button>
+                  )}
                 </div>
               </div>
             )}
           </div>
 
-          {/* Mobile: search icon → palette */}
+          {/* Mobile: search icon → open command palette */}
           <button
             className="sm:hidden material-symbols-outlined text-on-surface-variant hover:text-on-surface transition-colors"
-            onClick={() => setPaletteOpen(true)}
+            onClick={() => window.dispatchEvent(new Event('cmd-palette:open'))}
             aria-label="Search"
           >
             search
@@ -271,34 +349,74 @@ export function NavBar({ activeTab }: NavBarProps) {
         </div>
       </div>
 
-      {/* Mobile menu */}
-      {mobileOpen && (
-        <div className="md:hidden bg-surface-container border-t border-outline-variant px-base py-md space-y-xs">
-          {navLinks.map(link => (
-            <Link
-              key={link.key}
-              to={link.to}
-              onClick={() => setMobileOpen(false)}
-              className={`block px-sm py-sm rounded-xl text-body-md transition-colors ${
-                active === link.key
-                  ? 'bg-primary-container/10 text-primary-container font-bold'
-                  : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high'
-              }`}
-            >
-              {link.label}
-            </Link>
-          ))}
-          <button
-            onClick={() => { navigate('/analysis?reset=1'); setMobileOpen(false) }}
-            className="w-full mt-sm bg-primary-container text-on-primary-container font-bold py-sm px-base rounded-xl text-body-sm"
+      {/* Mobile menu — AnimatePresence for smooth open/close */}
+      <AnimatePresence>
+        {mobileOpen && (
+          <motion.div
+            className="md:hidden bg-surface-container border-t border-outline-variant px-base py-md space-y-xs overflow-hidden"
+            initial={shouldReduceMotion ? {} : { opacity: 0, height: 0 }}
+            animate={shouldReduceMotion ? {} : { opacity: 1, height: 'auto' }}
+            exit={shouldReduceMotion ? {} : { opacity: 0, height: 0 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 28 }}
           >
-            Run New Analysis
-          </button>
-        </div>
-      )}
-
-      {/* Command Palette */}
-      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
+            {navLinks.map((link, i) => (
+              shouldReduceMotion ? (
+                <Link
+                  key={link.key}
+                  to={link.to}
+                  onClick={() => setMobileOpen(false)}
+                  className={`block px-sm py-sm rounded-xl text-body-md transition-colors ${
+                    active === link.key
+                      ? 'bg-primary-container/10 text-primary-container font-bold'
+                      : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high'
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              ) : (
+                <motion.div
+                  key={link.key}
+                  initial={{ opacity: 0, x: -12 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 20, delay: i * 0.04 }}
+                >
+                  <Link
+                    to={link.to}
+                    onClick={() => setMobileOpen(false)}
+                    className={`block px-sm py-sm rounded-xl text-body-md transition-colors ${
+                      active === link.key
+                        ? 'bg-primary-container/10 text-primary-container font-bold'
+                        : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high'
+                    }`}
+                  >
+                    {link.label}
+                  </Link>
+                </motion.div>
+              )
+            ))}
+            {shouldReduceMotion ? (
+              <button
+                onClick={() => { navigate('/analysis?reset=1'); setMobileOpen(false) }}
+                className="w-full mt-sm bg-primary-container text-on-primary-container font-bold py-sm px-base rounded-xl text-body-sm"
+              >
+                Run New Analysis
+              </button>
+            ) : (
+              <motion.button
+                onClick={() => { navigate('/analysis?reset=1'); setMobileOpen(false) }}
+                className="w-full mt-sm bg-primary-container text-on-primary-container font-bold py-sm px-base rounded-xl text-body-sm"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 20, delay: navLinks.length * 0.04 }}
+                whileHover={{ scale: 1.02, boxShadow: '0 0 20px rgba(249,115,22,0.4)' }}
+                whileTap={{ scale: 0.97 }}
+              >
+                Run New Analysis
+              </motion.button>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </header>
   )
 }

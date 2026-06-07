@@ -18,7 +18,7 @@ from typing import Optional
 import httpx
 
 from app.scrapers.colleges.mlrit_r22 import (
-    R22_ARCHIVES, BASE_URL, identify_subject_from_filename, R22_SUBJECTS,
+    R22_ARCHIVES, BASE_URL, identify_subject_from_filename, R22_SUBJECTS, get_all_archives,
 )
 from app.extractors.archive_extractor import ArchiveExtractor
 from app.extractors.extractor_factory import extract, is_academic_file
@@ -69,8 +69,8 @@ async def crawl_r22_22(
     papers_cached = 0
     questions_stored = 0
 
-    # Select archives in year range
-    archives = [a for a in R22_ARCHIVES if year_from <= a["year"] <= year_to]
+    # Select archives in year range using dynamic discovery
+    archives = [a for a in get_all_archives() if year_from <= a["year"] <= year_to]
     log.info(f"[R22Crawler] {len(archives)} archives in range {year_from}-{year_to}")
 
     async with httpx.AsyncClient(
@@ -160,6 +160,7 @@ async def crawl_r22_22(
                         "semester"         : 2,
                         "regulation"       : "R22",
                         "original_url"     : archive_url,
+                        "archive_url"      : archive_url,
                         "file_name"        : os.path.basename(fpath),
                         "file_type"        : os.path.splitext(fpath)[1].lower().lstrip("."),
                         "file_size_bytes"  : file_size,
@@ -221,7 +222,7 @@ def _fuzzy_match_filename(fname: str, code: str, info: dict) -> bool:
 
 
 def _get_or_create_subject(db, code: str, info: dict, college_id: str) -> Optional[str]:
-    """Return existing subject_id or create it."""
+    """Return existing subject_id or create it with correct semester."""
     try:
         existing = (
             db.table("subjects")
@@ -233,11 +234,12 @@ def _get_or_create_subject(db, code: str, info: dict, college_id: str) -> Option
         )
         if existing.data:
             return existing.data["id"]
+        # Use the semester from the subject's own metadata (1 for 2-1, 2 for 2-2)
         result = db.table("subjects").insert({
             "college_id" : college_id,
             "name"       : info["name"],
             "code"       : code,
-            "semester"   : 2,
+            "semester"   : info.get("semester", 2),  # Correct semester from registry
             "year"       : 2,
             "regulation" : "R22",
         }).execute()

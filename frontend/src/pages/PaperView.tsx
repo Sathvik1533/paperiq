@@ -11,7 +11,8 @@ import { NavBar } from '../components/NavBar'
 import { Footer } from '../components/Footer'
 import { supabase } from '../lib/supabase'
 import { CustomSelect } from '../components/CustomSelect'
-
+import { motion, useReducedMotion } from 'framer-motion'
+import { PageTransition } from '../components/ui/PageTransition'
 interface Question {
   id: string
   question_number?: number
@@ -43,6 +44,7 @@ export function PaperView() {
   const { paperId } = useParams<{ paperId: string }>()
   const navigate    = useNavigate()
   const [searchParams] = useSearchParams()
+  const shouldReduceMotion = useReducedMotion()
 
   const [paper, setPaper]             = useState<Paper | null>(null)
   const [questions, setQuestions]     = useState<Question[]>([])
@@ -144,8 +146,16 @@ export function PaperView() {
       console.log('[Download] original_url is archive, using backend extraction')
     }
 
-    // Priority 2: Backend on-demand PDF generation from extracted questions
-    // This is the primary working path — generates a clean PDF from the parsed questions
+    // Priority 2: Document is stored in Supabase Storage
+    if (paper.storage_path && paper.storage_bucket) {
+      const storageUrl = getStorageUrl(paper.storage_path, paper.storage_bucket)
+      console.log('[Download] Supabase Storage →', storageUrl)
+      window.open(storageUrl, '_blank', 'noopener,noreferrer')
+      return
+    }
+
+    // Priority 3: Backend on-demand PDF generation from extracted questions
+    // This is the fallback working path — generates a clean PDF from the parsed questions
     const pdfUrl = `${apiBase}/papers/${paper.id}/download`
     console.log('[Download] Backend PDF →', pdfUrl)
     window.open(pdfUrl, '_blank', 'noopener,noreferrer')
@@ -223,6 +233,7 @@ export function PaperView() {
   }
 
   return (
+    <PageTransition>
     <div className="min-h-screen bg-background">
       <NavBar activeTab="papers" />
 
@@ -246,11 +257,8 @@ export function PaperView() {
                 // Strict academic marks calculation — never trust stale DB max_marks column.
                 // Priority 1: Sum marks from parsed questions (ground truth)
                 // Priority 2: Regulation cap — R22 = 60M, all others = 70M
-                const calculatedMarks = questions.length > 0
-                  ? questions.reduce((sum, q) => sum + (q.marks || 0), 0)
-                  : 0
                 const regulationCap = (paper.regulation?.toUpperCase() === 'R22') ? 60 : 70
-                const absoluteTotalMarks = calculatedMarks > 0 ? calculatedMarks : regulationCap
+                const absoluteTotalMarks = paper.max_marks || regulationCap
                 
                 return [
                   { icon:'school',        text: paper.regulation },
@@ -367,15 +375,18 @@ export function PaperView() {
             {/* Questions list */}
             {filteredQ.length > 0 ? (
               <div className="space-y-base">
-                {filteredQ.map((q) => {
+                {filteredQ.map((q, index) => {
                   const qPart = normalizePart(q.part)
                   const isPartB = qPart === 'B'
                   // Smart fallback for marks: Part A = 2 marks, Part B = 10 marks
                   const displayMarks = q.marks || (qPart === 'A' ? 2 : qPart === 'B' ? 10 : null)
                   
                   return (
-                    <div
+                    <motion.div
                       key={q.id}
+                      initial={shouldReduceMotion ? false : { opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ type: 'spring' as const, stiffness: 300, damping: 20, delay: index * 0.03 }}
                       className="glass-card rounded-xl p-lg"
                       style={{borderLeft: `4px solid ${isPartB ? '#10b981' : '#f97316'}`}}
                     >
@@ -413,7 +424,7 @@ export function PaperView() {
                           <span className="text-body-sm text-on-surface-variant">Topic: {q.topic_name}</span>
                         </div>
                       )}
-                    </div>
+                    </motion.div>
                   )
                 })}
               </div>
@@ -545,5 +556,6 @@ export function PaperView() {
         <Footer />
       </div>
     </div>
+    </PageTransition>
   )
 }
