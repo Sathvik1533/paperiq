@@ -90,44 +90,6 @@ export function CustomSelect({ value, onChange, options, placeholder = 'Select..
 
   const selected = options.find(o => o.value === value)
 
-  return (
-    <div ref={ref} className={`relative ${className}`}>
-      {/* Trigger button */}
-      <motion.button
-        type="button"
-        disabled={disabled}
-        onClick={() => setOpen(o => !o)}
-        className={`
-          w-full flex items-center justify-between gap-2
-          bg-white/5 border rounded-xl px-4 py-3
-          text-sm font-medium transition-colors duration-200
-          focus:outline-none focus:ring-1 focus:ring-primary-container/50
-          ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}
-          ${open
-            ? 'border-primary-container/60 bg-white/8 shadow-[0_0_0_1px_rgba(249,115,22,0.2)]'
-            : 'border-white/10'
-          }
-        `}
-        whileHover={disabled || shouldReduceMotion ? {} : { scale: 1.01, backgroundColor: 'rgba(255,255,255,0.08)' }}
-        whileTap={disabled || shouldReduceMotion ? {} : tapScale}
-        transition={SPRING_SNAPPY}
-      >
-        <span className={selected ? 'text-white' : 'text-white/40'}>
-          {selected ? selected.label : placeholder}
-        </span>
-        {/* Chevron — rotates when open */}
-        <motion.span
-          className="material-symbols-outlined text-[18px] shrink-0"
-          animate={{ 
-            rotate: open ? 180 : 0,
-            color: open ? 'rgb(249, 115, 22)' : 'rgba(255,255,255,0.4)'
-          }}
-          transition={shouldReduceMotion ? { duration: 0 } : SPRING_SNAPPY}
-        >
-          expand_more
-        </motion.span>
-      </motion.button>
-
   const dropdownPanel = (
     <AnimatePresence>
       {open && rect && (
@@ -199,6 +161,7 @@ export function CustomSelect({ value, onChange, options, placeholder = 'Select..
       )}
     </AnimatePresence>
   )
+
 
   return (
     <div ref={ref} className={`relative ${className}`}>
