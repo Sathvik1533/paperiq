@@ -209,7 +209,8 @@ async def get_user_context(user_id: str):
     try:
         result = db.table("user_profiles").select(
             "college_id, branch_id, regulation, current_year, current_semester, "
-            "current_cgpa, target_cgpa, study_hours_per_day, preparation_level"
+            "current_cgpa, target_cgpa, study_hours_per_day, preparation_level, "
+            "onboarding_complete, has_completed_tour"
         ).eq("id", user_id).single().execute()
         
         if not result.data:
@@ -252,13 +253,16 @@ async def get_user_subjects(user_id: str):
     
     # Fetch subjects for user's context
     try:
+        db_semester = 1 if profile["current_semester"] == 3 else 2 if profile["current_semester"] == 4 else profile["current_semester"]
+        db_year = 2 if profile["current_semester"] in [3, 4] else 1
+        
         subjects_result = db.table("subjects").select(
             "id, code, name, semester, regulation"
         ).eq("college_id", profile["college_id"]).eq(
             "branch_id", profile["branch_id"]
         ).eq("regulation", profile["regulation"]).eq(
-            "semester", profile["current_semester"]
-        ).order("code").execute()
+            "semester", db_semester
+        ).eq("year", db_year).order("code").execute()
         
         return {
             "success": True,

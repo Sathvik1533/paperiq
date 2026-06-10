@@ -348,10 +348,15 @@ export async function confirmHallTicketProfile(profile: {
 // ── Beta Student Experience ───────────────────────────────────────────────
 
 export async function getSubjectsForSemester(semester: number, regulation: string): Promise<Subject[]> {
+  // Map global semester (3 or 4) to B.Tech year/semester structure stored in DB
+  const dbSemester = semester === 3 ? 1 : semester === 4 ? 2 : semester
+  const dbYear = (semester === 3 || semester === 4) ? 2 : 1
+
   const { data, error } = await supabase
     .from('subjects')
     .select('*')
-    .eq('semester', semester)
+    .eq('year', dbYear)
+    .eq('semester', dbSemester)
     .eq('regulation', regulation)
     .order('code', { ascending: true })
   if (error) {
