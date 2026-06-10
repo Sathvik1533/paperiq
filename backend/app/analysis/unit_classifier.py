@@ -85,10 +85,10 @@ def backfill_questions(subject_id: str, regulation: str) -> dict:
     then bulk-update the DB rows.
     Returns {updated: N, skipped: N}.
     """
-    from app.database import get_db
+    from app.database import get_admin_db
     from app.analysis.topic_classifier import classify_topics
 
-    db = get_db()
+    db = get_admin_db()
     rows = (
         db.table("questions")
         .select("id, question_text, co, unit_number, topic_tags")

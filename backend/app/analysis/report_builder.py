@@ -5,7 +5,7 @@ Evidence enforcement: any insight without evidence[] is stripped before storage.
 import uuid
 from datetime import datetime, timedelta
 from typing import Optional
-from app.database import get_db
+from app.database import get_admin_db
 from app.analysis.unit_classifier import classify_unit, backfill_questions
 from app.analysis.topic_classifier import classify_topics
 from app.analysis.frequency_analyzer import FrequencyAnalyzer
@@ -20,7 +20,7 @@ CACHE_TTL_DAYS = 7
 
 class ReportBuilder:
     def __init__(self):
-        self.db = get_db()
+        self.db = get_admin_db()
 
     # ------------------------------------------------------------------
     # Public entry point
@@ -35,6 +35,7 @@ class ReportBuilder:
         year_to: Optional[int],
         exam_category: Optional[str] = None,
         exam_attempt: Optional[str] = None,
+        user_profile: Optional[dict] = None,
     ) -> dict:
         """
         Builds and stores a full AnalysisReport. Returns the report dict.
@@ -79,7 +80,7 @@ class ReportBuilder:
         most_asked_topics = self._build_most_asked_topics(questions)
         coverage_analysis = self._build_coverage_analysis(questions)
         high_probability_topics_classified = self._build_high_probability_topics(questions)
-        study_priority_order = self._build_study_priority(questions)
+        study_priority_order = self._build_study_priority(questions, user_profile)
 
         # 4. Evidence enforcement — strip insights with empty evidence
         topic_freq = [t for t in topic_freq if t.get("paper_ids")]
@@ -98,6 +99,7 @@ class ReportBuilder:
             "year_to": year_to,
             "exam_category": exam_category,
             "exam_attempt": exam_attempt,
+            "strategy_applied": study_priority_order.get("strategy_desc", "Standard historical frequency ranking.") if isinstance(study_priority_order, dict) else "Standard historical frequency ranking.",
             "generated_at": now.isoformat(),
             "expires_at": (now + timedelta(days=CACHE_TTL_DAYS)).isoformat(),
             "status": "ready",
@@ -110,12 +112,12 @@ class ReportBuilder:
             "repeated_questions": repeated,
             "high_probability_topics": high_prob_topics,
             "predicted_questions": predicted_questions,
-            # NEW: Classification-based insights
+            # NEW: Classification-based (flattened to root level)
             "unit_distribution_classified": unit_distribution_classified,
             "most_asked_topics": most_asked_topics,
-            "coverage_analysis": coverage_analysis,
             "high_probability_topics_classified": high_probability_topics_classified,
-            "study_priority_order": study_priority_order,
+            "study_priority_order": study_priority_order.get("order", []) if isinstance(study_priority_order, dict) else study_priority_order,
+            "coverage_analysis": coverage_analysis
         }
 
         # 6. Persist to analysis_reports
@@ -263,12 +265,29 @@ class ReportBuilder:
         
         return result
 
-    def _build_study_priority(self, questions: list[dict]) -> list[dict]:
+    def _build_study_priority(self, questions: list[dict], user_profile: dict = None) -> dict:
         """
-        Study Priority Order: Units and topics ranked by historical frequency.
-        Returns: [{"unit": "Unit II", "priority": 1, "question_count": 120, "top_topics": [...]}, ...]
+        Study Priority Order: Units and topics ranked by historical frequency, modified by user profile.
+        Returns: {"strategy_desc": str, "order": [{"unit": "Unit II", "priority": 1, "question_count": 120, "top_topics": [...]}, ...]}
         """
         unit_data = {}
+        
+        # Personalization Logic
+        is_aggressive = False
+        is_advanced = False
+        strategy_desc = "Standard historical frequency ranking."
+        
+        if user_profile:
+            cgpa = user_profile.get("current_cgpa") or 7.0
+            study_hours = user_profile.get("study_hours_per_day") or 4.0
+            prep_level = user_profile.get("preparation_level", "Intermediate")
+            
+            if cgpa < 6.0 or study_hours < 3.0 or prep_level == "Beginner":
+                is_aggressive = True
+                strategy_desc = "Aggressive Mode: Focus STRICTLY on high-frequency pass-critical units."
+            elif cgpa >= 8.0 and study_hours >= 5.0 and prep_level == "Advanced":
+                is_advanced = True
+                strategy_desc = "Advanced Mode: Broad coverage prioritizing high-scoring nuances."
         
         for q in questions:
             unit = q.get('unit_name')
@@ -289,16 +308,26 @@ class ReportBuilder:
             sorted_topics = sorted(data["topics"].items(), key=lambda x: x[1], reverse=True)[:3]
             top_topics = [{"topic": t, "count": c} for t, c in sorted_topics]
             
+            if is_aggressive:
+                recommendation = f"CRITICAL PASS REQUIREMENT: {data['count']} questions historical evidence." if i <= 2 else "Skip unless extra time available."
+            elif is_advanced:
+                recommendation = f"Score Maximizer: {data['count']} questions." if i > 3 else "Core requirement (Should already be strong)."
+            else:
+                recommendation = f"Focus on this unit - {data['count']} questions" if i <= 2 else "Standard coverage"
+            
             result.append({
                 "unit": unit,
                 "priority": i,
                 "question_count": data["count"],
                 "percentage": round((data["count"] / len(questions) * 100), 1) if questions else 0,
                 "top_topics": top_topics,
-                "recommendation": f"Focus on this unit - {data['count']} questions ({round((data['count'] / len(questions) * 100), 1)}% of exam)" if i <= 2 else "Standard coverage"
+                "recommendation": recommendation
             })
         
-        return result
+        return {
+            "strategy_desc": strategy_desc,
+            "order": result
+        }
 
     # ------------------------------------------------------------------
     # DB helpers

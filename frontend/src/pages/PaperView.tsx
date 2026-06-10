@@ -54,6 +54,7 @@ export function PaperView() {
   const [filterPart, setFilterPart]   = useState<'all'|'A'|'B'>('all')
   const [filterUnit, setFilterUnit]   = useState('')
   const [filterTopic, setFilterTopic] = useState('')
+  const [downloadError, setDownloadError] = useState('')
   // Adjacent paper IDs for Prev/Next navigation — matches Stitch bottom bar
   const [prevPaperId, setPrevPaperId] = useState<string | null>(null)
   const [nextPaperId, setNextPaperId] = useState<string | null>(null)
@@ -61,11 +62,16 @@ export function PaperView() {
   useEffect(() => { if (paperId) loadPaper() }, [paperId])
 
   async function loadPaper() {
+    if (!paperId || paperId === 'undefined' || paperId === 'null') {
+      setError('Invalid paper ID')
+      setLoading(false)
+      return
+    }
     try {
       setLoading(true)
       const { data: p, error: pErr } = await supabase
         .from('papers')
-        .select('id, title, exam_type, exam_year, exam_month, exam_category, regulation, subject_id, max_marks, duration_hours, original_url, storage_path, storage_bucket')
+        .select('id, title, exam_type, exam_year, exam_month, exam_category, regulation, subject_id, max_marks, max_evaluation_marks, duration_hours, original_url, storage_path, storage_bucket')
         .eq('id', paperId)
         .single()
       if (pErr) throw pErr
@@ -130,35 +136,35 @@ export function PaperView() {
 
   async function downloadPaper() {
     if (!paper) return
+    setDownloadError('')
 
-    const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1'
+    try {
+      const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1'
 
-    // Priority 1: original_url is a direct PDF or DOCX (not a RAR archive)
-    if (paper.original_url && paper.original_url.startsWith('http')) {
-      const url = paper.original_url.toLowerCase()
-      if (!url.endsWith('.rar') && !url.endsWith('.zip')) {
-        // Direct document link — open it
-        console.log('[Download] direct original_url →', paper.original_url)
-        window.open(paper.original_url, '_blank', 'noopener,noreferrer')
-        return
+      // Priority 1: original_url is a direct PDF or DOCX (not a RAR archive)
+      if (paper.original_url && paper.original_url.startsWith('http')) {
+        const url = paper.original_url.toLowerCase()
+        if (!url.endsWith('.rar') && !url.endsWith('.zip')) {
+          window.open(paper.original_url, '_blank', 'noopener,noreferrer')
+          return
+        }
       }
-      // RAR/ZIP — fall through to backend extraction
-      console.log('[Download] original_url is archive, using backend extraction')
-    }
 
-    // Priority 2: Document is stored in Supabase Storage
-    if (paper.storage_path && paper.storage_bucket) {
-      const storageUrl = getStorageUrl(paper.storage_path, paper.storage_bucket)
-      console.log('[Download] Supabase Storage →', storageUrl)
-      window.open(storageUrl, '_blank', 'noopener,noreferrer')
-      return
-    }
+      // Priority 2: Document is stored in Supabase Storage
+      if (paper.storage_path && paper.storage_bucket) {
+        const storageUrl = getStorageUrl(paper.storage_path, paper.storage_bucket)
+        if (storageUrl) {
+          window.open(storageUrl, '_blank', 'noopener,noreferrer')
+          return
+        }
+      }
 
-    // Priority 3: Backend on-demand PDF generation from extracted questions
-    // This is the fallback working path — generates a clean PDF from the parsed questions
-    const pdfUrl = `${apiBase}/papers/${paper.id}/download`
-    console.log('[Download] Backend PDF →', pdfUrl)
-    window.open(pdfUrl, '_blank', 'noopener,noreferrer')
+      // Priority 3: Backend on-demand PDF generation from extracted questions
+      const pdfUrl = `${apiBase}/papers/${paper.id}/download`
+      window.open(pdfUrl, '_blank', 'noopener,noreferrer')
+    } catch (err) {
+      setDownloadError(err instanceof Error ? err.message : 'Download failed. Please try again.')
+    }
   }
 
   // Helper to normalize part value (handles both "Part A" and "A" formats)
@@ -254,11 +260,11 @@ export function PaperView() {
             <h1 className="font-headline text-display-hero-mobile md:text-headline-lg font-bold text-on-surface leading-tight">{formatTitle()}</h1>
             <div className="flex flex-wrap items-center gap-base mt-md">
               {(() => {
-                // Strict academic marks calculation — never trust stale DB max_marks column.
-                // Priority 1: Sum marks from parsed questions (ground truth)
-                // Priority 2: Regulation cap — R22 = 60M, all others = 70M
+                // Strict academic marks calculation — dynamically parsed from PDF string
+                // Priority 1: Audited dynamic max_evaluation_marks from regex summation
+                // Priority 2: Stale max_marks or Regulation cap fallback
                 const regulationCap = (paper.regulation?.toUpperCase() === 'R22') ? 60 : 70
-                const absoluteTotalMarks = paper.max_marks || regulationCap
+                const absoluteTotalMarks = paper.max_evaluation_marks || paper.max_marks || regulationCap
                 
                 return [
                   { icon:'school',        text: paper.regulation },
@@ -274,13 +280,18 @@ export function PaperView() {
             </div>
           </div>
           <div className="flex gap-base">
-            <button
-              onClick={downloadPaper}
-              className="px-base py-sm border border-outline-variant text-on-surface hover:bg-surface-container-high rounded-xl transition-all flex items-center gap-sm font-body-md"
-            >
-              <span className="material-symbols-outlined text-[20px]">download</span>
-              Download Question Paper
-            </button>
+            <div className="flex flex-col gap-sm">
+              <button
+                onClick={downloadPaper}
+                className="px-base py-sm border border-outline-variant text-on-surface hover:bg-surface-container-high rounded-xl transition-all flex items-center gap-sm font-body-md"
+              >
+                <span className="material-symbols-outlined text-[20px]">download</span>
+                Download Question Paper
+              </button>
+              {downloadError && (
+                <p className="text-error text-body-sm px-xs">{downloadError}</p>
+              )}
+            </div>
             <button
               onClick={() => navigate('/papers')}
               className="px-base py-sm bg-primary-container text-on-primary-container rounded-xl hover:brightness-110 transition-all flex items-center gap-sm font-body-md font-bold"

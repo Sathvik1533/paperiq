@@ -110,7 +110,7 @@ export function CustomSelect({ value, onChange, options, placeholder = 'Select..
             backdropFilter: 'blur(16px)',
           }}
         >
-          <div className="max-h-60 overflow-y-auto py-1">
+          <div className="max-h-60 overflow-y-auto py-1 overscroll-contain">
             {options.map((opt, idx) => {
               const isSelected = opt.value === value
               return (

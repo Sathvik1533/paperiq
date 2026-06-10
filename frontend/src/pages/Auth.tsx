@@ -11,6 +11,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { supabase } from '../lib/supabase'
+import { ActionButton } from '../components/ui/ActionButton'
 
 export function Auth() {
   const { user, signInWithGoogle, loading } = useAuthStore()
@@ -67,7 +68,7 @@ export function Auth() {
   if (mode === 'forgot') {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center px-base py-huge">
-        <Link to="/" className="absolute top-6 left-6 flex items-center gap-xs text-on-surface-variant hover:text-white transition-colors text-body-sm">
+        <Link to="/" className="absolute top-6 left-6 flex items-center gap-xs text-on-surface-variant hover:text-white transition-colors text-body-sm cursor-pointer">
           <span className="material-symbols-outlined text-[18px]">arrow_back</span> Back
         </Link>
 
@@ -91,12 +92,12 @@ export function Auth() {
                 />
               </div>
               {error && <p className="text-error text-body-sm">{error}</p>}
-              <button
-                type="submit" disabled={submitting}
+              <ActionButton
+                type="submit" disabled={submitting} isLoading={submitting}
                 className="w-full h-12 bg-primary-container text-on-primary-container font-bold rounded-xl hover:brightness-110 transition-all disabled:opacity-50"
               >
                 {submitting ? 'Sending...' : 'Send Reset Link'}
-              </button>
+              </ActionButton>
             </form>
           ) : (
             <div className="text-center">
@@ -155,7 +156,7 @@ export function Auth() {
         </div>
 
         <header className="flex justify-between items-center w-full px-base md:px-xl max-w-[1400px] mx-auto h-20">
-          <Link to="/" className="font-headline text-headline-md font-bold text-on-surface tracking-tight">
+          <Link to="/" className="font-headline text-headline-md font-bold text-on-surface tracking-tight hover:opacity-80 transition-opacity cursor-pointer">
             Paper<span className="text-primary-container">IQ</span>
           </Link>
           <div className="flex items-center gap-base">
@@ -192,7 +193,7 @@ export function Auth() {
                 <h1 className="font-headline text-[40px] text-on-surface leading-tight font-bold tracking-tight">
                   Stop Guessing. See What Actually Matters.
                 </h1>
-                <p className="font-body-lg text-body-lg text-on-surface">Join 12,000+ students using data to skip the guesswork.</p>
+                <p className="font-body-lg text-body-lg text-on-surface">Join students using data to skip the guesswork.</p>
               </div>
 
               <div className="bg-surface-container border border-surface-container-highest rounded-xl p-xl space-y-xl shadow-2xl">
@@ -242,12 +243,12 @@ export function Auth() {
                     </div>
                   </div>
                   {error && <p className="text-error text-body-sm">{error}</p>}
-                  <button
-                    type="submit" disabled={submitting}
+                  <ActionButton
+                    type="submit" disabled={submitting} isLoading={submitting}
                     className="w-full bg-primary-container text-white font-bold py-md px-base rounded-lg hover:brightness-110 transition-all active:scale-[0.98] uppercase tracking-wider disabled:opacity-50"
                   >
                     {submitting ? 'Creating...' : 'Create Free Account'}
-                  </button>
+                  </ActionButton>
                 </form>
 
                 <p className="text-center font-body-sm text-body-sm text-secondary">
@@ -319,7 +320,14 @@ export function Auth() {
     <div className="min-h-screen bg-background flex flex-col font-body"
       style={{backgroundImage:'radial-gradient(at 0% 0%, rgba(249,115,22,0.05) 0, transparent 50%), radial-gradient(at 100% 100%, rgba(157,67,0,0.05) 0, transparent 50%)'}}>
       <nav className="fixed top-0 w-full z-50 h-20 flex justify-between items-center px-base md:px-xl max-w-[1200px] mx-auto left-0 right-0">
-        <Link to="/" className="font-headline text-headline-md font-bold text-on-surface">
+        <Link 
+          to="/" 
+          onClick={(e) => {
+            e.stopPropagation();
+            console.log('Logo clicked - navigating to landing');
+          }}
+          className="font-headline text-headline-md font-bold text-on-surface hover:opacity-80 transition-opacity cursor-pointer"
+        >
           Paper<span className="text-primary-container">IQ</span>
         </Link>
         <div className="flex items-center gap-base">

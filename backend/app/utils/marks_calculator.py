@@ -33,11 +33,21 @@ def calculate_max_marks_by_regulation(
     Returns:
         Exact max marks (never None, never 0)
     """
-    # Priority 1: Use calculated marks from questions if available
-    if calculated_marks > 0:
+    # Priority 1: Use calculated marks from questions if it appears complete
+    if calculated_marks >= 50:
         return calculated_marks
     
-    # Priority 2: Regulation-based evaluation
+    # Priority 2: Year-based evaluation MUST override regulation for 2022-2024
+    if exam_year:
+        # 2025+ papers follow new 60-mark structure
+        if exam_year >= 2025:
+            return 60
+        
+        # 2022-2024 papers follow legacy 70-mark structure
+        if 2022 <= exam_year <= 2024:
+            return 70
+            
+    # Priority 3: Regulation-based evaluation (fallback)
     if regulation:
         reg_upper = regulation.upper().strip()
         
@@ -48,16 +58,7 @@ def calculate_max_marks_by_regulation(
         # R19/R20 papers are always 70 marks (legacy standard)
         if reg_upper in ('R19', 'R20', 'R18'):
             return 70
-    
-    # Priority 3: Year-based evaluation
-    if exam_year:
-        # 2025+ papers follow new 60-mark structure
-        if exam_year >= 2025:
-            return 60
-        
-        # 2022-2024 papers follow legacy 70-mark structure
-        if 2022 <= exam_year <= 2024:
-            return 70
+
     
     # Default fallback: Legacy 70-mark standard
     return 70

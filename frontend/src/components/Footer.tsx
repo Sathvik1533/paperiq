@@ -6,21 +6,21 @@ import { Link } from 'react-router-dom'
 
 export function Footer() {
   return (
-    <footer className="w-full border-t border-outline-variant bg-background">
-      <div className="max-w-[1200px] mx-auto py-xl px-base md:px-xl flex flex-col md:flex-row justify-between items-center gap-lg">
-        <div className="flex flex-col items-center md:items-start">
-          <span className="font-headline text-headline-md font-bold text-on-surface">
+    <footer className="border-t border-white/[0.04] pt-8 mt-auto w-full">
+      <div className="max-w-7xl mx-auto px-6 py-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <div className="flex flex-col items-start">
+          <span className="font-headline text-2xl font-bold text-white">
             Paper<span className="text-primary-container">IQ</span>
           </span>
-          <p className="font-data-label text-data-label text-on-surface-variant mt-xs">
+          <p className="text-sm text-neutral-500 tracking-tight mt-1">
             © 2026 PaperIQ. Built for high-achieving scholars.
           </p>
         </div>
-        <div className="flex flex-wrap justify-center gap-lg">
-          <a href="#" className="font-data-label text-data-label text-on-surface-variant hover:text-on-surface transition-colors">Academic Integrity</a>
-          <a href="#" className="font-data-label text-data-label text-on-surface-variant hover:text-on-surface transition-colors">Terms of Service</a>
-          <a href="#" className="font-data-label text-data-label text-on-surface-variant hover:text-on-surface transition-colors">Privacy Policy</a>
-          <a href="#" className="font-data-label text-data-label text-on-surface-variant hover:text-on-surface transition-colors">Contact Support</a>
+        <div className="flex flex-wrap justify-start md:justify-center gap-x-8 gap-y-4">
+          <a href="#" className="text-sm text-neutral-500 tracking-tight hover:text-white transition-colors">Academic Integrity</a>
+          <a href="#" className="text-sm text-neutral-500 tracking-tight hover:text-white transition-colors">Terms of Service</a>
+          <a href="#" className="text-sm text-neutral-500 tracking-tight hover:text-white transition-colors">Privacy Policy</a>
+          <a href="#" className="text-sm text-neutral-500 tracking-tight hover:text-white transition-colors">Contact Support</a>
         </div>
       </div>
     </footer>

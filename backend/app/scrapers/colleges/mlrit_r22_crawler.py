@@ -1,18 +1,23 @@
 """
-MLRIT R22 2-2 Targeted Crawler.
+MLRIT R22 Targeted Crawler (2-1 and 2-2 Semesters).
 
 Unlike the generic scraper, this crawler:
 1. Knows exactly which archives to download (no portal scraping needed)
-2. Knows where 2-2 papers live inside each archive
+2. Knows where 2-1 and 2-2 papers live inside each archive
 3. Maps each docx to its R22 subject code automatically
-4. Stores papers with full metadata: subject_code, subject_name, semester=2, regulation=R22
+4. Stores papers with full metadata: subject_code, subject_name, semester=(1 or 2), regulation=R22
 
-Entry point: crawl_r22_22(subject_code, year_from, year_to)
+Entry points:
+  - crawl_r22_subject(subject_code, semester, year_from, year_to) → Crawl single subject
+  - crawl_r22_semester(semester, year_from, year_to) → Crawl entire semester
+  - crawl_r22_22(subject_code, ...) → Legacy alias for semester 2
 """
 import os
 import re
 import asyncio
 import tempfile
+import subprocess
+from datetime import datetime
 from typing import Optional
 
 import httpx
@@ -22,10 +27,11 @@ from app.scrapers.colleges.mlrit_r22 import (
 )
 from app.extractors.archive_extractor import ArchiveExtractor
 from app.extractors.extractor_factory import extract, is_academic_file
+from app.parsers.marks_extractor import extract_dynamic_marks
 from app.parsers.question_parser import QuestionParser
 from app.parsers.question_store import store_parse_result
 from app.utils.hash_utils import sha256_file
-from app.database import get_db
+from app.database import get_admin_db
 from app.logger import get_logger
 
 log = get_logger(__name__)
@@ -33,15 +39,16 @@ _parser = QuestionParser()
 _archive_ext = ArchiveExtractor()
 
 
-async def crawl_r22_22(
+async def crawl_r22_subject(
     subject_code: str,
     college_id: str,
+    semester: Optional[int] = None,
     year_from: int = 2021,
     year_to: int = 2025,
     force_refresh: bool = False,
 ) -> dict:
     """
-    Full automatic pipeline for one R22 2-2 subject:
+    Full automatic pipeline for one R22 subject (2-1 or 2-2):
       1. Select relevant archives from catalogue
       2. Download each archive
       3. Extract the archive
@@ -51,16 +58,30 @@ async def crawl_r22_22(
       7. Store in DB with full metadata
       8. Return summary
 
-    Returns: {subject_code, papers_found, papers_new, papers_cached, questions_stored}
+    Args:
+        subject_code: R22 subject code (e.g., A6CS05, A6CS09)
+        college_id: College UUID
+        semester: Optional override (1 or 2). If None, uses subject's registered semester.
+        year_from: Start year (inclusive)
+        year_to: End year (inclusive)
+        force_refresh: Re-process cached papers
+
+    Returns: {subject_code, semester, papers_found, papers_new, papers_cached, questions_stored}
     """
     subject_code = subject_code.upper()
     subject_info = R22_SUBJECTS.get(subject_code)
     if not subject_info:
         raise ValueError(f"Unknown R22 subject code: {subject_code}")
 
-    log.info(f"[R22Crawler] Crawling {subject_code} ({subject_info['name']}) years {year_from}-{year_to}")
+    # Use explicit semester or fall back to registry
+    target_semester = semester if semester is not None else subject_info["semester"]
+    
+    log.info(
+        f"[R22Crawler] Crawling {subject_code} ({subject_info['name']}) "
+        f"Semester={target_semester} Years={year_from}-{year_to}"
+    )
 
-    db = get_db()
+    db = get_admin_db()
     dest_dir = os.path.join("/tmp/paperiq_r22", subject_code)
     os.makedirs(dest_dir, exist_ok=True)
 
@@ -143,12 +164,61 @@ async def crawl_r22_22(
                     log.warning(f"[R22Crawler] Extraction failed {fpath}: {e}")
                     continue
 
-                # Resolve subject_id from DB
-                subject_id = _get_or_create_subject(db, subject_code, subject_info, college_id)
+                # Resolve subject_id from DB (use target_semester, not registry semester)
+                subject_id = _get_or_create_subject(db, subject_code, subject_info, college_id, target_semester)
+
+                # NEW: Dynamic Regulation Mapping (70-marks evaluation criteria)
+                dyn_marks = extract_dynamic_marks(raw_text)
+                if dyn_marks is not None:
+                    max_evaluation_marks = dyn_marks
+                else:
+                    max_evaluation_marks = 70.0 if archive_meta["year"] in (2023, 2024, 2025) else 75.0
 
                 # Store paper
+                # Upload to Supabase Storage
                 try:
                     file_size = os.path.getsize(fpath)
+                    file_ext = os.path.splitext(fpath)[1].lower()
+                    storage_bucket = "papers"
+                    original_storage_path = f"mlrit/{archive_meta['year']}/{subject_code}_{file_hash}{file_ext}"
+                    
+                    content_type = "application/pdf"
+                    if file_ext in [".doc", ".docx"]:
+                        content_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                        
+                    # Upload Original Source File
+                    with open(fpath, "rb") as f:
+                        db.storage.from_(storage_bucket).upload(
+                            path=original_storage_path,
+                            file=f,
+                            file_options={"content-type": content_type, "upsert": "true"}
+                        )
+                    
+                    viewable_storage_path = original_storage_path
+                    if file_ext in [".doc", ".docx"]:
+                        # Convert to PDF
+                        log.info(f"[R22Crawler] Converting {fpath} to PDF...")
+                        pdf_path = fpath.replace(file_ext, ".pdf")
+                        try:
+                            # Use LibreOffice headless to convert
+                            subprocess.run([
+                                "soffice", "--headless", "--convert-to", "pdf",
+                                fpath, "--outdir", os.path.dirname(fpath)
+                            ], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                            if os.path.exists(pdf_path):
+                                viewable_storage_path = f"mlrit/{archive_meta['year']}/{subject_code}_{file_hash}.pdf"
+                                with open(pdf_path, "rb") as pdf_f:
+                                    db.storage.from_(storage_bucket).upload(
+                                        path=viewable_storage_path,
+                                        file=pdf_f,
+                                        file_options={"content-type": "application/pdf", "upsert": "true"}
+                                    )
+                                log.info(f"[R22Crawler] Successfully converted & uploaded viewable PDF.")
+                            else:
+                                log.warning(f"[R22Crawler] PDF conversion produced no file for {fpath}")
+                        except Exception as conv_err:
+                            log.warning(f"[R22Crawler] PDF conversion failed: {conv_err}")
+
                     result = db.table("papers").insert({
                         "college_id"       : college_id,
                         "subject_id"       : subject_id,
@@ -157,16 +227,22 @@ async def crawl_r22_22(
                         "exam_month"       : archive_meta["month"],
                         "exam_year"        : archive_meta["year"],
                         "btech_year"       : 2,
-                        "semester"         : 2,
+                        "semester"         : target_semester,
                         "regulation"       : "R22",
+                        "max_evaluation_marks" : max_evaluation_marks,
                         "original_url"     : archive_url,
-                        "archive_url"      : archive_url,
+                        "source_url"       : archive_url,
+                        "source_filename"  : os.path.basename(fpath),
+                        "download_timestamp": datetime.utcnow().isoformat(),
                         "file_name"        : os.path.basename(fpath),
-                        "file_type"        : os.path.splitext(fpath)[1].lower().lstrip("."),
+                        "file_type"        : file_ext.lstrip("."),
                         "file_size_bytes"  : file_size,
                         "file_hash"        : file_hash,
                         "raw_text"         : raw_text,
                         "extraction_status": "success",
+                        "storage_path"     : viewable_storage_path, # Legacy fallback
+                        "original_storage_path": original_storage_path,
+                        "viewable_storage_path": viewable_storage_path,
                     }).execute()
                     paper_id = result.data[0]["id"] if result.data else None
                     papers_new += 1
@@ -193,17 +269,104 @@ async def crawl_r22_22(
                         log.warning(f"[R22Crawler] Parse failed: {e}")
 
     log.info(
-        f"[R22Crawler] Done: {subject_code} "
+        f"[R22Crawler] Done: {subject_code} Semester={target_semester} "
         f"found={papers_found} new={papers_new} cached={papers_cached} "
         f"questions={questions_stored}"
     )
     return {
         "subject_code"    : subject_code,
         "subject_name"    : subject_info["name"],
+        "semester"        : target_semester,
         "papers_found"    : papers_found,
         "papers_new"      : papers_new,
         "papers_cached"   : papers_cached,
         "questions_stored": questions_stored,
+    }
+
+
+async def crawl_r22_22(
+    subject_code: str,
+    college_id: str,
+    year_from: int = 2021,
+    year_to: int = 2025,
+    force_refresh: bool = False,
+) -> dict:
+    """
+    Legacy alias for crawl_r22_subject with semester=2.
+    Maintained for backward compatibility.
+    """
+    return await crawl_r22_subject(
+        subject_code=subject_code,
+        college_id=college_id,
+        semester=2,
+        year_from=year_from,
+        year_to=year_to,
+        force_refresh=force_refresh,
+    )
+
+
+async def crawl_r22_semester(
+    semester: int,
+    college_id: str,
+    year_from: int = 2021,
+    year_to: int = 2025,
+    force_refresh: bool = False,
+) -> dict:
+    """
+    Crawl all subjects for a given semester (1 for 2-1, 2 for 2-2).
+    
+    Returns: {
+        semester, total_subjects, successful, failed,
+        subjects: [list of individual results]
+    }
+    """
+    if semester not in (1, 2):
+        raise ValueError(f"Invalid semester: {semester}. Must be 1 or 2.")
+    
+    from app.scrapers.colleges.mlrit_r22 import get_all_subjects_for_semester
+    
+    subjects = get_all_subjects_for_semester(semester)
+    log.info(f"[R22Crawler] Starting semester {semester} crawl: {len(subjects)} subjects")
+    
+    results = []
+    successful = 0
+    failed = 0
+    
+    for subject in subjects:
+        code = subject["code"]
+        try:
+            result = await crawl_r22_subject(
+                subject_code=code,
+                college_id=college_id,
+                semester=semester,
+                year_from=year_from,
+                year_to=year_to,
+                force_refresh=force_refresh,
+            )
+            results.append(result)
+            successful += 1
+            log.info(f"[R22Crawler] ✓ {code}: {result['papers_new']} new papers")
+        except Exception as e:
+            log.error(f"[R22Crawler] ✗ {code}: {e}")
+            results.append({
+                "subject_code": code,
+                "subject_name": subject["name"],
+                "semester": semester,
+                "error": str(e),
+            })
+            failed += 1
+    
+    log.info(
+        f"[R22Crawler] Semester {semester} complete: "
+        f"{successful} successful, {failed} failed"
+    )
+    
+    return {
+        "semester": semester,
+        "total_subjects": len(subjects),
+        "successful": successful,
+        "failed": failed,
+        "subjects": results,
     }
 
 
@@ -221,7 +384,7 @@ def _fuzzy_match_filename(fname: str, code: str, info: dict) -> bool:
     return matches >= 2
 
 
-def _get_or_create_subject(db, code: str, info: dict, college_id: str) -> Optional[str]:
+def _get_or_create_subject(db, code: str, info: dict, college_id: str, semester: int) -> Optional[str]:
     """Return existing subject_id or create it with correct semester."""
     try:
         existing = (
@@ -234,12 +397,12 @@ def _get_or_create_subject(db, code: str, info: dict, college_id: str) -> Option
         )
         if existing.data:
             return existing.data["id"]
-        # Use the semester from the subject's own metadata (1 for 2-1, 2 for 2-2)
+        # Use the provided semester (overrides registry if needed)
         result = db.table("subjects").insert({
             "college_id" : college_id,
             "name"       : info["name"],
             "code"       : code,
-            "semester"   : info.get("semester", 2),  # Correct semester from registry
+            "semester"   : semester,
             "year"       : 2,
             "regulation" : "R22",
         }).execute()

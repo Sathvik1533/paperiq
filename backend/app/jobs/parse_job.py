@@ -4,7 +4,7 @@ Parse Job — Fix C: auto-triggers topic mapping after parsing.
 Pipeline position:
   raw_text (M2) → ParsedQuestions (M3) → topic_mapper (auto) → Topics mapped
 """
-from app.database import get_db
+from app.database import get_admin_db
 from app.parsers.question_parser import QuestionParser
 from app.parsers.question_store import store_parse_result
 from app.logger import get_logger
@@ -18,7 +18,7 @@ async def run_parse_job(paper_id: str | None = None) -> dict:
     Parse questions for one paper or all unprocessed papers.
     After parsing, automatically runs topic mapping for each affected subject+regulation.
     """
-    db = get_db()
+    db = get_admin_db()
 
     if paper_id:
         papers = (

@@ -8,6 +8,7 @@ from app.extractors.syllabus_ingester import ingest_syllabus
 from app.config import settings
 from app.database import get_db
 from app.logger import get_logger
+from app.utils.upload_validation import validate_upload_magic, validate_upload_size, SYLLABUS_MIME, MAX_SYLLABUS_SIZE
 
 router = APIRouter()
 log = get_logger(__name__)
@@ -18,10 +19,6 @@ async def trigger_extraction(
     background_tasks: BackgroundTasks,
     paper_id: Optional[str] = None,
 ):
-    """
-    Trigger extraction for a single paper or all pending papers.
-    Runs as a background task.
-    """
     background_tasks.add_task(run_extract_job, paper_id)
     return {
         "success": True,
@@ -34,16 +31,12 @@ async def trigger_extraction(
 
 @router.post("/extract/run")
 async def run_extraction_sync(paper_id: Optional[str] = None):
-    """
-    Synchronous extraction — waits for result (use for testing).
-    """
     result = await run_extract_job(paper_id)
     return {"success": True, "data": result}
 
 
 @router.get("/extract/status")
 async def extraction_status():
-    """Returns count of papers by extraction_status."""
     db = get_db()
     result = db.table("papers").select("extraction_status").execute()
     counts: dict = {}
@@ -59,23 +52,21 @@ async def upload_syllabus(
     subject_id: str = Form(...),
     regulation: str = Form(...),
 ):
-    """
-    Upload a syllabus PDF or DOCX.
-    Extracts text, parses unit/topic structure, stores in DB.
-    Does NOT perform question mapping (that's Milestone 4b).
-    """
-    allowed = {".pdf", ".docx", ".doc"}
-    ext = os.path.splitext(file.filename or "")[1].lower()
-    if ext not in allowed:
-        raise HTTPException(400, f"Unsupported file type '{ext}'. Allowed: {allowed}")
+    file_bytes = await file.read()
+
+    # Validate file size
+    validate_upload_size(file_bytes, MAX_SYLLABUS_SIZE, "syllabus")
+
+    # Validate MIME type via magic bytes (prevents extension spoofing)
+    validate_upload_magic(file_bytes, SYLLABUS_MIME, "syllabus")
 
     # Save uploaded file temporarily
     upload_dir = os.path.join(settings.scraper_download_dir, "syllabi")
     os.makedirs(upload_dir, exist_ok=True)
-    dest = os.path.join(upload_dir, file.filename)
+    dest = os.path.join(upload_dir, file.filename or "syllabus.pdf")
 
     with open(dest, "wb") as f:
-        shutil.copyfileobj(file.file, f)
+        f.write(file_bytes)
 
     try:
         syllabus_id = ingest_syllabus(

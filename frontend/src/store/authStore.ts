@@ -34,8 +34,13 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
 
     // Store the subscription so we can unsubscribe later (prevents memory leak)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       set({ session, user: session?.user ?? null })
+
+      if (event === 'SIGNED_OUT') {
+        window.location.href = '/auth'
+        return
+      }
 
       // Load prefs whenever a user signs in
       if (session?.user) {

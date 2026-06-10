@@ -27,7 +27,7 @@ reportlab==4.0.7
 
 # Archive extraction
 patool==3.1.0
-
+rarfile==4.1
 # LLM providers
 groq==0.12.0
 openai==1.57.0
@@ -35,6 +35,12 @@ ollama==0.4.4
 
 # HTTP clients
 httpx==0.27.2
+
+# Rate limiting
+slowapi==0.1.9
+
+# File validation
+python-magic==0.4.27
 
 # Utilities
 aiofiles==24.1.0

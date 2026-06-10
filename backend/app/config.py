@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     )
     # App
     environment: str = "development"
-    secret_key: str = "change-me"
+    secret_key: str = ""  # REQUIRED: Set in production via SECRET_KEY env var
     api_version: str = "v1"
     log_level: str = "INFO"
     cors_origins: str = "http://localhost:5173,http://localhost:3000"
@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     supabase_service_key: str = ""
     supabase_anon_key: str = ""
     supabase_storage_bucket: str = "papers"
+    supabase_pool_size: int = 20  # Connection pool size for production
 
     # LLM
     llm_provider_order: str = "groq,openrouter,ollama"
@@ -61,6 +62,12 @@ class Settings(BaseSettings):
     uvicorn_workers: int = 9
     uvicorn_limit_concurrency: int = 1000
     uvicorn_timeout_keep_alive: int = 5
+
+    # Sentry
+    sentry_dsn: str = ""
+
+    # Admin API key for protected endpoints
+    admin_api_key: str = ""
 
     @property
     def cors_origins_list(self) -> List[str]:

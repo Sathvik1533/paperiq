@@ -4,7 +4,7 @@ Gap #4 fix: writes regulation, college_id, branch_id, semester, exam_year
 directly on insert from the parent paper — no backfill dependency.
 """
 from app.parsers.models import ParseResult
-from app.database import get_db
+from app.database import get_admin_db
 from app.logger import get_logger
 
 log = get_logger(__name__)
@@ -28,7 +28,7 @@ def store_parse_result(result: ParseResult) -> dict:
     the parent paper on every insert — no backfill dependency.
     Returns: {inserted, skipped_duplicate, failed}
     """
-    db = get_db()
+    db = get_admin_db()
 
     # Fetch parent paper metadata once for the whole batch
     paper_meta = _fetch_paper_meta(db, result.paper_id)
@@ -42,16 +42,23 @@ def store_parse_result(result: ParseResult) -> dict:
     skipped  = 0
     failed   = 0
 
+    # Batch duplicate check: fetch all existing hashes for this paper in one query
+    all_hashes = [q.question_hash for q in result.questions if q.question_hash]
+    existing_hashes: set[str] = set()
+    if all_hashes:
+        existing = (
+            db.table("questions")
+            .select("question_hash")
+            .eq("paper_id", result.paper_id)
+            .in_("question_hash", all_hashes)
+            .execute()
+        )
+        if existing.data:
+            existing_hashes = {row["question_hash"] for row in existing.data}
+
     for q in result.questions:
         try:
-            existing = (
-                db.table("questions")
-                .select("id")
-                .eq("paper_id", q.paper_id)
-                .eq("question_hash", q.question_hash)
-                .execute()
-            )
-            if existing.data:
+            if q.question_hash and q.question_hash in existing_hashes:
                 skipped += 1
                 continue
 
@@ -90,7 +97,7 @@ def store_parse_result(result: ParseResult) -> dict:
 
 
 def get_questions_for_paper(paper_id: str) -> list[dict]:
-    db = get_db()
+    db = get_admin_db()
     return (
         db.table("questions")
         .select("*")
@@ -108,7 +115,7 @@ def get_questions_for_subject(
     section: str | None = None,
     regulation: str | None = None,
 ) -> list[dict]:
-    db = get_db()
+    db = get_admin_db()
     q = db.table("questions").select(
         "id, paper_id, question_number, part, question_text, "
         "question_type, marks, co, is_or_question, question_hash, "

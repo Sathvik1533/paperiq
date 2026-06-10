@@ -242,11 +242,9 @@ export function AnalysisLoadingState({ subjectName, questionCount, coveragePct, 
             </div>
             <div className="h-2 bg-surface-container-highest rounded-full overflow-hidden">
               <div
-                className={`h-full bg-gradient-to-r from-primary via-orange-400 to-primary rounded-full transition-all duration-500 ease-out ${allDone ? '' : ''}`}
+                className={`h-full bg-gradient-to-r from-primary to-orange-400 rounded-full transition-all duration-500 ease-out`}
                 style={{
                   width: `${finalProgress}%`,
-                  backgroundSize: '200% 100%',
-                  animation: allDone ? 'none' : 'shimmer 2s infinite',
                   boxShadow: allDone ? '0 0 12px rgba(249,115,22,0.6)' : 'none',
                 }}
               />

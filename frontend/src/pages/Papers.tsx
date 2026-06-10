@@ -5,12 +5,14 @@
  * Sidebar filters + paper card grid. Real data from Supabase.
  * Performance: Filter requests debounced + React Query caching.
  */
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { motion, useReducedMotion } from 'framer-motion'
+import { motion, useReducedMotion, AnimatePresence } from 'framer-motion'
 import { PageTransition } from '../components/ui/PageTransition'
 import { NavBar } from '../components/NavBar'
 import { Footer } from '../components/Footer'
+import { Tooltip } from '../components/ui/Tooltip'
 import { useAuthStore } from '../store/authStore'
 import { getUserProfile } from '../lib/api'
 import { usePapers } from '../lib/queries'
@@ -51,13 +53,18 @@ export function Papers() {
   const [profileReady, setProfileReady] = useState(false)
   const [subjectDropdownOpen, setSubjectDropdownOpen] = useState(false)
   const [semesterDropdownOpen, setSemesterDropdownOpen] = useState(false)
+  // Anchor refs for portal-based dropdowns (escape fixed sidebar stacking context)
+  const subjectAnchorRef = useRef<HTMLButtonElement>(null)
+  const semesterAnchorRef = useRef<HTMLButtonElement>(null)
+  const [subjectDropPos, setSubjectDropPos] = useState({ top: 0, left: 0, width: 0 })
+  const [semesterDropPos, setSemesterDropPos] = useState({ top: 0, left: 0, width: 0 })
   
-  // Hardcoded semester allocation matrix
+  // Hardcoded semester allocation matrix (THEORY SUBJECTS ONLY)
   const SEMESTER_SUBJECTS = {
     '2-1': [
       { code: 'A6CS05', name: 'Data Structures' },
       { code: 'A6IT02', name: 'Object Oriented Programming through Java' },
-      { code: 'A6CS02', name: 'Digital Electronics and Computer Organization' },
+      { code: 'A6CS28', name: 'Digital Electronics and Computer Organization' },
       { code: 'A6CS07', name: 'Software Engineering' },
       { code: 'A6BS03', name: 'Computer Oriented Statistical Methods' },
     ],
@@ -81,6 +88,32 @@ export function Papers() {
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [subjectDropdownOpen, semesterDropdownOpen])
+
+  // Close dropdowns on scroll so they don't drift away from their anchor
+  useEffect(() => {
+    const onScroll = () => { setSubjectDropdownOpen(false); setSemesterDropdownOpen(false) }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
+  // Measure anchor position before opening dropdown
+  const openSubjectDropdown = useCallback(() => {
+    if (subjectAnchorRef.current) {
+      const r = subjectAnchorRef.current.getBoundingClientRect()
+      setSubjectDropPos({ top: r.bottom + 8, left: r.left, width: r.width })
+    }
+    setSemesterDropdownOpen(false)
+    setSubjectDropdownOpen(o => !o)
+  }, [])
+
+  const openSemesterDropdown = useCallback(() => {
+    if (semesterAnchorRef.current) {
+      const r = semesterAnchorRef.current.getBoundingClientRect()
+      setSemesterDropPos({ top: r.bottom + 8, left: r.left, width: r.width })
+    }
+    setSubjectDropdownOpen(false)
+    setSemesterDropdownOpen(o => !o)
+  }, [])
 
   // Filters
   const [selectedSubject, setSelectedSubject] = useState(searchParams.get('subject') || '')
@@ -116,9 +149,12 @@ export function Papers() {
     subject_id: debouncedSubject || undefined,
     regulation: profileReady && debouncedReg ? debouncedReg : undefined,
     exam_category: debouncedCats.length > 0 ? debouncedCats : undefined,
-    yearRange: debouncedYear < 2025 ? debouncedYear : undefined,
+    yearRange: debouncedYear,
     search: debouncedSearch || undefined,
   })
+
+  // ONLY serve real data
+  const finalPapers = papers
 
   useEffect(() => {
     if (!user) return
@@ -134,12 +170,12 @@ export function Papers() {
         .eq('regulation', regulation)
         .order('code', { ascending: true })
 
-      // Canonical 10-subject list — ensures the dropdown always shows all subjects
-      // even if the DB query returns nothing (code is used as display key)
+      // Canonical 10-subject list — THEORY SUBJECTS ONLY
+      // Ensures the dropdown always shows all subjects even if the DB query returns nothing
       const ALL_SUBJECTS_CANONICAL = [
         { id: 'A6CS05', name: 'Data Structures',                               code: 'A6CS05', semester: 1, regulation },
         { id: 'A6IT02', name: 'Object Oriented Programming through Java',      code: 'A6IT02', semester: 1, regulation },
-        { id: 'A6CS02', name: 'Digital Electronics and Computer Organization', code: 'A6CS02', semester: 1, regulation },
+        { id: 'A6CS28', name: 'Digital Electronics and Computer Organization', code: 'A6CS28', semester: 1, regulation },
         { id: 'A6CS07', name: 'Software Engineering',                          code: 'A6CS07', semester: 1, regulation },
         { id: 'A6BS03', name: 'Computer Oriented Statistical Methods',         code: 'A6BS03', semester: 1, regulation },
         { id: 'A6HS08', name: 'Business Economics and Financial Analysis',     code: 'A6HS08', semester: 2, regulation },
@@ -213,15 +249,25 @@ export function Papers() {
     ...SEMESTER_SUBJECTS['2-2'].map(s => s.code),
   ])
 
-  const semesterFilteredBase = papers.filter(paper => {
+  const semesterFilteredBase = finalPapers.filter(paper => {
+    if (error) {
+      if (debouncedSubject && paper.subject_id !== debouncedSubject) return false;
+      if (debouncedSemester) {
+        const validCodes = SEMESTER_SUBJECTS[debouncedSemester as '2-1' | '2-2'].map(s => s.code);
+        if (!validCodes.includes(paper.subject_id)) return false;
+      }
+      return true;
+    }
+
     const subject = subjects.find(s => s.id === paper.subject_id)
     // Drop any paper whose subject isn't in our canonical 10-subject list
     if (!subject || !ALL_ALLOWED_CODES.has(subject.code)) return false
     // If a specific semester is chosen, further restrict to that semester's subjects
     if (debouncedSemester) {
-      const semesterCodes = SEMESTER_SUBJECTS[debouncedSemester].map(s => s.code)
+      const semesterCodes = SEMESTER_SUBJECTS[debouncedSemester as '2-1' | '2-2'].map(s => s.code)
       return semesterCodes.includes(subject.code)
     }
+    if (debouncedSubject && subject.code !== debouncedSubject) return false
     return true
   })
 
@@ -310,47 +356,81 @@ export function Papers() {
               {/* Custom dropdown — matches design system, not browser native */}
               <div className="relative" data-dropdown="subject">
                 <button
-                  onClick={() => setSubjectDropdownOpen(o => !o)}
-                  className="w-full bg-surface border border-outline-variant rounded-xl px-sm py-md text-body-sm text-on-surface flex items-center justify-between hover:border-primary-container/50 transition-colors"
+                  ref={subjectAnchorRef}
+                  onClick={openSubjectDropdown}
+                  className="w-full bg-[#121214] border border-[#1e1e24] rounded-xl px-sm py-md text-body-sm text-on-surface flex items-center justify-between hover:border-[#ff6600]/50 transition-colors"
                 >
                   <span className={selectedSubject ? 'text-on-surface' : 'text-on-surface-variant'}>
-                    {selectedSubject ? subjects.find(s => s.id === selectedSubject)?.name || 'All Subjects' : 'All Subjects'}
+                    {selectedSubject ? (
+                      [
+                        { code: "A6CS05", name: "Data Structures" },
+                        { code: "A6IT02", name: "Object Oriented Programming through Java" },
+                        { code: "A6CS28", name: "Digital Electronics and Computer Organization" },
+                        { code: "A6CS07", name: "Software Engineering" },
+                        { code: "A6BS03", name: "Computer Oriented Statistical Methods" },
+                        { code: "A6HS08", name: "Business Economics and Financial Analysis" },
+                        { code: "A6CS08", name: "Discrete Mathematics" },
+                        { code: "A6CS09", name: "Database Management Systems" },
+                        { code: "A6CS11", name: "Operating System" },
+                        { code: "A6CS13", name: "Software Testing Fundamentals" }
+                      ].find(s => s.code === selectedSubject)?.name || 'All Subjects'
+                    ) : 'All Subjects'}
                   </span>
                   <span className={`material-symbols-outlined text-[18px] text-on-surface-variant transition-transform duration-200 ${subjectDropdownOpen ? 'rotate-180' : ''}`}>
                     expand_more
                   </span>
                 </button>
-                {subjectDropdownOpen && (
-                  <div className="absolute z-50 w-full mt-2 bg-[#121214] border border-[#1e1e24] rounded-xl shadow-2xl max-h-60 overflow-y-auto py-1.5 scrollbar-thin scrollbar-thumb-neutral-800">
-                    {/* All Subjects option */}
-                    <button
-                      onClick={() => { setSelectedSubject(''); setSubjectDropdownOpen(false) }}
-                      className={`w-full text-left px-sm py-md text-body-sm transition-colors flex items-center gap-sm ${
-                        !selectedSubject
-                          ? 'bg-primary-container/10 text-primary-container'
-                          : 'text-on-surface hover:bg-surface-container-high'
-                      }`}
-                    >
-                      {!selectedSubject && <span className="material-symbols-outlined text-[16px]" style={{fontVariationSettings:"'FILL' 1"}}>check</span>}
-                      All Subjects
-                    </button>
-                    <div className="h-px bg-outline-variant/30" />
-                    {subjects.map(s => (
-                      <button
-                        key={s.id}
-                        onClick={() => { setSelectedSubject(s.id); setSubjectDropdownOpen(false) }}
-                        className={`w-full text-left px-sm py-md text-body-sm transition-colors flex items-center gap-sm ${
-                          selectedSubject === s.id
-                            ? 'bg-primary-container/10 text-primary-container'
-                            : 'text-on-surface hover:bg-surface-container-high'
-                        }`}
+                
+                {(() => {
+                  const displaySubjects = selectedSemester 
+                    ? subjects.filter(s => {
+                        // Match "1", "2" against "2-1", "2-2" etc.
+                        const semNum = selectedSemester.split('-')[1] || selectedSemester;
+                        return String(s.semester) === semNum;
+                      })
+                    : subjects;
+
+                  return (
+                    subjectDropdownOpen && createPortal(
+                      <motion.div
+                        data-dropdown="subject"
+                        initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                        style={{ position: 'fixed', top: subjectDropPos.top, left: subjectDropPos.left, width: subjectDropPos.width, zIndex: 9999, transformOrigin: 'top' }}
+                        className="bg-[#121214] border border-[#1e1e24] rounded-xl shadow-2xl max-h-60 overflow-y-auto py-1.5 scrollbar-thin scrollbar-thumb-neutral-800"
                       >
-                        {selectedSubject === s.id && <span className="material-symbols-outlined text-[16px]" style={{fontVariationSettings:"'FILL' 1"}}>check</span>}
-                        <span className={selectedSubject === s.id ? '' : 'ml-6'}>{s.name}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
+                        <button
+                          onClick={() => { setSelectedSubject(''); setSubjectDropdownOpen(false) }}
+                          className={`w-full text-left px-sm py-md text-body-sm transition-colors flex items-center gap-sm ${
+                            !selectedSubject
+                              ? 'bg-primary-container/10 text-primary-container'
+                              : 'text-on-surface hover:bg-surface-container-high'
+                          }`}
+                        >
+                          {!selectedSubject && <span className="material-symbols-outlined text-[16px]" style={{fontVariationSettings:"'FILL' 1"}}>check</span>}
+                          <span className={!selectedSubject ? '' : 'ml-6'}>All Subjects</span>
+                        </button>
+                        <div className="h-px bg-outline-variant/30" />
+                        {displaySubjects.map(s => (
+                          <button
+                            key={s.code}
+                            onClick={() => { setSelectedSubject(s.code); setSubjectDropdownOpen(false) }}
+                            className={`w-full text-left px-sm py-md text-body-sm transition-colors flex items-center gap-sm ${
+                              selectedSubject === s.code
+                                ? 'bg-primary-container/10 text-[#ff6600]'
+                                : 'text-on-surface hover:bg-surface-container-high'
+                            }`}
+                          >
+                            {selectedSubject === s.code && <span className="material-symbols-outlined text-[16px] text-[#ff6600]" style={{fontVariationSettings:"'FILL' 1"}}>check</span>}
+                            <span className={selectedSubject === s.code ? '' : 'ml-6'}>{s.code} — {s.name}</span>
+                          </button>
+                        ))}
+                      </motion.div>,
+                      document.body
+                    )
+                  );
+                })()}
               </div>
             </div>
 
@@ -359,7 +439,8 @@ export function Papers() {
               <label className="font-data-label text-data-label text-outline block">SEMESTER</label>
               <div className="relative" data-dropdown="semester">
                 <button
-                  onClick={() => setSemesterDropdownOpen(o => !o)}
+                  ref={semesterAnchorRef}
+                  onClick={openSemesterDropdown}
                   className="w-full bg-[#121214] border border-[#1e1e24] rounded-xl px-sm py-md text-body-sm text-on-surface flex items-center justify-between hover:border-[#ff6600]/50 transition-colors"
                 >
                   <span className={selectedSemester ? 'text-on-surface' : 'text-on-surface-variant'}>
@@ -369,47 +450,55 @@ export function Papers() {
                     expand_more
                   </span>
                 </button>
-                {semesterDropdownOpen && (
-                  <div className="absolute z-50 w-full mt-2 bg-[#121214] border border-[#1e1e24] rounded-xl shadow-2xl max-h-60 overflow-y-auto py-1.5 scrollbar-thin scrollbar-thumb-neutral-800">
+                {semesterDropdownOpen && createPortal(
+                  <motion.div
+                    data-dropdown="semester"
+                    initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                    style={{ position: 'fixed', top: semesterDropPos.top, left: semesterDropPos.left, width: semesterDropPos.width, zIndex: 9999, transformOrigin: 'top' }}
+                    className="bg-[#121214] border border-[#1e1e24] rounded-xl shadow-2xl max-h-60 overflow-y-auto py-1.5 scrollbar-thin scrollbar-thumb-neutral-800"
+                  >
                     {/* All Semesters option */}
                     <button
                       onClick={() => { setSelectedSemester(''); setSemesterDropdownOpen(false) }}
                       className={`w-full text-left px-sm py-md text-body-sm transition-colors flex items-center gap-sm ${
-                        !selectedSemester
-                          ? 'bg-primary-container/10 text-primary-container'
-                          : 'text-on-surface hover:bg-surface-container-high'
-                      }`}
-                    >
-                      {!selectedSemester && <span className="material-symbols-outlined text-[16px] text-[#ff6600]" style={{fontVariationSettings:"'FILL' 1"}}>check</span>}
-                      All Semesters
-                    </button>
-                    <div className="h-px bg-outline-variant/30" />
-                    {/* Semester 2-1 */}
-                    <button
-                      onClick={() => { setSelectedSemester('2-1'); setSemesterDropdownOpen(false) }}
-                      className={`w-full text-left px-sm py-md text-body-sm transition-colors flex items-center gap-sm ${
-                        selectedSemester === '2-1'
-                          ? 'bg-primary-container/10 text-[#ff6600]'
-                          : 'text-on-surface hover:bg-surface-container-high'
-                      }`}
-                    >
-                      {selectedSemester === '2-1' && <span className="material-symbols-outlined text-[16px] text-[#ff6600]" style={{fontVariationSettings:"'FILL' 1"}}>check</span>}
-                      <span className={selectedSemester === '2-1' ? '' : 'ml-6'}>Semester 2-1</span>
-                    </button>
-                    {/* Semester 2-2 */}
-                    <button
-                      onClick={() => { setSelectedSemester('2-2'); setSemesterDropdownOpen(false) }}
-                      className={`w-full text-left px-sm py-md text-body-sm transition-colors flex items-center gap-sm ${
-                        selectedSemester === '2-2'
-                          ? 'bg-primary-container/10 text-[#ff6600]'
-                          : 'text-on-surface hover:bg-surface-container-high'
-                      }`}
-                    >
-                      {selectedSemester === '2-2' && <span className="material-symbols-outlined text-[16px] text-[#ff6600]" style={{fontVariationSettings:"'FILL' 1"}}>check</span>}
-                      <span className={selectedSemester === '2-2' ? '' : 'ml-6'}>Semester 2-2</span>
-                    </button>
-                  </div>
-                )}
+                      !selectedSemester
+                        ? 'bg-primary-container/10 text-[#ff6600]'
+                        : 'text-on-surface hover:bg-surface-container-high'
+                    }`}
+                  >
+                    {!selectedSemester && <span className="material-symbols-outlined text-[16px] text-[#ff6600]" style={{fontVariationSettings:"'FILL' 1"}}>check</span>}
+                    <span className={!selectedSemester ? '' : 'ml-6'}>All Semesters</span>
+                  </button>
+                  <div className="h-px bg-outline-variant/30" />
+                  {/* Semester 2-1 */}
+                  <button
+                    onClick={() => { setSelectedSemester('2-1'); setSemesterDropdownOpen(false) }}
+                    className={`w-full text-left px-sm py-md text-body-sm transition-colors flex items-center gap-sm ${
+                      selectedSemester === '2-1'
+                        ? 'bg-primary-container/10 text-[#ff6600]'
+                        : 'text-on-surface hover:bg-surface-container-high'
+                    }`}
+                  >
+                    {selectedSemester === '2-1' && <span className="material-symbols-outlined text-[16px] text-[#ff6600]" style={{fontVariationSettings:"'FILL' 1"}}>check</span>}
+                    <span className={selectedSemester === '2-1' ? '' : 'ml-6'}>Semester 2-1</span>
+                  </button>
+                  {/* Semester 2-2 */}
+                  <button
+                    onClick={() => { setSelectedSemester('2-2'); setSemesterDropdownOpen(false) }}
+                    className={`w-full text-left px-sm py-md text-body-sm transition-colors flex items-center gap-sm ${
+                      selectedSemester === '2-2'
+                        ? 'bg-primary-container/10 text-[#ff6600]'
+                        : 'text-on-surface hover:bg-surface-container-high'
+                    }`}
+                  >
+                    {selectedSemester === '2-2' && <span className="material-symbols-outlined text-[16px] text-[#ff6600]" style={{fontVariationSettings:"'FILL' 1"}}>check</span>}
+                    <span className={selectedSemester === '2-2' ? '' : 'ml-6'}>Semester 2-2</span>
+                  </button>
+                </motion.div>,
+                document.body
+              )}
               </div>
               <p className="text-[11px] text-on-surface-variant italic flex items-center gap-xs">
                 <span className="material-symbols-outlined text-[14px]">info</span>
@@ -508,8 +597,8 @@ export function Papers() {
         </aside>
 
         {/* ── Main Content ─────────────────────────────────────────── */}
-        <main className="flex-1 md:ml-72 overflow-y-auto bg-background">
-          <div className="max-w-[1000px] mx-auto p-lg lg:p-huge space-y-xl">
+        <main className="flex-1 md:ml-72 overflow-y-auto bg-background flex flex-col min-h-screen">
+          <div className="max-w-[1000px] w-full mx-auto p-lg lg:p-huge space-y-xl flex-1">
             {/* Header */}
             <div className="space-y-sm border-b border-outline-variant pb-lg">
               <h1 className="font-headline text-headline-lg text-on-surface">Past Examination Papers</h1>
@@ -536,16 +625,23 @@ export function Papers() {
               </div>
             )}
 
-            {/* Error */}
-            {error && (
-              <div className="px-4 py-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-sm">
-                {error instanceof Error ? error.message : 'Failed to load papers'}
+            {/* ── Empty State ───────────────────────────────────────── */}
+            {semesterFilteredPapers && semesterFilteredPapers.length === 0 && !papersLoading && (
+              <div className="text-center py-24 glass-card rounded-2xl mx-auto w-full max-w-2xl mt-12">
+                <span className="material-symbols-outlined text-[64px] text-on-surface-variant/50 block mb-6">search_off</span>
+                <h3 className="text-headline-sm font-headline text-on-surface mb-2">No papers found</h3>
+                <p className="text-body-md text-on-surface-variant">Try adjusting your filters or search query.</p>
               </div>
             )}
 
             {/* ── Paper Cards ─────────────────────────────────────── */}
             {semesterFilteredPapers && semesterFilteredPapers.length > 0 && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-lg">
+              <motion.div 
+                initial={{ opacity: 0, y: 25 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ type: "spring", stiffness: 180, damping: 14 }}
+                className="grid grid-cols-1 lg:grid-cols-2 gap-lg"
+              >
                 {semesterFilteredPapers.map((paper, index) => {
                   // ── Strict marks (regulation + category driven, never raw DB sum) ──
                   // Use questions length if available; otherwise fall back to the stored question_count from the API
@@ -555,7 +651,9 @@ export function Papers() {
                   const catCard = (paper.exam_category || paper.exam_type || '').toLowerCase()
                   const isMidCard = catCard.includes('mid')
                   
-                  const trueTotalMarks = paper.max_marks || (paper.regulation === 'R22' || paper.exam_year === 2025 ? 60 : 70);
+                  // Priority 1: Audited dynamic max_evaluation_marks
+                  // Priority 2: Stale max_marks or Regulation cap fallback
+                  const trueTotalMarks = paper.max_evaluation_marks || paper.max_marks || (paper.regulation === 'R22' || paper.exam_year === 2025 ? 60 : 70);
                   
                   const hasQuestions = trueQuestionCount > 0
                   const downloadUrl = getDownloadUrl(paper)
@@ -659,31 +757,35 @@ export function Papers() {
                             const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1'
                             const href = downloadUrl || `${apiBase}/papers/${paper.id}/download`
                             return (
-                              <a
-                                href={href}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                onClick={(e) => e.stopPropagation()}
-                                className="flex-1 bg-primary-container/10 hover:bg-primary-container/20 border border-primary-container/20 hover:border-primary-container/40 text-primary-container hover:text-primary font-bold text-body-sm flex items-center justify-center gap-xs transition-all rounded-lg py-sm"
-                              >
-                                <span className="material-symbols-outlined text-[18px]">download</span>
-                                Download
-                              </a>
+                              <Tooltip content="Download original PDF" placement="bottom">
+                                <a
+                                  href={href}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="flex-1 bg-primary-container/10 hover:bg-primary-container/20 border border-primary-container/20 hover:border-primary-container/40 text-primary-container hover:text-primary font-bold text-body-sm flex items-center justify-center gap-xs transition-all rounded-lg py-sm"
+                                >
+                                  <span className="material-symbols-outlined text-[18px]">download</span>
+                                  Download
+                                </a>
+                              </Tooltip>
                             )
                           })()}
-                          <button 
-                            onClick={(e) => { e.stopPropagation(); navigate(`/papers/${paper.id}`) }}
-                            className="flex-1 bg-primary hover:bg-primary/90 text-white font-bold text-body-sm flex items-center justify-center gap-xs transition-all rounded-lg py-sm shadow-lg hover:shadow-xl"
-                          >
-                            View Paper
-                            <span className="material-symbols-outlined text-[18px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
-                          </button>
+                          <Tooltip content="Read extracted questions" placement="bottom">
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); navigate(`/papers/${paper.id}`) }}
+                              className="flex-1 bg-primary hover:bg-primary/90 text-white font-bold text-body-sm flex items-center justify-center gap-xs transition-all rounded-lg py-sm shadow-lg hover:shadow-xl"
+                            >
+                              View Paper
+                              <span className="material-symbols-outlined text-[18px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                            </button>
+                          </Tooltip>
                         </div>
                       </div>
                     </motion.div>
                   )
                 })}
-              </div>
+              </motion.div>
             )}
 
             {/* ── Empty State (Screen 16) ──────────────────────────── */}
@@ -722,7 +824,21 @@ export function Papers() {
             )}
           </div>
 
-          <Footer />
+          <footer className="max-w-7xl mx-auto px-6 py-8 flex flex-col md:flex-row justify-between items-center border-t border-white/[0.04] mt-auto w-full text-neutral-500 text-sm gap-4">
+            <div className="flex flex-col items-center md:items-start">
+              <span className="font-headline text-lg font-bold text-white">
+                Paper<span className="text-primary-container">IQ</span>
+              </span>
+              <p className="mt-1 tracking-tight">
+                © 2026 PaperIQ. Built for high-achieving scholars.
+              </p>
+            </div>
+            <div className="flex gap-6">
+              <a href="#" className="hover:text-white transition-colors tracking-tight">Academic Integrity</a>
+              <a href="#" className="hover:text-white transition-colors tracking-tight">Terms of Service</a>
+              <a href="#" className="hover:text-white transition-colors tracking-tight">Privacy Policy</a>
+            </div>
+          </footer>
         </main>
       </div>
     </div>

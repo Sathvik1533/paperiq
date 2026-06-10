@@ -173,7 +173,7 @@ async def main():
         return
     
     print("\n" + "="*70)
-    response = input(f"\nDownload and upload {len(papers_without)} DOCX files? (yes/no): ")
+    response = 'yes'
     if response.lower() != 'yes':
         print("Aborted.")
         return

@@ -1,0 +1,133 @@
+🚀 DEPLOY PaperIQ MVP — 1-3 Hours
+
+Hi Anti-Gravity,
+
+Deploy the complete PaperIQ MVP to production following these exact steps:
+
+═══════════════════════════════════════════════════════════════
+📋 STEP 1: READ YOUR DEPLOYMENT GUIDE (MANDATORY)
+═══════════════════════════════════════════════════════════════
+
+**Your Main Instructions**: 
+/Users/k.sathvik/paperiq/FINAL_ANTIGRAVITY_PROMPT.md
+
+⭐ THIS IS YOUR COMPLETE PLAYBOOK ⭐
+
+It contains:
+✅ All 40+ documents you must read (with file paths)
+✅ Step-by-step deployment instructions
+✅ Environment variables you need
+✅ Verification tests you must run
+✅ Performance optimizations (CRITICAL for 300-400 users)
+✅ Troubleshooting guide
+✅ Success criteria checklist
+✅ Final report template
+
+═══════════════════════════════════════════════════════════════
+⚡ STEP 2: EXECUTE DEPLOYMENT
+═══════════════════════════════════════════════════════════════
+
+Follow FINAL_ANTIGRAVITY_PROMPT.md phases:
+
+1. Read all 40+ documentation files (90 min)
+2. Deploy backend to Railway/Render (45 min)
+3. Deploy frontend to Vercel/Netlify (30 min)
+4. Performance optimization (45 min) — CRITICAL
+5. Monitoring setup (30 min)
+6. Verification tests (15 min)
+7. Report results to K. Sathvik
+
+Total: 2.5-3 hours
+
+═══════════════════════════════════════════════════════════════
+✅ WHAT KIRO BUILT (Already Complete)
+═══════════════════════════════════════════════════════════════
+
+✅ 10/10 core features (100%)
+✅ 80 papers, 7,193 questions ingested
+✅ 9 complete UI screens
+✅ 65+ E2E tests (all passing)
+✅ Zero blocking bugs
+✅ 150+ pages documentation
+✅ Backend API (11 endpoints, all working)
+✅ Frontend UI (React + TypeScript)
+✅ Database (PostgreSQL via Supabase)
+✅ Authentication (Supabase Auth)
+✅ File storage (77 DOCX files)
+
+You only need to: Deploy + Optimize for scale
+
+═══════════════════════════════════════════════════════════════
+🔑 KEY INFO
+═══════════════════════════════════════════════════════════════
+
+Workspace: /Users/k.sathvik/paperiq/
+Backend: Python FastAPI (backend/)
+Frontend: React TypeScript (frontend/)
+Database: Supabase (jkocmlgaovfchjkxvwfp)
+Target: 300-400 concurrent users
+
+Supabase URL: https://jkocmlgaovfchjkxvwfp.supabase.co
+(Get keys from: Dashboard → Settings → API)
+
+═══════════════════════════════════════════════════════════════
+📊 SUCCESS CRITERIA (12 Checks — ALL Must Pass)
+═══════════════════════════════════════════════════════════════
+
+1. Backend health check returns 200 OK
+2. All 11 API endpoints respond with data
+3. Frontend loads all 9 screens (< 3 sec)
+4. Complete user journey works (signup → dashboard → analysis → papers)
+5. Multi-worker configured (9 workers for Gunicorn)
+6. React Query caching implemented (5 min cache)
+7. Debouncing added to Papers filters (300ms)
+8. Monitoring active (Sentry + Google Analytics)
+9. Zero console errors in browser
+10. Mobile responsive working
+11. DOCX downloads working
+12. Can handle 300-400 concurrent users
+
+═══════════════════════════════════════════════════════════════
+🎯 YOUR DELIVERABLES
+═══════════════════════════════════════════════════════════════
+
+When complete, report:
+
+1. Live Frontend URL
+2. Live Backend URL
+3. Verification results (all 12 checks pass)
+4. Performance metrics
+5. Monitoring status
+6. Time taken
+7. Any issues encountered
+8. Cost estimate (~$50/month)
+
+Use template in FINAL_ANTIGRAVITY_PROMPT.md Step 7
+
+═══════════════════════════════════════════════════════════════
+📚 ALL DOCUMENTS TO READ (40+ Total)
+═══════════════════════════════════════════════════════════════
+
+See complete list in:
+/Users/k.sathvik/paperiq/FINAL_ANTIGRAVITY_PROMPT.md
+
+Critical Priority (Read First):
+1. FINAL_ANTIGRAVITY_PROMPT.md ⭐⭐⭐
+2. COMPREHENSIVE_REQUIREMENTS_AUDIT.md ⭐⭐⭐
+3. PROJECT_STATUS.md ⭐⭐
+4. PRODUCTION_READINESS_AUDIT.md ⭐⭐ (Performance critical)
+5. MVP_VERIFICATION_REPORT.md ⭐
+6. All SCREEN_*_STITCH.md files (UI specs)
+7. All completion/integration docs
+
+Total Tokens: ~150,000-200,000
+
+═══════════════════════════════════════════════════════════════
+🚀 START COMMAND
+═══════════════════════════════════════════════════════════════
+
+"I acknowledge I must read FINAL_ANTIGRAVITY_PROMPT.md and all 40+ referenced documents before starting deployment. Beginning now. Will report live URLs in 2-3 hours with all 12 success criteria verified."
+
+═══════════════════════════════════════════════════════════════
+END — PASTE EVERYTHING ABOVE
+═══════════════════════════════════════════════════════════════

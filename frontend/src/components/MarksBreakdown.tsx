@@ -62,7 +62,8 @@ export function MarksBreakdown({ analysisId }: Props) {
   async function fetchMarksData() {
     try {
       setLoading(true)
-      const response = await fetch(`/api/v1/analysis/${analysisId}/marks-breakdown`)
+      const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1'
+      const response = await fetch(`${apiBase}/analysis/${analysisId}/marks-breakdown`)
       const result = await response.json()
       
       if (result.success) {

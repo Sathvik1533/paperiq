@@ -11,7 +11,7 @@ import os
 import tempfile
 from datetime import datetime
 
-from app.database import get_db
+from app.database import get_admin_db
 from app.extractors.extractor_factory import extract_archive_and_process, extract, is_archive
 from app.utils.hash_utils import sha256_file
 from app.logger import get_logger
@@ -26,7 +26,7 @@ async def run_extract_job(paper_id: str | None = None) -> dict:
     Otherwise process all pending papers (batch mode).
     Returns summary dict.
     """
-    db = get_db()
+    db = get_admin_db()
 
     # Fetch papers to process
     q = db.table("papers").select("id, file_name, file_type, original_url, storage_path, file_hash")

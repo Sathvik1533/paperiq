@@ -17,7 +17,7 @@ from app.jobs.job_manager import (
 from app.scrapers.scraper_factory import ScraperFactory
 from app.utils.file_utils import download_dir
 from app.utils.hash_utils import sha256_file
-from app.database import get_db
+from app.database import get_admin_db
 from app.logger import get_logger
 
 log = get_logger(__name__)
@@ -56,7 +56,7 @@ async def run_scrape_job(
             update_job(job_id, stage=JobStage.DISCOVERING)
             log.info(f"[ScrapeJob:{job_id}] Auto-discovering syllabus...")
             try:
-                db = get_db()
+                db = get_admin_db()
                 college_row = db.table("colleges").select("short_name").eq("id", college_id).single().execute()
                 college_short = college_row.data.get("short_name", "") if college_row.data else ""
                 from app.intelligence.syllabus_discoverer import discover_and_ingest_syllabus
@@ -141,14 +141,14 @@ async def run_scrape_job(
                 log.warning(f"[ScrapeJob:{job_id}] Extraction failed (non-fatal): {e}")
 
         # ── Stage 4: Parse (B1 fix) ──────────────────────────────────────
-            advance_stage(job_id, JobStage.PARSING, 80)
-            log.info(f"[ScrapeJob:{job_id}] Parsing questions")
-            try:
-                from app.jobs.parse_job import run_parse_job
-                parse_result = await run_parse_job(paper_id=None)
-                log.info(f"[ScrapeJob:{job_id}] Parsing: {parse_result}")
-            except Exception as e:
-                log.warning(f"[ScrapeJob:{job_id}] Parsing failed (non-fatal): {e}")
+        advance_stage(job_id, JobStage.PARSING, 80)
+        log.info(f"[ScrapeJob:{job_id}] Parsing questions")
+        try:
+            from app.jobs.parse_job import run_parse_job
+            parse_result = await run_parse_job(paper_id=None)
+            log.info(f"[ScrapeJob:{job_id}] Parsing: {parse_result}")
+        except Exception as e:
+            log.warning(f"[ScrapeJob:{job_id}] Parsing failed (non-fatal): {e}")
 
         complete_job(
             job_id,
@@ -164,7 +164,7 @@ async def run_scrape_job(
 
 def _paper_exists(file_hash: str) -> bool:
     try:
-        db = get_db()
+        db = get_admin_db()
         result = db.table("papers").select("id").eq("file_hash", file_hash).execute()
         return len(result.data) > 0
     except Exception:
@@ -183,7 +183,7 @@ def _store_paper_meta(
     try:
         file_size = os.path.getsize(local_path)
         ext = local_path.rsplit(".", 1)[-1].lower()
-        db = get_db()
+        db = get_admin_db()
         result = db.table("papers").insert({
             "college_id": college_id,
             "subject_id": subject_id,

@@ -361,7 +361,7 @@ export function Settings() {
             {/* ── Display + Experimental ────────────────────────── */}
             <div className="md:col-span-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-lg">
               {/* Display */}
-              <section className="glass-card p-lg rounded-xl">
+              <section data-tour="tour-settings-display" className="glass-card p-lg rounded-xl">
                 <div className="flex items-center gap-sm mb-lg">
                   <span className="material-symbols-outlined text-primary-container">palette</span>
                   <h2 className="font-headline text-headline-md text-on-surface">Display</h2>

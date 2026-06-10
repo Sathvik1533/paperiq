@@ -186,6 +186,7 @@ export interface Paper {
   extraction_status: 'pending' | 'success' | 'failed'
   btech_year?: number
   max_marks?: number
+  max_evaluation_marks?: number
   parsed_questions?: ParsedQuestion[]
 }
 
@@ -246,5 +247,6 @@ export interface UserProfile {
   hours_per_day?: number
   preparation_level?: 'beginner' | 'intermediate' | 'advanced'
   onboarding_complete?: boolean
+  has_completed_tour?: boolean
   avatar_url?: string
 }

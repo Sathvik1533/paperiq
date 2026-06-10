@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 interface Props {
   children: ReactNode;
   fallback?: ReactNode;
+  resetKey?: unknown;
 }
 
 interface State {
@@ -19,6 +20,12 @@ class ErrorBoundaryClass extends Component<Props & { navigate: (path: string) =>
 
   static getDerivedStateFromError(error: Error): State {
     return { hasError: true, error };
+  }
+
+  componentDidUpdate(prevProps: Props & { navigate: (path: string) => void }) {
+    if (prevProps.resetKey !== this.props.resetKey && this.state.hasError) {
+      this.setState({ hasError: false, error: null });
+    }
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
@@ -56,8 +63,17 @@ class ErrorBoundaryClass extends Component<Props & { navigate: (path: string) =>
 
             <div className="flex gap-3">
               <button
-                onClick={() => window.location.reload()}
+                onClick={() => {
+                  this.setState({ hasError: false, error: null });
+                }}
                 className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Retry
+              </button>
+              
+              <button
+                onClick={() => window.location.reload()}
+                className="flex-1 bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors"
               >
                 Reload Page
               </button>

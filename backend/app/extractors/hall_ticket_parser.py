@@ -17,27 +17,32 @@ class HallTicketParser:
     # Known subject mappings (from verified hall tickets)
     SUBJECT_NAMES = {
         # 2-1
-        'A6IT02': 'Object Oriented Programming through Java',
-        'A6CS02': 'Digital Electronics and Computer Organization',
+        'A6CS03': 'Object Oriented Programming through Java',
+        'A6CS01': 'Digital Electronics and Computer Organization',
         'A6CS05': 'Data Structures',
-        'A6CS07': 'Software Engineering',
-        'A6BS03': 'Computer Oriented Statistical Methods',
+        'A6CS10': 'Software Engineering',
+        'A6BS04': 'Computer Oriented Statistical Methods',
         # 2-2
-        'A6HS08': 'Business Economics and Financial Analysis',
+        'A6BS05': 'Business Economics and Financial Analysis',
         'A6CS08': 'Discrete Mathematics',
         'A6CS13': 'Software Testing Fundamentals',
         'A6CS09': 'Database Management Systems',
         'A6CS11': 'Operating System',
         # Common abbreviations in hall tickets
-        'A6HS08_SHORT': 'BEFA',
+        'A6BS05_SHORT': 'BEFA',
     }
     
-    # Semester to academic year mapping
+    # Semester to academic year mapping (Check II Semester / 2-2 FIRST)
     SEMESTER_PATTERNS = [
-        (r'II\s*B\.?Tech\.?\s*-?\s*I\s+Semester', 'II B.Tech I Semester', 2, 1),
-        (r'II\s*B\.?Tech\.?\s*-?\s*II\s+Semester', 'II B.Tech II Semester', 2, 2),
-        (r'2\s*-\s*1', 'II B.Tech I Semester', 2, 1),
-        (r'2\s*-\s*2', 'II B.Tech II Semester', 2, 2),
+        # Check 2-2 / II SEMESTER first
+        (r'II\s*B\.?Tech\.?\s*-?\s*II\s+Semester', '2-2', 2, 4),
+        (r'\bII\s+SEMESTER\b', '2-2', 2, 4),
+        (r'2\s*-\s*2', '2-2', 2, 4),
+        
+        # Then check 2-1 / I SEMESTER
+        (r'II\s*B\.?Tech\.?\s*-?\s*I\s+Semester', '2-1', 2, 3),
+        (r'\bI\s+SEMESTER\b', '2-1', 2, 3),
+        (r'2\s*-\s*1', '2-1', 2, 3),
     ]
     
     def __init__(self):

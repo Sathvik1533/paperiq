@@ -7,6 +7,7 @@ import { supabase } from '../lib/supabase'
 import { NavBar } from '../components/NavBar'
 import { Footer } from '../components/Footer'
 import { AnalysisLoadingState } from '../components/AnalysisLoadingState'
+import { FacultyCrossCheck } from '../components/FacultyCrossCheck'
 import type { Subject } from '../types'
 
 interface AnalysisReport {
@@ -76,23 +77,21 @@ export function BetaAnalysis() {
       if (prof?.current_semester && prof?.regulation) {
         const subs = await getSubjectsForSemester(prof.current_semester, prof.regulation)
 
-        // ── Canonical subject guarantee ───────────────────────────────────────
-        // Always show all 5 subjects for the semester regardless of DB gaps.
-        // Map: profile semester (1 or 2) → canonical subject list
+        // ── Canonical subject guarantee - THEORY SUBJECTS ONLY ────────────────────
         const CANONICAL: Record<string, Array<{ id: string; name: string; code: string; semester: number; regulation: string }>> = {
-          '1-R22': [
-            { id: 'A6CS05', name: 'Data Structures',                               code: 'A6CS05', semester: 1, regulation: 'R22' },
-            { id: 'A6IT02', name: 'Object Oriented Programming through Java',      code: 'A6IT02', semester: 1, regulation: 'R22' },
-            { id: 'A6CS02', name: 'Digital Electronics and Computer Organization', code: 'A6CS02', semester: 1, regulation: 'R22' },
-            { id: 'A6CS07', name: 'Software Engineering',                          code: 'A6CS07', semester: 1, regulation: 'R22' },
-            { id: 'A6BS03', name: 'Computer Oriented Statistical Methods',         code: 'A6BS03', semester: 1, regulation: 'R22' },
+          '3-R22': [
+            { id: 'A6CS05', name: 'Data Structures', code: 'A6CS05', semester: 3, regulation: 'R22' },
+            { id: 'A6IT02', name: 'Object Oriented Programming through Java', code: 'A6IT02', semester: 3, regulation: 'R22' },
+            { id: 'A6CS28', name: 'Digital Electronics and Computer Organization', code: 'A6CS28', semester: 3, regulation: 'R22' },
+            { id: 'A6CS07', name: 'Software Engineering', code: 'A6CS07', semester: 3, regulation: 'R22' },
+            { id: 'A6BS03', name: 'Computer Oriented Statistical Methods', code: 'A6BS03', semester: 3, regulation: 'R22' },
           ],
-          '2-R22': [
-            { id: 'A6HS08', name: 'Business Economics and Financial Analysis',     code: 'A6HS08', semester: 2, regulation: 'R22' },
-            { id: 'A6CS08', name: 'Discrete Mathematics',                          code: 'A6CS08', semester: 2, regulation: 'R22' },
-            { id: 'A6CS09', name: 'Database Management Systems',                   code: 'A6CS09', semester: 2, regulation: 'R22' },
-            { id: 'A6CS11', name: 'Operating System',                              code: 'A6CS11', semester: 2, regulation: 'R22' },
-            { id: 'A6CS13', name: 'Software Testing Fundamentals',                 code: 'A6CS13', semester: 2, regulation: 'R22' },
+          '4-R22': [
+            { id: 'A6HS08', name: 'Business Economics and Financial Analysis', code: 'A6HS08', semester: 4, regulation: 'R22' },
+            { id: 'A6CS08', name: 'Discrete Mathematics', code: 'A6CS08', semester: 4, regulation: 'R22' },
+            { id: 'A6CS09', name: 'Database Management Systems', code: 'A6CS09', semester: 4, regulation: 'R22' },
+            { id: 'A6CS11', name: 'Operating System', code: 'A6CS11', semester: 4, regulation: 'R22' },
+            { id: 'A6CS13', name: 'Software Testing Fundamentals', code: 'A6CS13', semester: 4, regulation: 'R22' },
           ],
         }
 
@@ -110,16 +109,20 @@ export function BetaAnalysis() {
           })
         }
 
-        console.log(`📚 BetaAnalysis: setting ${finalSubs.length} subjects:`, finalSubs.map(s => s.code).join(', '))
-        setSubjects(finalSubs)
+        setSubjects(finalSubs as unknown as Subject[])
       }
-    }).finally(() => setProfileLoading(false))
+    })
+    .catch((err) => {
+        console.error("Failed to load profile/subjects:", err)
+        setError(err.message || 'Failed to load profile')
+    })
+    .finally(() => setProfileLoading(false))
   }, [user])
 
   // Auto-analyze if subject_id came from URL
   useEffect(() => {
     const id = searchParams.get('subject_id')
-    if (id && subjects.length > 0 && !analysis && !loading) {
+    if (id && id !== 'undefined' && id !== 'null' && subjects.length > 0 && !analysis && !loading) {
       setSelectedSubject(id)
       runAnalysis(id)
     }
@@ -127,7 +130,10 @@ export function BetaAnalysis() {
 
   async function runAnalysis(subjectId?: string) {
     const id = subjectId || selectedSubject
-    if (!id) return
+    if (!id || id === 'undefined' || id === 'null') {
+      navigate('/dashboard', { replace: true })
+      return
+    }
     setLoading(true)
     setError('')
     setAnalysis(null)
@@ -154,14 +160,10 @@ export function BetaAnalysis() {
       }
       // Store result — will be committed when the loading animation calls onComplete
       setPendingReport(report)
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : 'Analysis failed'
-      if (msg.includes('fetch') || msg.includes('network') || msg.includes('connect')) {
-        setError('Backend server is not running. Start it with: cd backend && .venv/bin/uvicorn app.main:app --reload --port 8000')
-      } else {
-        setError(msg)
-      }
-      setLoading(false)
+    } catch (e: any) {
+      console.error("Analysis generation failed:", e);
+      setError(e.message || "Failed to generate analysis.");
+      setLoading(false);
     }
     // Note: setLoading(false) is NOT called here — it's called inside handleLoadingComplete
     // so the loading screen stays visible until the animation finishes
@@ -195,8 +197,24 @@ export function BetaAnalysis() {
           subjectName={selectedSubjectName}
           questionCount={loadingQuestionCount}
           coveragePct={loadingCoveragePct}
+          isBackendDone={!!pendingReport}
           onComplete={handleLoadingComplete}
         />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background">
+        <NavBar activeTab="analysis" />
+        <main className="flex items-center justify-center min-h-[60vh] px-lg">
+          <div className="mb-xl px-xl py-lg bg-red-500/10 border border-red-500/30 rounded-2xl text-center max-w-md">
+            <span className="material-symbols-outlined text-[48px] text-red-400 mb-4 block">error</span>
+            <h3 className="text-headline-sm font-headline text-red-400 mb-2">Network Error</h3>
+            <p className="text-red-400/80 text-body-md">{error}</p>
+          </div>
+        </main>
       </div>
     )
   }
@@ -266,7 +284,7 @@ export function BetaAnalysis() {
             {FILTERS.map(f => (
               <button
                 key={f.value}
-                disabled={!!f.comingSoon}
+                disabled={!!f.comingSoon || loading}
                 onClick={() => {
                   if (f.comingSoon) return
                   setFilter(f.value)
@@ -696,6 +714,9 @@ export function BetaAnalysis() {
                 </div>
               </div>
             )}
+
+            {/* Faculty Cross Check */}
+            <FacultyCrossCheck subjectId={selectedSubject} />
           </div>
         )}
 

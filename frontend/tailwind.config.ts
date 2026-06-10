@@ -18,7 +18,7 @@ const config: Config = {
         'primary-fixed':              '#ffdbca',
         'primary-fixed-dim':          '#ffb690',
         'on-primary-fixed':           '#341100',
-        'background':                 '#07070d',
+        'background':                 '#030303',
         'surface':                    '#121414',
         'surface-dim':                '#121414',
         'surface-bright':             '#37393a',
@@ -101,6 +101,15 @@ const config: Config = {
         'data-value':          ['14px', { lineHeight: '1.4',  fontWeight: '500' }],
         'data-label':          ['12px', { lineHeight: '1',    letterSpacing: '0.05em', fontWeight: '500' }],
       },
+      keyframes: {
+        shimmer: {
+          '0%': { transform: 'translateX(-100%) skewX(12deg)' },
+          '100%': { transform: 'translateX(200%) skewX(12deg)' },
+        }
+      },
+      animation: {
+        shimmer: 'shimmer 1.5s infinite',
+      }
     },
   },
   plugins: [],

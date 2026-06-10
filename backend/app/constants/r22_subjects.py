@@ -12,31 +12,31 @@ Verified By: Academic Office + Student Hall Tickets
 # ── Semester 2-1 (II B.Tech I Semester) ────────────────────────────────────────
 
 R22_SEMESTER_2_1 = {
+    "A6CS03": {
+        "name": "Object Oriented Programming through Java",
+        "semester": 1,
+        "branch": "CSE",
+        "short": "OOPS"
+    },
+    "A6CS01": {
+        "name": "Digital Electronics and Computer Organization",
+        "semester": 1,
+        "branch": "CSE",
+        "short": "DECO"
+    },
     "A6CS05": {
         "name": "Data Structures",
         "semester": 1,  # DB value for 2-1
         "branch": "CSE",
         "short": "DS"
     },
-    "A6IT02": {
-        "name": "Object Oriented Programming through Java",
-        "semester": 1,
-        "branch": "IT",
-        "short": "OOPS"
-    },
-    "A6CS02": {  # CORRECTED: Was incorrectly A6CS28 in old code
-        "name": "Digital Electronics and Computer Organization",
-        "semester": 1,
-        "branch": "CSE",
-        "short": "DECO"
-    },
-    "A6CS07": {
+    "A6CS10": {
         "name": "Software Engineering",
         "semester": 1,
         "branch": "CSE",
         "short": "SE"
     },
-    "A6BS03": {
+    "A6BS04": {
         "name": "Computer Oriented Statistical Methods",
         "semester": 1,
         "branch": "BS",
@@ -47,10 +47,10 @@ R22_SEMESTER_2_1 = {
 # ── Semester 2-2 (II B.Tech II Semester) ───────────────────────────────────────
 
 R22_SEMESTER_2_2 = {
-    "A6HS08": {
+    "A6BS05": {
         "name": "Business Economics and Financial Analysis",
         "semester": 2,  # DB value for 2-2
-        "branch": "HS",
+        "branch": "BS",
         "short": "BEFA"
     },
     "A6CS08": {

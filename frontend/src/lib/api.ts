@@ -4,21 +4,58 @@ import type {
   MockExam, ScrapeJob, Paper, Syllabus, SyllabusTopic, CoverageReport,
 } from '../types'
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL as string
+const BASE_URL = (import.meta.env.VITE_API_BASE_URL as string) || 'http://localhost:8000/api/v1'
 
-async function fetchWithAuth<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const { data: { session } } = await supabase.auth.getSession()
+export async function fetchWithAuth<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const { data: { session }, error } = await supabase.auth.getSession()
+  
+  if (error || !session || !session.access_token) {
+    // Bug 2 Fix: Silently abort the doomed request and route to auth
+    const { useAuthStore } = await import('../store/authStore')
+    useAuthStore.getState().signOut()
+    throw new Error('Session expired. Please log in again.')
+  }
+
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(options.headers as Record<string, string> ?? {}),
   }
-  if (session?.access_token) headers['Authorization'] = `Bearer ${session.access_token}`
-  const res = await fetch(`${BASE_URL}${path}`, { ...options, headers })
-  if (!res.ok) {
-    const text = await res.text()
-    throw new Error(`API ${res.status}: ${text}`)
+  headers['Authorization'] = `Bearer ${session.access_token}`
+  
+  // Custom SWR Engine: Instant hydration from localStorage for GET requests
+  const cacheKey = `paperiq_swr_${path}`
+  const isGet = !options.method || options.method.toUpperCase() === 'GET'
+
+  try {
+    const res = await fetch(`${BASE_URL}${path}`, { ...options, headers })
+    if (!res.ok) {
+      const text = await res.text()
+      throw new Error(`API ${res.status}: ${text}`)
+    }
+    const data = await res.json()
+    
+    // Silently update cache in the background
+    if (isGet) {
+      localStorage.setItem(cacheKey, JSON.stringify(data))
+    }
+    return data
+  } catch (err) {
+    // GLOBAL FETCH INTERCEPTOR: The Network Shield
+    // If a network connection drops or the backend dies ("Failed to fetch"), we intercept the exception immediately.
+    // Instead of letting the component throw a red layout error, we silently catch it, pull the last valid
+    // dataset from localStorage, and serve it directly back to the component as if the server succeeded.
+    if (isGet) {
+      const cached = localStorage.getItem(cacheKey)
+      if (cached) {
+        console.warn(`[NETWORK SHIELD] Backend connection dropped for ${path}. Suppressing error and hydrating directly from local cache.`);
+        return JSON.parse(cached) as T
+      }
+    }
+    
+    // If it's a POST/mutation and it drops, the ActionButton's silent retry will handle the loop.
+    // If it's a GET and we have zero cache, we throw but the component-level fail-safes (like mock arrays) will catch it.
+    throw err;
   }
-  return res.json()
 }
 
 // ── Academic ──────────────────────────────────────────────────────────────
@@ -244,13 +281,18 @@ export async function logActivity(
 // ── Profile (B4 fix) ──────────────────────────────────────────────────────
 
 export async function getUserProfile(userId: string) {
-  const { data } = await supabase.from('user_profiles').select('*').eq('id', userId).single()
-  return data
+  try {
+    const res = await fetchWithAuth<{ data: any }>(`/profile/${userId}/context`)
+    return res.data
+  } catch (error) {
+    // Profile not found or error - return null to allow fallback behavior
+    console.warn('Profile fetch failed, using fallback:', error)
+    return null
+  }
 }
 
 export async function upsertUserProfile(userId: string, profile: Record<string, unknown>) {
-  const { error } = await supabase.from('user_profiles').upsert({ ...profile, id: userId })
-  if (error) throw error
+  await updateProfile(userId, profile)
 }
 
 // ── Onboarding ────────────────────────────────────────────────────────────
@@ -306,19 +348,15 @@ export async function confirmHallTicketProfile(profile: {
 // ── Beta Student Experience ───────────────────────────────────────────────
 
 export async function getSubjectsForSemester(semester: number, regulation: string): Promise<Subject[]> {
-  console.log(`🔍 API: Fetching subjects for Semester ${semester}, ${regulation}`)
   const { data, error } = await supabase
     .from('subjects')
     .select('*')
     .eq('semester', semester)
     .eq('regulation', regulation)
     .order('code', { ascending: true })
-  console.log(`🔍 API: Supabase returned ${data?.length || 0} subjects`, data)
   if (error) {
-    console.error('❌ API: Error fetching subjects:', error)
     throw error
   }
-  console.log(`✅ API: Returning ${data?.length || 0} subjects to caller`)
   return data || []
 }
 
@@ -342,4 +380,57 @@ export async function generateAnalysis(
     body: JSON.stringify(body),
   })
   return (res as any).data ?? res
+}
+
+// ── Stats ────────────────────────────────────────────────────────────────
+
+export async function getStats(): Promise<{ papers: number; questions: number; subjects: number }> {
+  const res = await fetchWithAuth<{ data: { papers: number; questions: number; subjects: number } }>('/stats')
+  return res.data
+}
+
+// ── Feedback ─────────────────────────────────────────────────────────────
+
+export async function submitFeedback(feedback: {
+  page: string
+  rating: number
+  hours_saved?: string
+  trigger?: string
+}): Promise<void> {
+  await fetchWithAuth('/feedback', {
+    method: 'POST',
+    body: JSON.stringify(feedback),
+  })
+}
+
+// ── Profile (backend) ────────────────────────────────────────────────────
+
+export async function updateProfile(userId: string, profile: Record<string, unknown>): Promise<void> {
+  await fetchWithAuth(`/profile/${userId}`, {
+    method: 'PUT',
+    body: JSON.stringify(profile),
+  })
+}
+
+export async function deleteProfile(userId: string): Promise<void> {
+  await fetchWithAuth(`/profile/${userId}`, {
+    method: 'DELETE',
+  })
+}
+
+// ── Subjects (filtered) ──────────────────────────────────────────────────
+
+export async function getSubjectsByFilter(semester: number, regulation: string): Promise<Subject[]> {
+  const res = await fetchWithAuth<{ data: Subject[] }>(`/subjects/filter?semester=${semester}&regulation=${regulation}`)
+  return res.data ?? []
+}
+
+// ── Questions (batch) ────────────────────────────────────────────────────
+
+export async function getQuestionsBatch(paperIds: string[]): Promise<any[]> {
+  const res = await fetchWithAuth<{ data: any[] }>('/questions/batch', {
+    method: 'POST',
+    body: JSON.stringify({ paper_ids: paperIds }),
+  })
+  return res.data ?? []
 }

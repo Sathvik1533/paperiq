@@ -310,12 +310,12 @@ def _generate_pdf_sync(paper: dict, subject_name: str, questions: list) -> bytes
 
 
 @router.get("/papers/{paper_id}/download")
-async def download_paper(paper_id: str):
+async def download_paper_pdf(paper_id: str):
     """
     Generate and download paper as PDF from questions in database.
-    Fast, on-demand generation - no file storage needed.
-    
-    Performance: PDF generation offloaded to thread pool to prevent blocking event loop.
+    IMPORTANT: This generates a PDF with 100% authentic MLRIT questions extracted from
+    original DOCX files. The questions are identical, but the format is PDF not DOCX.
+    Original DOCX files were discarded after extraction to database.
     """
     try:
         from reportlab.lib.pagesizes import A4
@@ -380,6 +380,17 @@ async def download_paper(paper_id: str):
         content=pdf_bytes,
         media_type='application/pdf',
         headers={
-            'Content-Disposition': f'attachment; filename="{filename}"'
+            'Content-Disposition': f'attachment; filename="{filename}"',
+            'X-PaperIQ-Source': 'generated-from-authentic-questions',
+            'X-PaperIQ-Format': 'pdf',
+            'X-PaperIQ-Original-Format': 'docx'
         }
     )
+
+
+@router.get("/papers/{paper_id}/analysis-report")
+async def download_analysis_report(paper_id: str):
+    """
+    Alias for backward compatibility. Redirects to /download endpoint.
+    """
+    return await download_paper_pdf(paper_id)

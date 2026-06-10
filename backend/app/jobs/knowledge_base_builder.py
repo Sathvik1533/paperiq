@@ -15,7 +15,7 @@ import httpx
 from typing import List, Dict, Optional
 from dataclasses import dataclass
 
-from app.database import get_db
+from app.database import get_admin_db
 from app.extractors.syllabus_ingester import ingest_syllabus, parse_syllabus_text
 from app.extractors.extractor_factory import extract
 from app.extractors.text_normalizer import normalize
@@ -147,7 +147,7 @@ async def build_subject_registry(
     
     Returns summary dict.
     """
-    db = get_db()
+    db = get_admin_db()
     
     # Step 1: Ensure college exists — query by short_name (the unique constraint column)
     # Previously queried by name which could mismatch, causing duplicate key on insert
@@ -309,7 +309,7 @@ async def check_knowledge_base_exists(college_name: str, regulation: str) -> boo
     Check if knowledge base already exists for given college and regulation.
     Returns True if subjects exist, False otherwise.
     """
-    db = get_db()
+    db = get_admin_db()
     
     try:
         # Check if college exists

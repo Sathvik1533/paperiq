@@ -4,12 +4,20 @@ Profile API — Learner Profile & Onboarding
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Optional
-from app.database import get_db
+from app.database import get_db, get_admin_db, _verified_user_id
 from app.intelligence.learner_profiler import compute_learner_profile
 from app.logger import get_logger
 
 router = APIRouter()
 log = get_logger(__name__)
+
+def verify_user_access(requested_user_id: str):
+    """Enforce strict authentication to prevent race conditions and spoofing."""
+    verified_id = _verified_user_id.get()
+    if not verified_id:
+        raise HTTPException(401, "Authentication required: Invalid or expired token")
+    if verified_id != requested_user_id:
+        raise HTTPException(403, "Forbidden: Cannot access another user's profile")
 
 
 class OnboardingRequest(BaseModel):
@@ -47,6 +55,7 @@ async def complete_onboarding(req: OnboardingRequest):
     
     Returns learner profile with inferred characteristics.
     """
+    verify_user_access(req.user_id)
     db = get_db()
     
     # Resolve college and branch
@@ -154,6 +163,7 @@ async def get_learner_profile(user_id: str):
     Get current learner profile.
     Re-computes on every request to ensure fresh data.
     """
+    verify_user_access(user_id)
     try:
         profile = compute_learner_profile(user_id)
         return {
@@ -174,6 +184,7 @@ async def refresh_learner_profile(user_id: str):
     - Readiness score calculation
     - Major study session
     """
+    verify_user_access(user_id)
     try:
         profile = compute_learner_profile(user_id)
         return {
@@ -193,11 +204,12 @@ async def get_user_context(user_id: str):
     """
     Get user academic context for filtering.
     """
+    verify_user_access(user_id)
     db = get_db()
     try:
         result = db.table("user_profiles").select(
             "college_id, branch_id, regulation, current_year, current_semester, "
-            "current_cgpa, target_cgpa, study_hours_per_day"
+            "current_cgpa, target_cgpa, study_hours_per_day, preparation_level"
         ).eq("id", user_id).single().execute()
         
         if not result.data:
@@ -220,6 +232,7 @@ async def get_user_subjects(user_id: str):
     
     Returns list of subjects user can select from.
     """
+    verify_user_access(user_id)
     db = get_db()
     
     # Get user context
@@ -258,4 +271,66 @@ async def get_user_subjects(user_id: str):
     
     except Exception as e:
         log.error(f"Failed to fetch subjects: {e}")
+        raise HTTPException(500, f"Failed to fetch subjects: {e}")
+
+
+class ProfileUpdateRequest(BaseModel):
+    full_name: Optional[str] = None
+    regulation: Optional[str] = None
+    current_semester: Optional[int] = None
+    current_cgpa: Optional[float] = None
+    target_cgpa: Optional[float] = None
+    study_hours_per_day: Optional[float] = None
+    preparation_level: Optional[str] = None
+    has_completed_tour: Optional[bool] = None
+
+
+@router.put("/profile/{user_id}")
+async def upsert_profile(user_id: str, req: ProfileUpdateRequest):
+    """Upsert user profile — updates only provided fields."""
+    verify_user_access(user_id)
+    db = get_admin_db()
+    try:
+        update_fields = {k: v for k, v in req.model_dump().items() if v is not None}
+        if not update_fields:
+            raise HTTPException(400, "No fields to update")
+        
+        update_fields["id"] = user_id
+        db.table("user_profiles").upsert(update_fields).execute()
+        
+        result = db.table("user_profiles").select("*").eq("id", user_id).single().execute()
+        return {"success": True, "data": result.data}
+    except HTTPException:
+        raise
+    except Exception as e:
+        log.error(f"Failed to upsert profile for {user_id}: {e}")
+        raise HTTPException(500, f"Failed to update profile: {e}")
+
+
+@router.delete("/profile/{user_id}")
+async def delete_profile(user_id: str):
+    """Delete user account — removes user_profiles and learner_profiles."""
+    verify_user_access(user_id)
+    db = get_admin_db()
+    try:
+        db.table("learner_profiles").delete().eq("user_id", user_id).execute()
+        db.table("user_profiles").delete().eq("id", user_id).execute()
+        return {"success": True, "data": {"message": "Account deleted"}}
+    except Exception as e:
+        log.error(f"Failed to delete profile for {user_id}: {e}")
+        raise HTTPException(500, f"Failed to delete account: {e}")
+
+
+@router.get("/subjects/filter")
+async def filter_subjects(semester: int, regulation: str):
+    """Get subjects by semester+regulation (no college_id required)."""
+    db = get_admin_db()
+    try:
+        result = db.table("subjects").select(
+            "id, code, name, semester, regulation"
+        ).eq("semester", semester).eq("regulation", regulation).order("code").execute()
+        
+        return {"success": True, "data": result.data or []}
+    except Exception as e:
+        log.error(f"Failed to filter subjects: {e}")
         raise HTTPException(500, f"Failed to fetch subjects: {e}")

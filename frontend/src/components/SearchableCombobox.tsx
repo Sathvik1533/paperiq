@@ -130,42 +130,6 @@ export function SearchableCombobox({
 
   const displayText = open ? searchQuery : (selected?.label || '')
 
-  return (
-    <div ref={ref} className={`relative ${className}`}>
-      {/* Search Input Field */}
-      <div className="relative">
-        <input
-          ref={inputRef}
-          type="text"
-          disabled={disabled}
-          value={displayText}
-          onChange={(e) => {
-            setSearchQuery(e.target.value)
-            if (!open) setOpen(true)
-          }}
-          onFocus={() => setOpen(true)}
-          placeholder={placeholder}
-          className={`
-            w-full flex items-center justify-between gap-2
-            bg-white/5 border rounded-xl px-4 py-3
-            text-sm font-medium transition-colors duration-200
-            focus:outline-none focus:ring-1 focus:ring-primary-container/50
-            ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-text'}
-            ${open
-              ? 'border-primary-container/60 bg-white/8 shadow-[0_0_0_1px_rgba(249,115,22,0.2)]'
-              : 'border-white/10'
-            }
-            ${!open && !selected ? 'text-white/40' : 'text-white'}
-          `}
-        />
-        {/* Search icon */}
-        <span 
-          className="material-symbols-outlined text-[18px] absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none"
-          style={{ color: open ? 'rgb(249, 115, 22)' : 'rgba(255,255,255,0.4)' }}
-        >
-          {open ? 'search' : 'expand_more'}
-        </span>
-      </div>
 
   const dropdownPanel = (
     <AnimatePresence>

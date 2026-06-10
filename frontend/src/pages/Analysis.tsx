@@ -10,6 +10,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { motion, useReducedMotion } from 'framer-motion'
 import { useAuthStore } from '../store/authStore'
+import { useAppStore } from '../store/useAppStore'
 import { getUserProfile, getSubjectsForSemester, generateAnalysis } from '../lib/api'
 import { NavBar } from '../components/NavBar'
 import { Footer } from '../components/Footer'
@@ -18,6 +19,7 @@ import { FeedbackWidget } from '../components/FeedbackWidget'
 import { SearchableCombobox } from '../components/SearchableCombobox'
 import { AnalysisLoadingState } from '../components/AnalysisLoadingState'
 import { PageTransition } from '../components/ui/PageTransition'
+import { Tooltip } from '../components/ui/Tooltip'
 import type { Subject, UserProfile } from '../types'
 
 const SPRING_SNAPPY = { type: 'spring' as const, stiffness: 300, damping: 20 }
@@ -39,7 +41,7 @@ const SUBJECT_FALLBACK: Record<string, Array<{ id: string; name: string; code: s
   '1-R22': [
     { id: 'A6CS05', name: 'Data Structures',                                    code: 'A6CS05', semester: 1, regulation: 'R22' },
     { id: 'A6IT02', name: 'Object Oriented Programming through Java',           code: 'A6IT02', semester: 1, regulation: 'R22' },
-    { id: 'A6CS02', name: 'Digital Electronics and Computer Organization',      code: 'A6CS02', semester: 1, regulation: 'R22' },
+    { id: 'A6CS28', name: 'Digital Electronics and Computer Organization',      code: 'A6CS28', semester: 1, regulation: 'R22' },
     { id: 'A6CS07', name: 'Software Engineering',                               code: 'A6CS07', semester: 1, regulation: 'R22' },
     { id: 'A6BS03', name: 'Computer Oriented Statistical Methods',              code: 'A6BS03', semester: 1, regulation: 'R22' },
   ],
@@ -139,10 +141,10 @@ export function Analysis() {
   const [searchParams] = useSearchParams()
   const shouldReduceMotion = useReducedMotion()
 
+  const { selectedSubjectId, activeFilter, setSelectedSubjectId, setActiveFilter } = useAppStore()
+
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [subjects, setSubjects] = useState<Subject[]>([])
-  const [selectedSubject, setSelectedSubject] = useState(searchParams.get('subject_id') || '')
-  const [filter, setFilter] = useState<Filter>('all')
   const [analysis, setAnalysis] = useState<any | null>(null)
   const [loading, setLoading] = useState(false)
   const [profileLoading, setProfileLoading] = useState(true)
@@ -150,66 +152,68 @@ export function Analysis() {
   const [loadingComplete, setLoadingComplete] = useState(false)
   const [showAllQ, setShowAllQ] = useState(false)
 
-  // Load profile + subjects
+  // Load profile + subjects (profile is optional now)
   useEffect(() => {
-    if (!user) return
-    getUserProfile(user.id).then(async prof => {
-      console.log('👤 Profile loaded:', prof)
-      setProfile(prof)
-      if (prof?.current_semester && prof?.regulation) {
-        const subs = await getSubjectsForSemester(prof.current_semester, prof.regulation)
-        console.log(`📚 DETAILED: Loaded ${subs?.length || 0} subjects for Semester ${prof.current_semester}, ${prof.regulation}:`)
-        console.log('📚 All subject codes:', subs?.map(s => s.code).join(', '))
-        console.log('📚 All subject names:', subs?.map(s => s.name).join(' | '))
-        console.table(subs)
+    // Load all R22 subjects by default (no profile required)
+    const allR22Subjects = [...SUBJECT_FALLBACK['1-R22'], ...SUBJECT_FALLBACK['2-R22']]
+    setSubjects(allR22Subjects)
+    setProfileLoading(false)
+    
+    // Try to load user profile if logged in (optional enhancement)
+    if (user) {
+      getUserProfile(user.id).then(async prof => {
+        setProfile(prof)
+        if (prof?.current_semester && prof?.regulation) {
+          const subs = await getSubjectsForSemester(prof.current_semester, prof.regulation)
+          const fallbackKey = `${prof.current_semester}-${prof.regulation}`
+          const fallback = SUBJECT_FALLBACK[fallbackKey]
+          let finalSubs = subs || []
 
-        // ── Canonical subject override ────────────────────────────────────────
-        // Always use the local fallback list as the source of truth for subject
-        // names and codes. If the DB has a real UUID for a given code, we use it
-        // (required for analysis API). If not, we use the code as the id so the
-        // dropdown always shows all 5 subjects regardless of DB gaps.
-        const fallbackKey = `${prof.current_semester}-${prof.regulation}`
-        const fallback = SUBJECT_FALLBACK[fallbackKey]
-        let finalSubs = subs || []
+          if (fallback) {
+            const dbByCode = new Map(finalSubs.map(s => [s.code, s]))
+            finalSubs = fallback.map(f => {
+              const live = dbByCode.get(f.code)
+              if (live) {
+                return { ...live, name: f.name }
+              }
+              return f
+            })
+          }
 
-        if (fallback) {
-          // Build a map of code → real DB row (with UUID)
-          const dbByCode = new Map(finalSubs.map(s => [s.code, s]))
-          // Build canonical list from fallback, patching in real UUIDs where available
-          finalSubs = fallback.map(f => {
-            const live = dbByCode.get(f.code)
-            if (live) {
-              // Use real DB row but ensure name matches canonical
-              return { ...live, name: f.name }
-            }
-            // DB missing this subject — use fallback entry (id = code, usable for lookup)
-            console.warn(`⚠️ Subject ${f.code} not in DB — using local fallback entry`)
-            return f
-          })
-          console.log('📚 Canonical subjects:', finalSubs.map(s => `${s.code}:${s.id}`).join(', '))
+          setSubjects(finalSubs)
         }
-
-        setSubjects(finalSubs)
-        console.log(`📚 State updated with ${finalSubs.length} subjects`)
-      }
-    }).finally(() => setProfileLoading(false))
+      }).catch(err => {
+        // Profile load failed, but that's okay - we have fallback subjects
+        console.warn('Profile load failed, using fallback subjects:', err)
+      })
+    }
   }, [user])
 
-  // Auto-run if subject_id came from URL
+  // Sync searchParams subject_id on mount/change
   useEffect(() => {
     const id = searchParams.get('subject_id')
+    if (id) {
+      setSelectedSubjectId(id)
+    }
+  }, [searchParams, setSelectedSubjectId])
+
+  // Auto-run if subject_id came from URL or is already set in store when subjects load
+  useEffect(() => {
+    const id = searchParams.get('subject_id') || selectedSubjectId
     if (id && subjects.length > 0 && !analysis && !loading) {
-      setSelectedSubject(id)
+      setSelectedSubjectId(id)
       runAnalysis(id)
     }
   }, [subjects])
 
   async function runAnalysis(subjectId?: string) {
-    const id = subjectId || selectedSubject
-    if (!id || !profile) return
+    const id = subjectId || selectedSubjectId || ''
+    if (!id) return
     setLoading(true); setError(''); setAnalysis(null); setLoadingComplete(false)
     try {
-      const report = await generateAnalysis(id, profile.regulation || 'R22', filter !== 'all' ? filter : undefined)
+      // Use profile regulation if available, otherwise default to R22
+      const regulation = profile?.regulation || 'R22'
+      const report = await generateAnalysis(id, regulation, activeFilter !== 'all' ? activeFilter : undefined)
       setAnalysis(report)
     } catch (e: any) {
       setError(e.message?.includes('fetch') || e.message?.includes('connect')
@@ -220,7 +224,7 @@ export function Analysis() {
     }
   }
 
-  const selectedSubjectName = subjects.find(s => s.id === selectedSubject)?.name || ''
+  const selectedSubjectName = subjects.find(s => s.id === (selectedSubjectId || ''))?.name || ''
 
   if (profileLoading) {
     return (
@@ -237,21 +241,8 @@ export function Analysis() {
   }
 
   if (!profile?.current_semester) {
-    return (
-      <div className="min-h-screen bg-background">
-        <NavBar activeTab="analysis" />
-        <main className="max-w-[1200px] mx-auto px-lg pt-32 flex items-center justify-center min-h-[60vh]">
-          <div className="glass-card rounded-2xl p-xl text-center max-w-md">
-            <span className="material-symbols-outlined text-[64px] text-primary-container mb-base block">school</span>
-            <h2 className="font-headline text-headline-md mb-sm">Complete Your Profile First</h2>
-            <p className="text-on-surface-variant mb-xl">Set up your semester and regulation to access analysis.</p>
-            <button onClick={() => navigate('/onboarding')} className="bg-primary-container text-on-primary-container px-lg py-md rounded-xl font-bold hover:brightness-110 transition-all">
-              Complete Onboarding
-            </button>
-          </div>
-        </main>
-      </div>
-    )
+    // No profile is fine - we'll use default semester 1 display
+    // Just make sure we have fallback subjects loaded
   }
 
   return (
@@ -279,13 +270,13 @@ export function Analysis() {
                 return (
                   <motion.button
                     key={f.value}
-                    onClick={() => !isLocked && setFilter(f.value)}
+                    onClick={() => !isLocked && setActiveFilter(f.value)}
                     disabled={isLocked}
                     title={isLocked ? 'Coming soon' : undefined}
                     className={`px-md py-sm rounded-xl font-data-label text-data-label transition-all relative ${
                       isLocked
                         ? 'text-on-surface-variant/30 cursor-not-allowed'
-                        : filter === f.value
+                        : activeFilter === f.value
                         ? 'bg-primary-container text-on-primary-container'
                         : 'text-on-surface-variant hover:bg-white/5'
                     }`}
@@ -314,14 +305,14 @@ export function Analysis() {
               <div>
                 <label className="text-on-surface-variant text-xs font-medium uppercase tracking-wider block mb-2">Semester</label>
                 <div className="px-4 py-3 bg-white/5 border border-white/[0.08] rounded-xl text-white font-medium text-sm">
-                  Semester {profile.current_semester} · {profile.regulation}
+                  {profile?.current_semester ? `Semester ${profile.current_semester} · ${profile.regulation}` : 'All Semesters · R22'}
                 </div>
               </div>
               <div>
                 <label className="text-on-surface-variant text-xs font-medium uppercase tracking-wider block mb-2">Subject</label>
                 <SearchableCombobox
-                  value={selectedSubject}
-                  onChange={v => { setSelectedSubject(v); setAnalysis(null) }}
+                  value={selectedSubjectId || ''}
+                  onChange={v => { setSelectedSubjectId(v); setAnalysis(null) }}
                   placeholder="Choose or type a subject (e.g., Java, Data Structures)..."
                   options={subjects.map(s => {
                     return { value: s.id, label: s.name, sublabel: s.code }
@@ -329,19 +320,21 @@ export function Analysis() {
                 />
               </div>
             </div>
-            <motion.button
-              onClick={() => runAnalysis()}
-              disabled={!selectedSubject || loading}
-              className="w-full py-3.5 bg-primary-container hover:brightness-110 rounded-xl font-bold text-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-3 text-on-primary-container"
-              whileHover={shouldReduceMotion || (!selectedSubject || loading) ? {} : { scale: 1.03, boxShadow: '0 0 24px rgba(249,115,22,0.5)' }}
-              whileTap={shouldReduceMotion ? {} : { scale: 0.97 }}
-            >
-              {loading ? (
-                <><div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />Analysing papers…</>
-              ) : (
-                <><span className="material-symbols-outlined text-[18px]">bolt</span>Analyse Papers</>
-              )}
-            </motion.button>
+            <Tooltip content={selectedSubjectId ? "Start AI pattern recognition" : "Select a subject first"} placement="bottom">
+              <motion.button
+                onClick={() => runAnalysis()}
+                disabled={!selectedSubjectId || loading}
+                className="w-full py-3.5 bg-primary-container hover:brightness-110 rounded-xl font-bold text-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-3 text-on-primary-container"
+                whileHover={shouldReduceMotion || (!selectedSubjectId || loading) ? {} : { scale: 1.03, boxShadow: '0 0 24px rgba(249,115,22,0.5)' }}
+                whileTap={shouldReduceMotion ? {} : { scale: 0.97 }}
+              >
+                {loading ? (
+                  <><div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />Analysing papers…</>
+                ) : (
+                  <><span className="material-symbols-outlined text-[18px]">bolt</span>Analyse Papers</>
+                )}
+              </motion.button>
+            </Tooltip>
             {error && (
               <div className="mt-4 px-4 py-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-sm whitespace-pre-line">{error}</div>
             )}
@@ -580,8 +573,8 @@ export function Analysis() {
                         key={item.unit}
                         item={item}
                         rank={item.priority}
-                        subjectId={selectedSubject}
-                        onViewUnit={unit => navigate(`/analysis/${selectedSubject}/unit/${encodeURIComponent(unit)}/questions`)}
+                        subjectId={selectedSubjectId || ''}
+                        onViewUnit={unit => navigate(`/analysis/${selectedSubjectId}/unit/${encodeURIComponent(unit)}/questions`)}
                       />
                     ))}
                   </div>
@@ -667,7 +660,7 @@ export function Analysis() {
                   {/* Hero card */}
                   {subjects[0] && (
                     <div
-                      onClick={() => { setSelectedSubject(subjects[0].id); runAnalysis(subjects[0].id) }}
+                      onClick={() => { setSelectedSubjectId(subjects[0].id) }}
                       className="md:col-span-8 group relative overflow-hidden cursor-pointer rounded-2xl p-xl flex flex-col justify-between min-h-[320px] transition-all"
                       style={{background:'#0f0f0f', border:'1px solid #584237'}}
                       onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor='#ffb690'; (e.currentTarget as HTMLElement).style.background='#161616' }}
@@ -696,7 +689,7 @@ export function Analysis() {
                   {subjects.slice(1, 5).map(subject => (
                     <div
                       key={subject.id}
-                      onClick={() => { setSelectedSubject(subject.id); runAnalysis(subject.id) }}
+                      onClick={() => { setSelectedSubjectId(subject.id) }}
                       className="md:col-span-4 group cursor-pointer rounded-2xl p-xl flex flex-col transition-all"
                       style={{background:'#0f0f0f', border:'1px solid #584237'}}
                       onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor='#ffb690'; (e.currentTarget as HTMLElement).style.background='#161616' }}

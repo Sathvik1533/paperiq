@@ -16,7 +16,6 @@ export function DebugTest() {
       try {
         const collegesData = await getColleges()
         setColleges(collegesData)
-        console.log('✅ Colleges API:', collegesData)
       } catch (e) {
         const err = `❌ Colleges API failed: ${e}`
         errs.push(err)
@@ -44,7 +43,6 @@ export function DebugTest() {
         
         if (error) throw error
         setSemesterSubjects(data || [])
-        console.log('✅ Supabase direct query:', data?.length, 'subjects')
       } catch (e) {
         const err = `❌ Supabase query failed: ${e}`
         errs.push(err)
@@ -54,7 +52,6 @@ export function DebugTest() {
       // Test 4: Get subjects via helper function
       try {
         const semesterData = await getSubjectsForSemester(1, 'R22')
-        console.log('✅ getSubjectsForSemester:', semesterData.length, 'subjects')
       } catch (e) {
         const err = `❌ getSubjectsForSemester failed: ${e}`
         errs.push(err)

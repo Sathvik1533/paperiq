@@ -35,10 +35,17 @@ class Paper(BaseModel):
     max_marks: Optional[int] = None
 
     original_url: Optional[str] = None
+    source_url: Optional[str] = None
+    source_filename: Optional[str] = None
+    download_timestamp: Optional[datetime] = None
+    
     file_name: Optional[str] = None
     file_type: Optional[str] = None
     file_hash: Optional[str] = None
-    storage_path: Optional[str] = None
+    
+    storage_path: Optional[str] = None  # Deprecated in favor of below
+    original_storage_path: Optional[str] = None
+    viewable_storage_path: Optional[str] = None
 
     extraction_status: str = "pending"
     created_at: datetime = Field(default_factory=datetime.utcnow)

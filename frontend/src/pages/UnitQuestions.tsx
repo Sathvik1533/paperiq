@@ -191,16 +191,24 @@ export function UnitQuestions() {
           {/* Header */}
           <div className="mb-xl">
             <h1 className="font-headline text-headline-lg text-on-surface mb-xs">{unitLabel}</h1>
-            <p className="text-on-surface-variant font-body-md">
-              {questions.length} important questions identified from past papers
-            </p>
+            {!error && (
+              <p className="text-on-surface-variant font-body-md">
+                {questions.length} important questions identified from past papers
+              </p>
+            )}
           </div>
 
           {error && (
-            <div className="mb-xl px-4 py-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-sm">{error}</div>
+            <div className="mb-xl px-xl py-lg bg-red-500/10 border border-red-500/30 rounded-2xl text-center">
+              <span className="material-symbols-outlined text-[48px] text-red-400 mb-4 block">error</span>
+              <h3 className="text-headline-sm font-headline text-red-400 mb-2">Network Error</h3>
+              <p className="text-red-400/80 text-body-md">{error}</p>
+            </div>
           )}
 
-          {/* Intelligence summary card */}
+          {!error && (
+            <>
+              {/* Intelligence summary card */}
           <section className="glass-card rounded-2xl p-xl mb-huge">
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-lg">
               {[
@@ -333,6 +341,8 @@ export function UnitQuestions() {
                 ))}
               </div>
             </section>
+          )}
+          </>
           )}
         </div>
       </main>

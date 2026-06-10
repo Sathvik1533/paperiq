@@ -41,13 +41,14 @@ export function AnimatedCard({
       className={`${BASE} ${className} ${onClick ? 'cursor-pointer' : ''}`}
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ type: 'spring', stiffness: 300, damping: 20, delay }}
+      transition={{ type: 'spring', stiffness: 150, damping: 22, delay }}
       whileHover={{
         scale: 1.02,
-        translateY: -3,
+        y: -3,
         boxShadow: '0 0 30px rgba(255,102,0,0.14), 0 4px 30px rgba(0,0,0,0.6)',
       }}
       whileTap={{ scale: 0.99 }}
+      style={{ willChange: 'transform, opacity' }}
       onClick={onClick}
     >
       {children}

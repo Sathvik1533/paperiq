@@ -48,8 +48,7 @@ async def main():
     papers = await scraper.list_papers(
         btech_year=2,
         year_from=2021,
-        year_to=2025,
-        regulation="R22"
+        year_to=2025
     )
     
     print(f"✓ Total archives discovered: {len(papers)}")

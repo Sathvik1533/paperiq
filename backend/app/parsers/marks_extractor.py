@@ -48,3 +48,36 @@ def infer_marks_from_section(section: str, question_number: str) -> Optional[int
     if "part b" in s or "section b" in s:
         return 5
     return None
+
+def extract_dynamic_marks(raw_text: str) -> Optional[float]:
+    """
+    Scans the extracted raw_text of a paper for section markers (Part A, Part B, etc.)
+    and dynamic mark totals (e.g., '10 x 2 = 20' or '5 x 10M = 50Marks').
+    Adds them together to find the true max_evaluation_marks (e.g. 20 + 50 = 70).
+    Falls back to 'Max. Marks: 60' or similar headers if section math is missing.
+    """
+    if not raw_text:
+        return None
+        
+    # Example format: 10 x 2 = 20 or 5 x 10M = 50Marks
+    # We look for equations matching: <number> x <number>[M] = <total>
+    matches = re.findall(r'\d+\s*[xX*]\s*\d+[a-zA-Z]*\s*=\s*(\d+)', raw_text)
+    
+    # We typically expect 2 parts (Part A and Part B).
+    if matches and len(matches) >= 2:
+        try:
+            total = sum(int(m) for m in matches[:2])
+            if total > 0:
+                return float(total)
+        except ValueError:
+            pass
+            
+    # Fallback to header "Max. Marks: 70" or "Max Marks: 60"
+    m = re.search(r'Max\.?\s*Marks:\s*(\d+)', raw_text, re.IGNORECASE)
+    if m:
+        try:
+            return float(m.group(1))
+        except ValueError:
+            pass
+            
+    return None

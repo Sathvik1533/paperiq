@@ -19,7 +19,6 @@
  * One reaction per session per page — never shows twice.
  */
 import { useState, useEffect, useRef } from 'react'
-import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
 
 interface Props {
@@ -77,12 +76,12 @@ export function FeedbackWidget({ page, timedDelayMs = 5 * 60 * 1000 }: Props) {
 
     try {
       setSubmitting(true)
-      await supabase.from('feedback').insert({
-        user_id: user?.id ?? null,
+      const { submitFeedback } = await import('../lib/api')
+      await submitFeedback({
         page,
         rating: r,
-        hours_saved: hours ?? null,
-        trigger: stage, // "timed" or "exit" — useful to know which trigger got more responses
+        hours_saved: hours ?? undefined,
+        trigger: stage,
       })
     } catch {
       // silent — analytics failure should never affect the user experience

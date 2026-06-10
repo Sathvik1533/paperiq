@@ -11,11 +11,23 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { useAuthStore } from '../store/authStore'
 import { Icon } from './Icon'
+import { Tooltip } from './ui/Tooltip'
 import { hoverScale, tapScale, SPRING_SNAPPY } from '../lib/motion'
+
+/** Tooltip descriptions for each nav link */
+const navTooltips: Record<string, string> = {
+  dashboard: 'Your study command center \u2014 subjects, progress, and quick actions',
+  analysis:  'AI-powered exam pattern analysis across 10+ years of papers',
+  papers:    'Browse, search, and download 80+ past exam papers',
+  about:     'The story behind PaperIQ and the developer',
+  profile:   'Your learning goals, preferences, and academic profile',
+  settings:  'Customize your PaperIQ experience',
+  vision:    'The future roadmap of PaperIQ',
+}
 
 interface NavBarProps {
   /** Override which nav item is highlighted (defaults to path detection) */
-  activeTab?: 'dashboard' | 'analysis' | 'papers' | 'about' | 'profile' | 'settings'
+  activeTab?: 'dashboard' | 'analysis' | 'papers' | 'about' | 'profile' | 'settings' | 'vision'
 }
 
 export function NavBar({ activeTab }: NavBarProps) {
@@ -79,21 +91,23 @@ export function NavBar({ activeTab }: NavBarProps) {
       <div className="max-w-[1200px] mx-auto flex justify-between items-center px-base md:px-xl h-20 gap-xl">
         {/* Logo */}
         <div className="flex items-center gap-huge">
-          {shouldReduceMotion ? (
-            <Link to="/" className="font-headline text-headline-md font-bold text-on-surface tracking-tight">
-              Paper<span className="text-primary-container">IQ</span>
-            </Link>
-          ) : (
-            <motion.div
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.96 }}
-              transition={SPRING_SNAPPY}
-            >
-              <Link to="/" className="font-headline text-headline-md font-bold text-on-surface tracking-tight">
+          <Tooltip content="Go to Dashboard" placement="bottom">
+            {shouldReduceMotion ? (
+              <Link to="/dashboard" className="font-headline text-headline-md font-bold text-on-surface tracking-tight">
                 Paper<span className="text-primary-container">IQ</span>
               </Link>
-            </motion.div>
-          )}
+            ) : (
+              <motion.div
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.96 }}
+                transition={SPRING_SNAPPY}
+              >
+                <Link to="/dashboard" className="font-headline text-headline-md font-bold text-on-surface tracking-tight">
+                  Paper<span className="text-primary-container">IQ</span>
+                </Link>
+              </motion.div>
+            )}
+          </Tooltip>
 
           {/* Desktop nav */}
           <nav className="hidden md:flex gap-xl">
@@ -102,32 +116,33 @@ export function NavBar({ activeTab }: NavBarProps) {
               const NavLink = shouldReduceMotion ? Link : motion(Link)
               
               return (
-                <NavLink
-                  key={link.key}
-                  to={link.to}
-                  data-tour={link.tourAttr}
-                  onMouseEnter={() => setHoveredKey(link.key)}
-                  onMouseLeave={() => setHoveredKey(null)}
-                  className={`relative font-body-md text-body-md transition-colors duration-200 pb-1 ${
-                    isBeam
-                      ? 'text-primary-container font-bold'
-                      : 'text-on-surface-variant hover:text-primary-container'
-                  }`}
-                  {...(!shouldReduceMotion && {
-                    whileHover: { scale: 1.03, translateY: -2 },
-                    whileTap: { scale: 0.97 },
-                    transition: SPRING_SNAPPY
-                  })}
-                >
-                  {link.label}
-                  {/* beam — follows hover, snaps back to active route on mouse leave */}
-                  <span
-                    className={`absolute bottom-0 left-0 w-full h-[2px] rounded-full bg-primary-container transition-all duration-200 ${
-                      isBeam ? 'opacity-100 scale-x-100' : 'opacity-0 scale-x-0'
+                <Tooltip key={link.key} content={navTooltips[link.key] ?? link.label} placement="bottom">
+                  <NavLink
+                    to={link.to}
+                    data-tour={link.tourAttr}
+                    onMouseEnter={() => setHoveredKey(link.key)}
+                    onMouseLeave={() => setHoveredKey(null)}
+                    className={`relative font-body-md text-body-md transition-colors duration-200 pb-1 ${
+                      isBeam
+                        ? 'text-primary-container font-bold'
+                        : 'text-on-surface-variant hover:text-primary-container'
                     }`}
-                    style={{ transformOrigin: 'left' }}
-                  />
-                </NavLink>
+                    {...(!shouldReduceMotion && {
+                      whileHover: { scale: 1.03, translateY: -2 },
+                      whileTap: { scale: 0.97 },
+                      transition: SPRING_SNAPPY
+                    })}
+                  >
+                    {link.label}
+                    {/* beam — follows hover, snaps back to active route on mouse leave */}
+                    <span
+                      className={`absolute bottom-0 left-0 w-full h-[2px] rounded-full bg-primary-container transition-all duration-200 ${
+                        isBeam ? 'opacity-100 scale-x-100' : 'opacity-0 scale-x-0'
+                      }`}
+                      style={{ transformOrigin: 'left' }}
+                    />
+                  </NavLink>
+                </Tooltip>
               )
             })}
           </nav>
@@ -146,30 +161,32 @@ export function NavBar({ activeTab }: NavBarProps) {
 
           {/* Search / Command Palette trigger */}
           <div className="relative hidden sm:block">
-            {shouldReduceMotion ? (
-              <button
-                onClick={() => window.dispatchEvent(new Event('cmd-palette:open'))}
-                className="flex items-center gap-sm bg-surface border border-outline-variant rounded-xl pl-3 pr-4 py-2 text-body-sm text-on-surface-variant hover:border-primary-container/60 hover:text-on-surface transition-all w-48 group"
-                aria-label="Search (⌘K)"
-              >
-                <Icon name="search" size={20} />
-                <span className="flex-1 text-left text-on-surface-variant/60">Search…</span>
-                <kbd className="hidden lg:flex items-center gap-[2px] text-[9px] border border-outline-variant rounded px-[4px] py-[1px] font-mono opacity-60 group-hover:opacity-100 transition-opacity">⌘K</kbd>
-              </button>
-            ) : (
-              <motion.button
-                onClick={() => window.dispatchEvent(new Event('cmd-palette:open'))}
-                className="flex items-center gap-sm bg-surface border border-outline-variant rounded-xl pl-3 pr-4 py-2 text-body-sm text-on-surface-variant hover:border-primary-container/60 hover:text-on-surface transition-all w-48 group"
-                aria-label="Search (⌘K)"
-                whileHover={{ scale: 1.02, boxShadow: '0 0 16px rgba(255,102,0,0.10)' }}
-                whileTap={{ scale: 0.97 }}
-                transition={SPRING_SNAPPY}
-              >
-                <Icon name="search" size={20} />
-                <span className="flex-1 text-left text-on-surface-variant/60">Search…</span>
-                <kbd className="hidden lg:flex items-center gap-[2px] text-[9px] border border-outline-variant rounded px-[4px] py-[1px] font-mono opacity-60 group-hover:opacity-100 transition-opacity">⌘K</kbd>
-              </motion.button>
-            )}
+            <Tooltip content="Search papers, subjects, and more (⌘K)" placement="bottom">
+              {shouldReduceMotion ? (
+                <button
+                  onClick={() => window.dispatchEvent(new Event('cmd-palette:open'))}
+                  className="flex items-center gap-sm bg-surface border border-outline-variant rounded-xl pl-3 pr-4 py-2 text-body-sm text-on-surface-variant hover:border-primary-container/60 hover:text-on-surface transition-all w-48 group"
+                  aria-label="Search (⌘K)"
+                >
+                  <Icon name="search" size={20} />
+                  <span className="flex-1 text-left text-on-surface-variant/60">Search…</span>
+                  <kbd className="hidden lg:flex items-center gap-[2px] text-[9px] border border-outline-variant rounded px-[4px] py-[1px] font-mono opacity-60 group-hover:opacity-100 transition-opacity">⌘K</kbd>
+                </button>
+              ) : (
+                <motion.button
+                  onClick={() => window.dispatchEvent(new Event('cmd-palette:open'))}
+                  className="flex items-center gap-sm bg-surface border border-outline-variant rounded-xl pl-3 pr-4 py-2 text-body-sm text-on-surface-variant hover:border-primary-container/60 hover:text-on-surface transition-all w-48 group"
+                  aria-label="Search (⌘K)"
+                  whileHover={{ scale: 1.02, boxShadow: '0 0 16px rgba(255,102,0,0.10)' }}
+                  whileTap={{ scale: 0.97 }}
+                  transition={SPRING_SNAPPY}
+                >
+                  <Icon name="search" size={20} />
+                  <span className="flex-1 text-left text-on-surface-variant/60">Search…</span>
+                  <kbd className="hidden lg:flex items-center gap-[2px] text-[9px] border border-outline-variant rounded px-[4px] py-[1px] font-mono opacity-60 group-hover:opacity-100 transition-opacity">⌘K</kbd>
+                </motion.button>
+              )}
+            </Tooltip>
           </div>
 
           {/* Run New Analysis CTA */}
@@ -199,32 +216,34 @@ export function NavBar({ activeTab }: NavBarProps) {
           {/* Avatar / dropdown — click-controlled, no hover jank */}
           {/* Student placeholder - personal avatar only on About page */}
           <div className="relative" ref={dropdownRef}>
-            {shouldReduceMotion ? (
-              <button
-                onClick={() => setDropdownOpen(o => !o)}
-                className={`w-9 h-9 rounded-full border-2 overflow-hidden bg-neutral-800 flex items-center justify-center text-xs font-mono font-bold text-neutral-400 transition-all ${
-                  dropdownOpen
-                    ? 'border-primary-container shadow-[0_0_16px_rgba(249,115,22,0.4)]'
-                    : 'border-neutral-700 hover:border-primary-container'
-                }`}
-              >
-                {initials}
-              </button>
-            ) : (
-              <motion.button
-                onClick={() => setDropdownOpen(o => !o)}
-                className={`w-9 h-9 rounded-full border-2 overflow-hidden bg-neutral-800 flex items-center justify-center text-xs font-mono font-bold text-neutral-400 transition-all ${
-                  dropdownOpen
-                    ? 'border-primary-container shadow-[0_0_16px_rgba(249,115,22,0.4)]'
-                    : 'border-neutral-700 hover:border-primary-container'
-                }`}
-                whileHover={{ scale: 1.1, boxShadow: '0 0 20px rgba(249,115,22,0.35)' }}
-                whileTap={{ scale: 0.93 }}
-                transition={SPRING_SNAPPY}
-              >
-                {initials}
-              </motion.button>
-            )}
+            <Tooltip content="Your profile & sign out" placement="bottom">
+              {shouldReduceMotion ? (
+                <button
+                  onClick={() => setDropdownOpen(o => !o)}
+                  className={`w-9 h-9 rounded-full border-2 overflow-hidden bg-neutral-800 flex items-center justify-center text-xs font-mono font-bold text-neutral-400 transition-all ${
+                    dropdownOpen
+                      ? 'border-primary-container shadow-[0_0_16px_rgba(249,115,22,0.4)]'
+                      : 'border-neutral-700 hover:border-primary-container'
+                  }`}
+                >
+                  {initials}
+                </button>
+              ) : (
+                <motion.button
+                  onClick={() => setDropdownOpen(o => !o)}
+                  className={`w-9 h-9 rounded-full border-2 overflow-hidden bg-neutral-800 flex items-center justify-center text-xs font-mono font-bold text-neutral-400 transition-all ${
+                    dropdownOpen
+                      ? 'border-primary-container shadow-[0_0_16px_rgba(249,115,22,0.4)]'
+                      : 'border-neutral-700 hover:border-primary-container'
+                  }`}
+                  whileHover={{ scale: 1.1, boxShadow: '0 0 20px rgba(249,115,22,0.35)' }}
+                  whileTap={{ scale: 0.93 }}
+                  transition={SPRING_SNAPPY}
+                >
+                  {initials}
+                </motion.button>
+              )}
+            </Tooltip>
 
             {/* Dropdown — click-triggered, z-[200] over all page content */}
             {dropdownOpen && (

@@ -51,17 +51,26 @@ export const APP_TOUR_STEPS: TourStep[] = [
     target: 'tour-profile-hero',        // <div data-tour="tour-profile-hero"> in Profile.tsx:286
     title: 'Your Academic Profile',
     description: 'Keep your semester and regulation updated here. PaperIQ uses this to pull the right subjects and question papers for you.',
-    position: 'bottom',
+    position: 'right',
     route: '/profile',
     waitMs: 900,
   },
-  // ── NAVBAR (Step 9) ──
+  // ── VISION (Step 9) ──
   {
-    target: 'tour-nav-dashboard',       // <a data-tour="tour-nav-dashboard"> in NavBar.tsx
-    title: 'Navigation',
-    description: 'Use this navigation bar to move between Dashboard, Analysis, Papers, and Profile at any time. You\'re all set!',
+    target: 'tour-vision',              // <section data-tour="tour-vision"> in Vision.tsx
+    title: 'The Road Ahead',
+    description: 'See the future of PaperIQ and our upcoming features designed to make your academic life completely frictionless.',
     position: 'bottom',
-    route: '/dashboard',
-    waitMs: 600,
+    route: '/vision',
+    waitMs: 900,
+  },
+  // ── SETTINGS (Step 10) ──
+  {
+    target: 'tour-settings-display',    // <section data-tour="tour-settings-display"> in Settings.tsx
+    title: 'Customize Your Experience',
+    description: 'Tweak the UI, change themes, or adjust the intelligence settings to match your exact study style.',
+    position: 'top',
+    route: '/settings',
+    waitMs: 900,
   },
 ]

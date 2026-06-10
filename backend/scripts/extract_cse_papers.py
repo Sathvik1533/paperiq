@@ -13,6 +13,7 @@ from dotenv import load_dotenv
 from supabase import create_client
 from app.extractors.extractor_factory import extract
 from app.parsers.question_parser import QuestionParser
+from app.parsers.marks_extractor import extract_dynamic_marks
 
 load_dotenv()
 
@@ -124,6 +125,16 @@ def main():
                 print(f"  ⚠️ No subject found for {subject_code}")
                 continue
             
+            # Extract year from rar_file.name (e.g., Aug-2023.rar -> 2023)
+            year_match = re.search(r'(20\d{2})', rar_file.name)
+            exam_year = int(year_match.group(1)) if year_match else None
+            
+            # Calculate dynamic max evaluation marks
+            dyn_marks = extract_dynamic_marks(doc.raw_text)
+            # Default to 70 for 2023-2025 R22, otherwise 75
+            if dyn_marks is None:
+                dyn_marks = 70.0 if exam_year in (2023, 2024, 2025) else 75.0
+            
             if not papers.data:
                 # Create paper
                 paper_data = {
@@ -132,19 +143,25 @@ def main():
                     "file_type": file_path.suffix[1:],
                     "regulation": "R22",
                     "subject_id": subject_id,
+                    "exam_year": exam_year,
                     "exam_type": "regular",
                     "exam_category": "Unknown",
-                    "extraction_status": "complete"
+                    "extraction_status": "complete",
+                    "max_evaluation_marks": dyn_marks
                 }
                 paper_result = supabase.table("papers").insert(paper_data).execute()
                 paper_id = paper_result.data[0]['id'] if paper_result.data else None
                 papers_added += 1
-                print(f"  ✅ Created paper (subject: {CSE_CODES[subject_code]})")
+                print(f"  ✅ Created paper (subject: {CSE_CODES[subject_code]}, year: {exam_year})")
             else:
                 paper_id = papers.data[0]['id']
-                # Update subject_id if missing
-                supabase.table("papers").update({"subject_id": subject_id}).eq("id", paper_id).execute()
-                print(f"  ✅ Updated existing paper")
+                # Update subject_id, year, and max_evaluation_marks
+                supabase.table("papers").update({
+                    "subject_id": subject_id, 
+                    "exam_year": exam_year,
+                    "max_evaluation_marks": dyn_marks
+                }).eq("id", paper_id).execute()
+                print(f"  ✅ Updated existing paper (year: {exam_year})")
             
             if not paper_id:
                 continue

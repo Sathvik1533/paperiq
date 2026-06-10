@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, BackgroundTasks
-from typing import Optional
+from pydantic import BaseModel
+from typing import List, Optional
 from app.jobs.parse_job import run_parse_job
 from app.parsers.question_store import get_questions_for_paper, get_questions_for_subject
 from app.parsers.question_parser import QuestionParser
@@ -98,6 +99,26 @@ async def list_questions(
         "data": data,
         "meta": {"total": len(data)}
     }
+
+
+class BatchQuestionsRequest(BaseModel):
+    paper_ids: List[str]
+
+
+@router.post("/questions/batch")
+async def batch_questions(req: BatchQuestionsRequest):
+    """Get questions for multiple papers in one call."""
+    db = get_db()
+    try:
+        result = db.table("questions").select("*").in_("paper_id", req.paper_ids).execute()
+        return {
+            "success": True,
+            "data": result.data or [],
+            "meta": {"total": len(result.data or [])}
+        }
+    except Exception as e:
+        log.error(f"Failed to fetch batch questions: {e}")
+        raise HTTPException(500, f"Failed to fetch questions: {e}")
 
 
 @router.get("/questions/{question_id}")

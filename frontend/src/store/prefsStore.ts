@@ -85,6 +85,8 @@ export const usePrefsStore = create<PrefsStore>((set) => ({
         topicSensitivity:  intel.topicSensitivity     ?? DEFAULT_PREFS.topicSensitivity,
         theme:             display.theme              ?? DEFAULT_PREFS.theme,
         defaultLandingPage: landingMap[navigation.defaultLandingPage] ?? DEFAULT_PREFS.defaultLandingPage,
+        dashboardView:     display.dashboardView      ?? DEFAULT_PREFS.dashboardView,
+        analysisLayout:    display.analysisLayout     ?? DEFAULT_PREFS.analysisLayout,
       },
     })
   },

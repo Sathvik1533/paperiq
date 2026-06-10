@@ -2,7 +2,7 @@ import asyncio
 from datetime import datetime
 from typing import Dict, Optional
 from app.models.job import ScrapingJob, JobStatus, JobStage
-from app.database import get_db
+from app.database import get_admin_db
 from app.logger import get_logger
 
 log = get_logger(__name__)
@@ -70,7 +70,7 @@ def fail_job(job_id: str, error: str) -> None:
 def _persist_job(job: ScrapingJob) -> None:
     """Fire-and-forget DB upsert."""
     try:
-        db = get_db()
+        db = get_admin_db()
         db.table("scraping_jobs").upsert({
             "id": job.id,
             "user_id": job.user_id,

@@ -11,7 +11,7 @@ POST /topics/map            — map questions→syllabus topics (Gap #7)
 from typing import Optional
 from fastapi import APIRouter, HTTPException, BackgroundTasks, Query
 from pydantic import BaseModel
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 from app.database import get_db
 from app.jobs.analysis_job import run_analysis_job
@@ -21,6 +21,9 @@ from app.logger import get_logger
 
 log = get_logger(__name__)
 router = APIRouter()
+
+# Global job store (In-memory for basic tracking, replace with Redis for scale)
+_job_store = {}
 
 # ---------------------------------------------------------------------------
 # Request / Response models
@@ -53,10 +56,41 @@ class RunAnalysisResponse(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# In-memory job tracker (report_id → status/result)
-# For production, this would live in Redis or the DB.
+# Supabase-backed caching (persists across restarts)
 # ---------------------------------------------------------------------------
-_job_store: dict[str, dict] = {}
+from app.database import get_admin_db
+
+def _get_cache_key(kwargs: dict) -> str:
+    return "|".join(f"{k}:{v}" for k, v in sorted(kwargs.items()) if v is not None)
+
+async def _get_from_cache(key: str) -> Optional[dict]:
+    try:
+        db = get_admin_db()
+        result = db.table("analysis_cache").select("data, expires_at").eq("cache_key", key).single().execute()
+        if result.data:
+            expires_at = result.data["expires_at"]
+            if datetime.now(timezone.utc) < datetime.fromisoformat(expires_at):
+                return result.data["data"]
+            else:
+                # Expired, delete it
+                db.table("analysis_cache").delete().eq("cache_key", key).execute()
+        return None
+    except Exception as e:
+        log.warning(f"Cache read failed: {e}")
+        return None
+
+async def _set_to_cache(key: str, val: dict, ttl_seconds: int = 3600):
+    try:
+        db = get_admin_db()
+        expires_at = (datetime.now(timezone.utc) + timedelta(seconds=ttl_seconds)).isoformat()
+        db.table("analysis_cache").upsert({
+            "cache_key": key,
+            "data": val,
+            "expires_at": expires_at
+        }).execute()
+    except Exception as e:
+        log.warning(f"Cache write failed: {e}")
+
 
 
 # ---------------------------------------------------------------------------
@@ -84,8 +118,26 @@ async def generate_analysis(req: RunAnalysisRequest):
         )
         return {"success": True, "data": report}
     except Exception as e:
-        log.error(f"Analysis generation failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        log.warning(f"Database anomaly in Analysis generation: {e}")
+        # Return a structured fallback schema so frontend stays completely active
+        return {
+            "success": False,
+            "error": str(e),
+            "data": {
+                "unit_distribution_classified": {},
+                "most_asked_topics": [],
+                "high_probability_topics_classified": [],
+                "study_priority_order": [],
+                "repeated_questions": [],
+                "question_count": 0,
+                "coverage_analysis": {
+                    "classification_coverage": 0,
+                    "total_questions": 0,
+                    "classified_questions": 0
+                },
+                "marks_distribution": None
+            }
+        }
 
 
 @router.post("/analysis/run", response_model=RunAnalysisResponse, status_code=202)
@@ -144,7 +196,7 @@ async def run_simple_analysis(req: SimplifiedAnalysisRequest, background_tasks: 
     # Fetch user profile
     try:
         profile_result = db.table("user_profiles").select(
-            "college_id, branch_id, regulation"
+            "college_id, branch_id, regulation, current_cgpa, target_cgpa, study_hours_per_day, preparation_level"
         ).eq("id", req.user_id).single().execute()
         
         if not profile_result.data:
@@ -182,6 +234,7 @@ async def run_simple_analysis(req: SimplifiedAnalysisRequest, background_tasks: 
                 year_to=year_to,
                 exam_category=req.exam_category,
                 exam_attempt=req.exam_attempt,
+                user_profile=profile
             )
             actual_id = report.get("id", report_id)
             _job_store[report_id] = {"status": "ready", "report": report, "actual_id": actual_id}
@@ -206,6 +259,22 @@ async def get_cached_report(
     """
     Returns the most recent non-expired cached report matching the params.
     """
+    # Check memory cache first
+    cache_key = _get_cache_key({
+        "subject_id": subject_id,
+        "regulation": regulation,
+        "branch_id": branch_id,
+        "year_from": year_from,
+        "year_to": year_to,
+        "exam_category": exam_category,
+        "exam_attempt": exam_attempt
+    })
+    
+    mem_cached = _get_from_cache(cache_key)
+    if mem_cached:
+        log.info("Returned analysis from memory cache")
+        return mem_cached
+
     db = get_db()
     now_iso = datetime.now(timezone.utc).isoformat()
 
@@ -235,7 +304,9 @@ async def get_cached_report(
     if not rows:
         raise HTTPException(status_code=404, detail="No cached report found")
 
-    return rows[0].get("report_data") or rows[0]
+    report = rows[0].get("report_data") or rows[0]
+    _set_to_cache(cache_key, report, ttl_seconds=3600)
+    return report
 
 
 @router.get("/analysis/{report_id}/status")

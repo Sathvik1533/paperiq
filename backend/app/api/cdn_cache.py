@@ -197,7 +197,7 @@ def _generate_and_upload_pdf_sync(paper_id: str, paper_data: dict, subject_name:
 
 
 @router.post("/papers/{paper_id}/cache")
-async def cache_paper_to_cdn(paper_id: str, background_tasks: BackgroundTasks):
+async def cache_paper_to_cdn(paper_id: str, background_tasks: BackgroundTasks = None):
     """
     Pre-generate PDF and cache to Supabase Storage CDN.
     
@@ -306,7 +306,7 @@ async def cache_all_papers(background_tasks: BackgroundTasks, limit: int = 100):
     
     # Queue caching jobs in background
     for paper_id in paper_ids:
-        background_tasks.add_task(cache_paper_to_cdn, paper_id, background_tasks)
+        background_tasks.add_task(cache_paper_to_cdn, paper_id)
     
     return {
         'success': True,
