@@ -26,8 +26,9 @@ COPY --from=deps /usr/local/bin /usr/local/bin
 
 # Copy application code
 COPY app/ ./app/
+COPY gunicorn.conf.py .
 
 EXPOSE 8000
 
-# Production: 4 workers handles ~200 concurrent users comfortably
-CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers ${WEB_CONCURRENCY:-4}"]
+# Production: Gunicorn with Uvicorn workers for max concurrency
+CMD ["sh", "-c", "gunicorn app.main:app --config gunicorn.conf.py --bind 0.0.0.0:${PORT:-8000}"]
