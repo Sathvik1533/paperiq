@@ -276,13 +276,17 @@ async def get_user_subjects(user_id: str):
 
 class ProfileUpdateRequest(BaseModel):
     full_name: Optional[str] = None
+    college_id: Optional[str] = None
+    branch_id: Optional[str] = None
     regulation: Optional[str] = None
+    current_year: Optional[int] = None
     current_semester: Optional[int] = None
     current_cgpa: Optional[float] = None
     target_cgpa: Optional[float] = None
     study_hours_per_day: Optional[float] = None
     preparation_level: Optional[str] = None
     has_completed_tour: Optional[bool] = None
+    onboarding_complete: Optional[bool] = None
 
 
 @router.put("/profile/{user_id}")
