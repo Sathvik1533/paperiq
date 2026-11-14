@@ -15,7 +15,9 @@ class Settings(BaseSettings):
     secret_key: str = ""  # REQUIRED: Set in production via SECRET_KEY env var
     api_version: str = "v1"
     log_level: str = "INFO"
-    cors_origins: str = "http://localhost:5173,http://localhost:3000"
+    cors_origins: str = "http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173,http://127.0.0.1:3000"
+    redis_url: str = ""  # Shared rate-limiting & cache storage URI (e.g. redis://...)
+    trusted_proxies: str = "127.0.0.1,::1,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
 
     # Supabase
     supabase_url: str = ""
@@ -29,11 +31,12 @@ class Settings(BaseSettings):
     llm_failover_cooldown_seconds: int = 60
     llm_request_timeout_seconds: int = 30
 
-    # Groq
+    # Groq (Supported production models)
     groq_api_key: str = ""
-    groq_model_fast: str = "llama-3.1-8b-instant"
-    groq_model_medium: str = "llama-3.3-70b-versatile"
-    groq_model_reasoning: str = "deepseek-r1-distill-llama-70b"
+    groq_model: str = "openai/gpt-oss-120b"
+    groq_model_fast: str = "openai/gpt-oss-20b"
+    groq_model_medium: str = "openai/gpt-oss-120b"
+    groq_model_reasoning: str = "openai/gpt-oss-120b"
 
     # OpenRouter
     openrouter_api_key: str = ""

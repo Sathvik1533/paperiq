@@ -3,10 +3,13 @@ Marks Distribution Analysis API
 
 Provides breakdown of questions by marks range (1-2, 3-5, 6-10, 11+)
 for better exam preparation planning.
+Protected by user authentication, resource ownership verification, and rate limiting.
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends, Request
 from app.database import get_db
+from app.auth import get_current_user_id, verify_resource_access
+from app.limiter import limiter
 from app.logger import get_logger
 
 router = APIRouter()
@@ -14,9 +17,15 @@ log = get_logger(__name__)
 
 
 @router.get("/analysis/{analysis_id}/marks-breakdown")
-async def get_marks_breakdown(analysis_id: str):
+@limiter.limit("20/minute")
+async def get_marks_breakdown(
+    request: Request,
+    analysis_id: str,
+    user_id: str = Depends(get_current_user_id),
+):
     """
     Get question distribution by marks ranges.
+    Requires authentication. Verifies report ownership.
     
     Returns breakdown of questions into:
     - 1-2 marks: Short answer questions
@@ -27,23 +36,29 @@ async def get_marks_breakdown(analysis_id: str):
     db = get_db()
     
     try:
-        # Get analysis metadata
+        # Get analysis metadata including user ownership and cached flag
         analysis = db.table('analysis_reports').select(
-            'subject_id, regulation, exam_category'
-        ).eq('id', analysis_id).single().execute()
+            'subject_id, regulation, exam_category, user_id, is_cached'
+        ).eq('id', analysis_id).limit(1).execute()
         
-        if not analysis.data:
+        rows = analysis.data or []
+        if not rows:
             raise HTTPException(status_code=404, detail="Analysis not found")
         
-        subject_id = analysis.data['subject_id']
-        regulation = analysis.data['regulation']
+        row = rows[0]
+        report_owner = row.get('user_id')
+        is_public = bool(row.get('is_cached') or row.get('is_public') or row.get('is_system'))
+        verify_resource_access(report_owner, user_id, is_public=is_public, resource_type="analysis report")
+        
+        subject_id = row['subject_id']
+        regulation = row['regulation']
         
         # Get all questions for this subject + regulation
         questions_query = db.table('questions').select('marks').eq('regulation', regulation)
         
         # Join with papers to filter by subject
         papers = db.table('papers').select('id').eq('subject_id', subject_id).eq('regulation', regulation).execute()
-        paper_ids = [p['id'] for p in papers.data]
+        paper_ids = [p['id'] for p in (papers.data or [])]
         
         if not paper_ids:
             return {
@@ -65,7 +80,7 @@ async def get_marks_breakdown(analysis_id: str):
             '11+': 0     # Very long (BTL6 - Create, Essay)
         }
         
-        for q in questions.data:
+        for q in (questions.data or []):
             marks = q.get('marks')
             if marks is None:
                 continue
@@ -139,7 +154,8 @@ async def get_marks_breakdown(analysis_id: str):
                 }
             }
         }
-        
+    except HTTPException:
+        raise
     except Exception as e:
         log.error(f"Error fetching marks breakdown: {e}")
         raise HTTPException(status_code=500, detail=str(e))

@@ -10,12 +10,14 @@ GET /r22/subjects  — list all R22 subjects (both 2-1 and 2-2)
 GET /r22/status/{subject_code}  — papers and questions found so far
 """
 import asyncio
-from fastapi import APIRouter, HTTPException, BackgroundTasks
+from fastapi import APIRouter, HTTPException, BackgroundTasks, Request, Depends
 from pydantic import BaseModel
 from typing import Optional
 
 from app.scrapers.colleges.mlrit_r22 import R22_SUBJECTS
 from app.database import get_db
+from app.auth import get_current_user_id, verify_resource_access
+from app.limiter import limiter
 from app.logger import get_logger
 
 router = APIRouter()
@@ -96,7 +98,13 @@ async def get_r22_subject(subject_code: str):
 
 
 @router.post("/r22/analyze")
-async def analyze_r22_subject(req: AnalyzeRequest, background_tasks: BackgroundTasks):
+@limiter.limit("5/minute")
+async def analyze_r22_subject(
+    request: Request,
+    req: AnalyzeRequest,
+    background_tasks: BackgroundTasks,
+    user_id: str = Depends(get_current_user_id),
+):
     """
     Full auto-pipeline for one R22 2-2 subject.
 
@@ -118,6 +126,7 @@ async def analyze_r22_subject(req: AnalyzeRequest, background_tasks: BackgroundT
     job = create_job(
         college_id=MLRIT_COLLEGE_ID,
         subject_id=None,
+        user_id=user_id,
     )
 
     async def _run_pipeline():
@@ -161,6 +170,7 @@ async def analyze_r22_subject(req: AnalyzeRequest, background_tasks: BackgroundT
                 regulation="R22",
                 year_from=req.year_from,
                 year_to=req.year_to,
+                user_id=user_id,
             )
 
             complete_job(
@@ -194,17 +204,25 @@ async def analyze_r22_subject(req: AnalyzeRequest, background_tasks: BackgroundT
 
 
 @router.get("/r22/job/{job_id}")
-async def get_r22_job_status(job_id: str):
-    """Poll job status. When status=completed, check error_log[0].report_id for the analysis."""
+async def get_r22_job_status(
+    job_id: str,
+    user_id: str = Depends(get_current_user_id),
+):
+    """Poll job status. Requires authentication and verifies ownership."""
     from app.jobs.job_manager import get_job
 
     job = get_job(job_id)
     if not job:
         db = get_db()
-        result = db.table("scraping_jobs").select("*").eq("id", job_id).single().execute()
-        if not result.data:
+        result = db.table("scraping_jobs").select("*").eq("id", job_id).limit(1).execute()
+        rows = result.data or []
+        if not rows:
             raise HTTPException(404, "Job not found")
-        return {"success": True, "data": result.data}
+        job_owner = rows[0].get("user_id")
+        verify_resource_access(job_owner, user_id, is_public=False, resource_type="analysis job")
+        return {"success": True, "data": rows[0]}
+
+    verify_resource_access(job.user_id, user_id, is_public=False, resource_type="analysis job")
 
     report_id = None
     if job.error_log:

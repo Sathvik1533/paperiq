@@ -15,16 +15,32 @@ This script updates the exam_date column in the papers table.
 import os
 import re
 import sys
+import argparse
 from datetime import date
 from typing import Optional
 
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from supabase import create_client
-from app.config import SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
+from app.database import get_db
+from app.config import settings
 
-supabase = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+def _get_client():
+    if not settings.supabase_url or not settings.supabase_service_key:
+        return None
+    try:
+        return get_db()
+    except Exception:
+        return None
+
+class _LazySupabase:
+    def __getattr__(self, name):
+        client = _get_client()
+        if not client:
+            raise RuntimeError("Supabase not configured or available")
+        return getattr(client, name)
+
+supabase = _LazySupabase()
 
 
 def extract_year_from_filename(filename: str) -> Optional[int]:
@@ -192,14 +208,65 @@ def verify_backfill():
             print(f"   • {paper['file_name'][:50]:50s} → {paper['exam_date']}")
 
 
-if __name__ == '__main__':
-    print("="*60)
+def run_dry_run_demo():
+    """Runs dry-run estimation demo without requiring active Supabase connection."""
+    test_cases = [
+        ("R22_CSE_2023_Semester_DataStructures.pdf", "R22", "Semester", 2),
+        ("MLRIT_2021_Mid1_OS.docx", "R20", "Mid-1", 3),
+        ("A6CS09_OperatingSystems.pdf", "R22", "Mid-2", 4),
+        ("DiscreteMath_Final.pdf", "R18", "Semester", 1),
+    ]
+    print("\n🔍 Executing Dry-Run Date Estimation Demo:")
+    for filename, reg, cat, sem in test_cases:
+        est = estimate_exam_date(filename, reg, cat, sem)
+        print(f"  • {filename} ({reg}, {cat}, S{sem}) -> {est}")
+    print("\n✅ Dry run completed successfully (0 database writes performed).")
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(
+        description="Backfill exam_date field for PaperIQ papers based on filename patterns and metadata."
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Simulate date estimation without mutating papers table in database.",
+    )
+    parser.add_argument(
+        "--batch-size",
+        type=int,
+        default=100,
+        help="Number of records to process per batch (default: 100).",
+    )
+    args = parser.parse_args(argv)
+
+    print("=" * 60)
     print("🚀 Backfilling Exam Dates for Papers")
-    print("="*60)
-    
+    print(f"   Mode: {'DRY RUN' if args.dry_run else 'LIVE PRODUCTION'}")
+    print(f"   Batch Size: {args.batch_size}")
+    print("=" * 60)
+
+    client = _get_client()
+    if not client:
+        if args.dry_run:
+            print("⚠️ Supabase not configured in environment. Running local dry-run demonstration.")
+            run_dry_run_demo()
+            return 0
+        else:
+            print("\n❌ Supabase not configured or available. Set SUPABASE_URL and SUPABASE_SERVICE_KEY, or run with --dry-run.")
+            return 1
+
     try:
-        backfill_exam_dates()
-        verify_backfill()
+        if args.dry_run:
+            run_dry_run_demo()
+        else:
+            backfill_exam_dates()
+            verify_backfill()
+        return 0
     except Exception as e:
         print(f"\n❌ Fatal error: {e}")
-        sys.exit(1)
+        return 1
+
+
+if __name__ == '__main__':
+    sys.exit(main())

@@ -17,10 +17,11 @@ import uuid
 from typing import Optional
 from datetime import datetime
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Depends
 from pydantic import BaseModel
 
 from app.database import get_db
+from app.auth import get_current_user_id, verify_user_ownership, verify_resource_access
 from app.planner.priority_ranker import PriorityRanker
 from app.planner.schedule_builder import ScheduleBuilder
 from app.planner.mock_generator import MockExamGenerator
@@ -71,8 +72,8 @@ class LogActivityRequest(BaseModel):
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _fetch_report(report_id: str, regulation: str) -> dict:
-    """Fetch an analysis_report from DB and enforce regulation match."""
+def _fetch_report(report_id: str, regulation: str, authenticated_user_id: Optional[str] = None) -> dict:
+    """Fetch an analysis_report from DB, enforce resource existence, regulation match, and user ownership."""
     db = get_db()
     result = (
         db.table("analysis_reports")
@@ -86,6 +87,13 @@ def _fetch_report(report_id: str, regulation: str) -> dict:
         raise HTTPException(status_code=404, detail=f"Analysis report '{report_id}' not found")
 
     row = rows[0]
+    report_owner = row.get("user_id")
+    if not report_owner and isinstance(row.get("report_data"), dict):
+        report_owner = row["report_data"].get("user_id")
+
+    is_public = bool(row.get("is_cached") or row.get("is_public") or row.get("is_system"))
+    verify_resource_access(report_owner, authenticated_user_id, is_public=is_public, resource_type="analysis report")
+
     report = row.get("report_data") or row
 
     # Regulation safety gate
@@ -103,13 +111,52 @@ def _fetch_report(report_id: str, regulation: str) -> dict:
 # Study Plan endpoints
 # ---------------------------------------------------------------------------
 
+@router.get("/planner/progress")
+async def get_planner_progress(
+    user_id: str = Depends(get_current_user_id),
+    subject_id: Optional[str] = Query(None),
+    regulation: Optional[str] = Query(None),
+):
+    """
+    Returns study planner progress for the authenticated user.
+    Requires valid authentication.
+    """
+    try:
+        db = get_db()
+        query = db.table("study_plans").select("*").eq("user_id", user_id).order("created_at", desc=True)
+        if subject_id:
+            query = query.eq("subject_id", subject_id)
+        if regulation:
+            query = query.eq("regulation", regulation)
+
+        result = query.limit(5).execute()
+        plans = result.data or []
+    except Exception as e:
+        log.warning(f"Failed to fetch study plans for progress: {e}")
+        plans = []
+
+    return {
+        "success": True,
+        "data": {
+            "user_id": user_id,
+            "total_plans": len(plans),
+            "active_plan": plans[0] if plans else None,
+            "recent_plans": plans,
+        }
+    }
+
+
 @router.post("/planner/generate", status_code=201)
-async def generate_plan(req: GeneratePlanRequest):
+async def generate_plan(
+    req: GeneratePlanRequest,
+    user_id: str = Depends(get_current_user_id),
+):
     """
     Generate a personalised study plan from an analysis report.
     The report must belong to the same regulation as the request.
+    Requires authentication.
     """
-    report = _fetch_report(req.report_id, req.regulation)
+    report = _fetch_report(req.report_id, req.regulation, authenticated_user_id=user_id)
 
     ranker = PriorityRanker()
     priority_map = ranker.rank_topics(report, req.preparation_level)
@@ -122,6 +169,7 @@ async def generate_plan(req: GeneratePlanRequest):
 
     plan_record = {
         "id": plan_id,
+        "user_id": user_id,
         "subject_id": req.subject_id,
         "regulation": req.regulation,
         "syllabus_id": req.syllabus_id,
@@ -158,13 +206,28 @@ async def generate_plan(req: GeneratePlanRequest):
 
 
 @router.get("/planner/{plan_id}")
-async def get_plan(plan_id: str):
-    db = get_db()
-    result = db.table("study_plans").select("*").eq("id", plan_id).limit(1).execute()
-    rows = result.data or []
+async def get_plan(
+    plan_id: str,
+    user_id: str = Depends(get_current_user_id),
+):
+    """Fetch a stored study plan. Requires authentication."""
+    try:
+        db = get_db()
+        result = db.table("study_plans").select("*").eq("id", plan_id).limit(1).execute()
+        rows = result.data or []
+    except Exception as e:
+        log.warning(f"Error querying study plan '{plan_id}': {e}")
+        rows = []
+
     if not rows:
         raise HTTPException(status_code=404, detail="Study plan not found")
-    return rows[0]
+
+    plan = rows[0]
+    owner = plan.get("user_id")
+    is_public = bool(plan.get("is_public") or plan.get("is_system"))
+    verify_resource_access(owner, user_id, is_public=is_public, resource_type="study plan")
+
+    return plan
 
 
 # ---------------------------------------------------------------------------
@@ -172,7 +235,11 @@ async def get_plan(plan_id: str):
 # ---------------------------------------------------------------------------
 
 @router.post("/readiness/calculate", status_code=201)
-async def calculate_readiness(req: ReadinessRequest):
+async def calculate_readiness(
+    req: ReadinessRequest,
+    user_id: str = Depends(get_current_user_id),
+):
+    verify_user_ownership(req.user_id, user_id)
     scorer = ReadinessScorer()
     result = scorer.score(
         user_id=req.user_id,
@@ -210,19 +277,26 @@ async def get_readiness(
     subject_id: str = Query(...),
     regulation: str = Query(...),
     user_id: str = Query(...),
+    authenticated_user_id: str = Depends(get_current_user_id),
 ):
-    db = get_db()
-    result = (
-        db.table("readiness_scores")
-        .select("*")
-        .eq("subject_id", subject_id)
-        .eq("regulation", regulation)
-        .eq("user_id", user_id)
-        .order("calculated_at", desc=True)
-        .limit(1)
-        .execute()
-    )
-    rows = result.data or []
+    verify_user_ownership(user_id, authenticated_user_id)
+    try:
+        db = get_db()
+        result = (
+            db.table("readiness_scores")
+            .select("*")
+            .eq("subject_id", subject_id)
+            .eq("regulation", regulation)
+            .eq("user_id", user_id)
+            .order("calculated_at", desc=True)
+            .limit(1)
+            .execute()
+        )
+        rows = result.data or []
+    except Exception as e:
+        log.warning(f"Error querying readiness score: {e}")
+        rows = []
+
     if not rows:
         raise HTTPException(status_code=404, detail="No readiness score found")
     return rows[0]
@@ -233,8 +307,11 @@ async def get_readiness(
 # ---------------------------------------------------------------------------
 
 @router.post("/mock/generate", status_code=201)
-async def generate_mock(req: MockGenerateRequest):
-    report = _fetch_report(req.report_id, req.regulation)
+async def generate_mock(
+    req: MockGenerateRequest,
+    user_id: str = Depends(get_current_user_id),
+):
+    report = _fetch_report(req.report_id, req.regulation, authenticated_user_id=user_id)
 
     generator = MockExamGenerator()
     try:
@@ -245,6 +322,7 @@ async def generate_mock(req: MockGenerateRequest):
     now = datetime.utcnow().isoformat()
     record = {
         "id": mock["mock_id"],
+        "user_id": user_id,
         "subject_id": req.subject_id,
         "regulation": req.regulation,
         "report_id": req.report_id,
@@ -263,6 +341,7 @@ async def generate_mock(req: MockGenerateRequest):
 
     return {
         "mock_id": mock["mock_id"],
+        "user_id": user_id,
         "questions": mock["questions"],
         "total_marks": mock["total_marks"],
         "part_a_count": mock["part_a_count"],
@@ -271,13 +350,27 @@ async def generate_mock(req: MockGenerateRequest):
 
 
 @router.get("/mock/{mock_id}")
-async def get_mock(mock_id: str):
-    db = get_db()
-    result = db.table("mock_exams").select("*").eq("id", mock_id).limit(1).execute()
-    rows = result.data or []
+async def get_mock(
+    mock_id: str,
+    user_id: str = Depends(get_current_user_id),
+):
+    try:
+        db = get_db()
+        result = db.table("mock_exams").select("*").eq("id", mock_id).limit(1).execute()
+        rows = result.data or []
+    except Exception as e:
+        log.warning(f"Error querying mock exam '{mock_id}': {e}")
+        rows = []
+
     if not rows:
         raise HTTPException(status_code=404, detail="Mock exam not found")
-    return rows[0]
+
+    mock = rows[0]
+    mock_owner = mock.get("user_id")
+    is_public = bool(mock.get("is_public") or mock.get("is_system") or mock.get("generated_by") == "system")
+    verify_resource_access(mock_owner, user_id, is_public=is_public, resource_type="mock exam")
+
+    return mock
 
 
 # ---------------------------------------------------------------------------
@@ -285,7 +378,11 @@ async def get_mock(mock_id: str):
 # ---------------------------------------------------------------------------
 
 @router.post("/activity", status_code=201)
-async def log_activity(req: LogActivityRequest):
+async def log_activity(
+    req: LogActivityRequest,
+    user_id: str = Depends(get_current_user_id),
+):
+    verify_user_ownership(req.user_id, user_id)
     activity_id = str(uuid.uuid4())
     now = datetime.utcnow().isoformat()
 
@@ -314,7 +411,9 @@ async def get_activity_summary(
     subject_id: str = Query(...),
     regulation: str = Query(...),
     user_id: str = Query(...),
+    authenticated_user_id: str = Depends(get_current_user_id),
 ):
+    verify_user_ownership(user_id, authenticated_user_id)
     try:
         db = get_db()
         result = (

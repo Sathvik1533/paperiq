@@ -1,9 +1,8 @@
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
+from app.limiter import limiter
 import sentry_sdk
 from jose import JWTError
 import uuid
@@ -12,15 +11,12 @@ from app.logger import get_logger, correlation_id
 from app.database import auth_token, get_admin_db, _verified_user_id
 from .auth.jwt_verifier import verify_supabase_jwt
 from .errors import register_error_handlers
-from .api import health, colleges, scrape, papers, extract, questions, analysis, planner, profile, admin, onboarding, marks_analysis, r22, cdn_cache, download, vision_vote, cross_reference, stats, feedback
+from .api import health, colleges, scrape, papers, extract, questions, analysis, planner, profile, admin, onboarding, marks_analysis, r22, cdn_cache, download, vision_vote, cross_reference, stats, feedback, companion
 
 log = get_logger(__name__)
 
 # Public paths that do not require authentication
 PUBLIC_PATHS = {"/api/v1/health", "/api/v1/health/detailed", "/api/v1/stats", "/api/v1/feedback", "/docs", "/redoc", "/openapi.json"}
-
-# Rate limiting
-limiter = Limiter(key_func=get_remote_address)
 
 sentry_sample_rate = 0.1 if settings.is_production else 1.0
 sentry_sdk.init(
@@ -40,7 +36,31 @@ app = FastAPI(
 app.state.limiter = limiter
 
 register_error_handlers(app)
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+
+def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded) -> JSONResponse:
+    """Consistent rate-limit response matching PaperIQ error contract."""
+    msg = f"Rate limit exceeded: {exc.detail}"
+    response = JSONResponse(
+        status_code=429,
+        content={
+            "success": False,
+            "error": {
+                "code": "HTTP_429",
+                "message": msg,
+            },
+            "detail": msg,
+            "request_id": getattr(request.state, "request_id", None),
+        },
+    )
+    if hasattr(request.app.state, "limiter") and hasattr(request.state, "view_rate_limit"):
+        response = request.app.state.limiter._inject_headers(
+            response, request.state.view_rate_limit
+        )
+    return response
+
+
+app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
 
 @app.middleware("http")
 async def correlation_id_middleware(request: Request, call_next):
@@ -58,6 +78,7 @@ async def _verify_and_set_auth(request: Request) -> None:
     if not auth_header or not auth_header.startswith("Bearer "):
         auth_token.set(None)
         _verified_user_id.set(None)
+        request.state.user_id = None
         return
 
     token = auth_header.split(" ")[1]
@@ -69,10 +90,12 @@ async def _verify_and_set_auth(request: Request) -> None:
         if not user_id:
             raise JWTError("Token missing 'sub' claim")
         _verified_user_id.set(user_id)
+        request.state.user_id = user_id
     except (JWTError, RuntimeError) as e:
         log.warning(f"JWT verification failed: {e}")
         auth_token.set(None)
         _verified_user_id.set(None)
+        request.state.user_id = None
 
 
 import asyncio
@@ -167,6 +190,7 @@ app.include_router(vision_vote.router, prefix=PREFIX, tags=["Vision"])
 app.include_router(cross_reference.router, prefix=PREFIX, tags=["Analysis"])
 app.include_router(stats.router,    prefix=PREFIX, tags=["System"])
 app.include_router(feedback.router, prefix=PREFIX, tags=["Feedback"])
+app.include_router(companion.router, prefix=PREFIX, tags=["Companion"])
 
 @app.on_event("startup")
 async def startup():

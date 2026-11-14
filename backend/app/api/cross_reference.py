@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, UploadFile, File, Form
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form, Request, Depends
 from typing import Optional
 import os
 import json
@@ -7,6 +7,8 @@ import tempfile
 
 from app.database import get_db
 from app.logger import get_logger
+from app.auth import get_current_user_id
+from app.limiter import limiter
 from app.llm.provider_factory import get_llm_router
 from app.llm.base import TaskType
 from app.utils.upload_validation import validate_upload_magic, validate_upload_size, CROSS_REFERENCE_MIME, MAX_CROSS_REFERENCE_SIZE
@@ -42,9 +44,12 @@ def extract_text_from_upload(file_path: str, filename: str) -> str:
     return text
 
 @router.post("/analysis/{subject_id}/cross-reference")
+@limiter.limit("5/minute")
 async def cross_reference_faculty_notes(
+    request: Request,
     subject_id: str,
     file: UploadFile = File(...),
+    user_id: str = Depends(get_current_user_id),
 ):
     db = get_db()
     

@@ -10,11 +10,8 @@ export function SmoothScroll({ children }: SmoothScrollProps) {
     const lenis = new Lenis({
       duration: 1.8,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), // High-fidelity easing
-      direction: 'vertical', // vertical, horizontal
-      gestureDirection: 'vertical', // vertical, horizontal, both
-      smooth: true,
-      mouseMultiplier: 0.6,
-      smoothTouch: false,
+      orientation: 'vertical',
+      gestureOrientation: 'vertical',
       touchMultiplier: 1.5,
       infinite: false,
     })

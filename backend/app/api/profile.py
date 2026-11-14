@@ -11,13 +11,16 @@ from app.logger import get_logger
 router = APIRouter()
 log = get_logger(__name__)
 
-def verify_user_access(requested_user_id: str):
+def verify_user_access(requested_user_id: str) -> str:
     """Enforce strict authentication to prevent race conditions and spoofing."""
     verified_id = _verified_user_id.get()
     if not verified_id:
         raise HTTPException(401, "Authentication required: Invalid or expired token")
+    if requested_user_id == "me":
+        return verified_id
     if verified_id != requested_user_id:
         raise HTTPException(403, "Forbidden: Cannot access another user's profile")
+    return requested_user_id
 
 
 class OnboardingRequest(BaseModel):
@@ -204,14 +207,32 @@ async def get_user_context(user_id: str):
     """
     Get user academic context for filtering.
     """
-    verify_user_access(user_id)
+    target_id = verify_user_access(user_id)
+    if target_id.startswith("dev-student-"):
+        return {
+            "success": True,
+            "data": {
+                "id": target_id,
+                "college_id": "mlrit",
+                "branch_id": "CSE",
+                "regulation": "R22",
+                "current_year": 3,
+                "current_semester": 1,
+                "current_cgpa": 8.5,
+                "target_cgpa": 9.0,
+                "study_hours_per_day": 3.0,
+                "preparation_level": "intermediate",
+                "onboarding_complete": True,
+                "has_completed_tour": True,
+            }
+        }
     db = get_db()
     try:
         result = db.table("user_profiles").select(
             "college_id, branch_id, regulation, current_year, current_semester, "
             "current_cgpa, target_cgpa, study_hours_per_day, preparation_level, "
             "onboarding_complete, has_completed_tour"
-        ).eq("id", user_id).single().execute()
+        ).eq("id", target_id).single().execute()
         
         if not result.data:
             raise HTTPException(404, "User profile not found")
@@ -233,14 +254,14 @@ async def get_user_subjects(user_id: str):
     
     Returns list of subjects user can select from.
     """
-    verify_user_access(user_id)
+    target_id = verify_user_access(user_id)
     db = get_db()
     
     # Get user context
     try:
         profile_result = db.table("user_profiles").select(
             "college_id, branch_id, regulation, current_semester"
-        ).eq("id", user_id).single().execute()
+        ).eq("id", target_id).single().execute()
         
         if not profile_result.data:
             raise HTTPException(404, "User profile not found")
@@ -296,17 +317,17 @@ class ProfileUpdateRequest(BaseModel):
 @router.put("/profile/{user_id}")
 async def upsert_profile(user_id: str, req: ProfileUpdateRequest):
     """Upsert user profile — updates only provided fields."""
-    verify_user_access(user_id)
+    target_id = verify_user_access(user_id)
     db = get_admin_db()
     try:
         update_fields = {k: v for k, v in req.model_dump().items() if v is not None}
         if not update_fields:
             raise HTTPException(400, "No fields to update")
         
-        update_fields["id"] = user_id
+        update_fields["id"] = target_id
         db.table("user_profiles").upsert(update_fields).execute()
         
-        result = db.table("user_profiles").select("*").eq("id", user_id).single().execute()
+        result = db.table("user_profiles").select("*").eq("id", target_id).single().execute()
         return {"success": True, "data": result.data}
     except HTTPException:
         raise
@@ -318,11 +339,11 @@ async def upsert_profile(user_id: str, req: ProfileUpdateRequest):
 @router.delete("/profile/{user_id}")
 async def delete_profile(user_id: str):
     """Delete user account — removes user_profiles and learner_profiles."""
-    verify_user_access(user_id)
+    target_id = verify_user_access(user_id)
     db = get_admin_db()
     try:
-        db.table("learner_profiles").delete().eq("user_id", user_id).execute()
-        db.table("user_profiles").delete().eq("id", user_id).execute()
+        db.table("learner_profiles").delete().eq("user_id", target_id).execute()
+        db.table("user_profiles").delete().eq("id", target_id).execute()
         return {"success": True, "data": {"message": "Account deleted"}}
     except Exception as e:
         log.error(f"Failed to delete profile for {user_id}: {e}")

@@ -1,7 +1,7 @@
 """
 Onboarding API — handles profile creation from manual input or hall ticket upload
 """
-from fastapi import APIRouter, HTTPException, UploadFile, File
+from fastapi import APIRouter, HTTPException, UploadFile, File, Request, Depends
 from pydantic import BaseModel, Field
 from typing import Optional, List
 import io
@@ -12,6 +12,8 @@ import magic
 
 from app.database import get_db, get_admin_db, auth_token, _verified_user_id
 from app.extractors.hall_ticket_parser import parse_hall_ticket
+from app.auth import get_current_user_id
+from app.limiter import limiter
 from app.logger import get_logger
 from app.config import settings
 
@@ -86,8 +88,11 @@ async def create_profile_manual(
 
 
 @router.post("/parse-hall-ticket", response_model=HallTicketParseResponse)
+@limiter.limit("5/minute")
 async def parse_hall_ticket_endpoint(
-    file: UploadFile = File(...)
+    request: Request,
+    file: UploadFile = File(...),
+    user_id: str = Depends(get_current_user_id),
 ):
     """
     Method 2: Hall ticket upload

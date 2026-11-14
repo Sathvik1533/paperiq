@@ -17,7 +17,9 @@ import { hoverScale, tapScale, SPRING_SNAPPY } from '../lib/motion'
 /** Tooltip descriptions for each nav link */
 const navTooltips: Record<string, string> = {
   dashboard: 'Your study command center \u2014 subjects, progress, and quick actions',
+  companion: 'PaperIQ AI Companion \u2014 unified academic tutor and exam intelligence',
   analysis:  'AI-powered exam pattern analysis across 10+ years of papers',
+  planner:   'Plan your daily study schedule and track exam readiness',
   papers:    'Browse, search, and download 80+ past exam papers',
   about:     'The story behind PaperIQ and the developer',
   profile:   'Your learning goals, preferences, and academic profile',
@@ -27,7 +29,7 @@ const navTooltips: Record<string, string> = {
 
 interface NavBarProps {
   /** Override which nav item is highlighted (defaults to path detection) */
-  activeTab?: 'dashboard' | 'analysis' | 'papers' | 'about' | 'profile' | 'settings' | 'vision'
+  activeTab?: 'dashboard' | 'companion' | 'analysis' | 'planner' | 'papers' | 'about' | 'profile' | 'settings' | 'vision'
 }
 
 export function NavBar({ activeTab }: NavBarProps) {
@@ -61,8 +63,10 @@ export function NavBar({ activeTab }: NavBarProps) {
   // Derive active tab from path if not overridden
   const path = location.pathname
   const active = activeTab ?? (
+    path.startsWith('/companion') ? 'companion' :
     path.startsWith('/dashboard') || path.startsWith('/subjects') ? 'dashboard' :
     path.startsWith('/analysis') || path.startsWith('/beta') ? 'analysis' :
+    path.startsWith('/planner') ? 'planner' :
     path.startsWith('/papers') ? 'papers' :
     path.startsWith('/profile') ? 'profile' :
     path.startsWith('/settings') ? 'settings' :
@@ -71,12 +75,14 @@ export function NavBar({ activeTab }: NavBarProps) {
   )
 
   const navLinks: Array<{ key: typeof active; label: string; to: string; tourAttr?: string }> = [
-    { key: 'dashboard', label: 'Dashboard',  to: '/dashboard', tourAttr: 'tour-nav-dashboard' },
-    { key: 'analysis',  label: 'Analysis',   to: '/analysis',  tourAttr: 'tour-nav-analysis' },
-    { key: 'papers',    label: 'Papers',      to: '/papers',   tourAttr: 'tour-nav-papers' },
-    { key: 'about',     label: 'About',       to: '/about',    tourAttr: 'tour-nav-about' },
-    { key: 'profile',   label: 'Profile',     to: '/profile',  tourAttr: 'tour-nav-profile' },
-    { key: 'settings',  label: 'Settings',    to: '/settings', tourAttr: 'tour-nav-settings' },
+    { key: 'dashboard', label: 'Dashboard',   to: '/dashboard', tourAttr: 'tour-nav-dashboard' },
+    { key: 'companion', label: 'Companion',   to: '/companion', tourAttr: 'tour-nav-companion' },
+    { key: 'analysis',  label: 'Analysis',    to: '/analysis',  tourAttr: 'tour-nav-analysis' },
+    { key: 'planner',   label: 'Planner',     to: '/planner',   tourAttr: 'tour-nav-planner' },
+    { key: 'papers',    label: 'Papers',      to: '/papers',    tourAttr: 'tour-nav-papers' },
+    { key: 'about',     label: 'About',       to: '/about',     tourAttr: 'tour-nav-about' },
+    { key: 'profile',   label: 'Profile',     to: '/profile',   tourAttr: 'tour-nav-profile' },
+    { key: 'settings',  label: 'Settings',    to: '/settings',  tourAttr: 'tour-nav-settings' },
   ]
 
   const initials = user?.user_metadata?.full_name

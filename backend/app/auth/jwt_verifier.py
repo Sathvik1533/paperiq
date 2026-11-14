@@ -64,6 +64,14 @@ async def verify_supabase_jwt(token: str) -> dict:
     """
     if not token:
         raise JWTError("No token provided")
+
+    # In development environment, accept local dev student tokens for testing & browser simulation
+    if settings.environment == "development":
+        if token.startswith("dev-student-"):
+            return {"sub": token}
+        sub = extract_user_id_from_token(token)
+        if sub and sub.startswith("dev-student-"):
+            return {"sub": sub}
     
     if not settings.supabase_url or not settings.supabase_anon_key:
         raise RuntimeError("Supabase config missing")
@@ -90,6 +98,14 @@ def verify_supabase_jwt_sync(token: str) -> dict:
     """
     if not token:
         raise JWTError("No token provided")
+
+    # In development environment, accept local dev student tokens for testing & browser simulation
+    if settings.environment == "development":
+        if token.startswith("dev-student-"):
+            return {"sub": token}
+        sub = extract_user_id_from_token(token)
+        if sub and sub.startswith("dev-student-"):
+            return {"sub": sub}
     
     if not settings.supabase_url or not settings.supabase_anon_key:
         raise RuntimeError("Supabase config missing")
@@ -113,7 +129,14 @@ def verify_supabase_jwt_sync(token: str) -> dict:
 def extract_user_id_from_token(token: str) -> Optional[str]:
     """Extract user_id (sub claim) from token without full verification."""
     try:
-        payload = jwt.decode(token, options={"verify_signature": False})
-        return payload.get("sub")
-    except JWTError:
-        return None
+        parts = token.split(".")
+        if len(parts) >= 2:
+            import base64
+            import json
+            padded = parts[1] + "=" * ((4 - len(parts[1]) % 4) % 4)
+            data = base64.urlsafe_b64decode(padded.encode("utf-8"))
+            payload = json.loads(data.decode("utf-8"))
+            return payload.get("sub")
+    except Exception as e:
+        log.warning(f"Failed to extract sub from token: {e}")
+    return None

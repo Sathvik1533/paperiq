@@ -34,6 +34,7 @@ interface Paper {
   regulation: string
   subject_id: string
   max_marks?: number
+  max_evaluation_marks?: number
   duration_hours?: number   // actual DB column name
   original_url?: string     // actual DB column (download link)
   storage_path?: string     // actual DB column (Supabase storage)

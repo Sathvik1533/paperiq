@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, type HTMLMotionProps } from 'framer-motion';
 
-interface ActionButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+type BaseButtonProps = Omit<HTMLMotionProps<'button'>, 'onClick'>;
+
+interface ActionButtonProps extends BaseButtonProps {
   isLoading?: boolean;
   onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void | Promise<void>;
   children: React.ReactNode;

@@ -1,0 +1,581 @@
+[
+  {
+    "method": "GET",
+    "path": "/api/v1/health",
+    "summary": "Health",
+    "tags": [
+      "System"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/llm/health",
+    "summary": "Llm Health",
+    "tags": [
+      "System"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/llm/active",
+    "summary": "Llm Active",
+    "tags": [
+      "System"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/colleges",
+    "summary": "List Colleges",
+    "tags": [
+      "Academic"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/colleges/{college_id}/branches",
+    "summary": "List Branches",
+    "tags": [
+      "Academic"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/colleges/{college_id}/subjects",
+    "summary": "List Subjects",
+    "tags": [
+      "Academic"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/subjects",
+    "summary": "Search Subjects",
+    "tags": [
+      "Academic"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/scrape/trigger",
+    "summary": "Trigger Scrape",
+    "tags": [
+      "Scraping"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/scrape/jobs/{job_id}",
+    "summary": "Get Job Status",
+    "tags": [
+      "Scraping"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/scrape/jobs",
+    "summary": "List Jobs",
+    "tags": [
+      "Scraping"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/papers/{paper_id}/download",
+    "summary": "Download Paper Pdf",
+    "tags": [
+      "Papers"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/papers/{paper_id}/view",
+    "summary": "View Paper",
+    "tags": [
+      "Papers"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/papers",
+    "summary": "List Papers",
+    "tags": [
+      "Papers"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/papers/{paper_id}",
+    "summary": "Get Paper",
+    "tags": [
+      "Papers"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/papers/{paper_id}/questions",
+    "summary": "Get Paper Questions",
+    "tags": [
+      "Papers"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/papers/{paper_id}/analysis-report",
+    "summary": "Download Analysis Report",
+    "tags": [
+      "Papers"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/papers/{paper_id}/cache",
+    "summary": "Cache Paper To Cdn",
+    "tags": [
+      "CDN"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/papers/{paper_id}/cdn-url",
+    "summary": "Get Cdn Url",
+    "tags": [
+      "CDN"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/papers/cache-all",
+    "summary": "Cache All Papers",
+    "tags": [
+      "CDN"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/extract/trigger",
+    "summary": "Trigger Extraction",
+    "tags": [
+      "Extraction"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/extract/run",
+    "summary": "Run Extraction Sync",
+    "tags": [
+      "Extraction"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/extract/status",
+    "summary": "Extraction Status",
+    "tags": [
+      "Extraction"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/syllabus/upload",
+    "summary": "Upload Syllabus",
+    "tags": [
+      "Extraction"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/syllabus",
+    "summary": "List Syllabi",
+    "tags": [
+      "Extraction"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/syllabus/{syllabus_id}/topics",
+    "summary": "Get Syllabus Topics",
+    "tags": [
+      "Extraction"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/parse/trigger",
+    "summary": "Trigger Parsing",
+    "tags": [
+      "Questions"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/parse/run",
+    "summary": "Run Parsing Sync",
+    "tags": [
+      "Questions"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/parse/preview",
+    "summary": "Preview Parse",
+    "tags": [
+      "Questions"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/questions",
+    "summary": "List Questions",
+    "tags": [
+      "Questions"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/questions/batch",
+    "summary": "Batch Questions",
+    "tags": [
+      "Questions"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/questions/{question_id}",
+    "summary": "Get Question",
+    "tags": [
+      "Questions"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/parse/stats",
+    "summary": "Parse Stats",
+    "tags": [
+      "Questions"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/analysis/generate",
+    "summary": "Generate Analysis",
+    "tags": [
+      "Analysis"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/analysis/run",
+    "summary": "Run Analysis",
+    "tags": [
+      "Analysis"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/analysis/simple",
+    "summary": "Run Simple Analysis",
+    "tags": [
+      "Analysis"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/analysis/cached",
+    "summary": "Get Cached Report",
+    "tags": [
+      "Analysis"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/analysis/{report_id}/status",
+    "summary": "Get Report Status",
+    "tags": [
+      "Analysis"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/analysis/{report_id}",
+    "summary": "Get Report",
+    "tags": [
+      "Analysis"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/syllabus/{syllabus_id}/coverage",
+    "summary": "Get Syllabus Coverage",
+    "tags": [
+      "Analysis"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/topics/map",
+    "summary": "Map Topics",
+    "tags": [
+      "Analysis"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/analysis/{analysis_id}/marks-breakdown",
+    "summary": "Get Marks Breakdown",
+    "tags": [
+      "Analysis"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/planner/generate",
+    "summary": "Generate Plan",
+    "tags": [
+      "Planner"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/planner/{plan_id}",
+    "summary": "Get Plan",
+    "tags": [
+      "Planner"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/readiness/calculate",
+    "summary": "Calculate Readiness",
+    "tags": [
+      "Planner"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/readiness",
+    "summary": "Get Readiness",
+    "tags": [
+      "Planner"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/mock/generate",
+    "summary": "Generate Mock",
+    "tags": [
+      "Planner"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/mock/{mock_id}",
+    "summary": "Get Mock",
+    "tags": [
+      "Planner"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/activity",
+    "summary": "Log Activity",
+    "tags": [
+      "Planner"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/activity/summary",
+    "summary": "Get Activity Summary",
+    "tags": [
+      "Planner"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/onboarding",
+    "summary": "Complete Onboarding",
+    "tags": [
+      "Profile"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/profile/{user_id}",
+    "summary": "Get Learner Profile",
+    "tags": [
+      "Profile"
+    ]
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/profile/{user_id}",
+    "summary": "Upsert Profile",
+    "tags": [
+      "Profile"
+    ]
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/profile/{user_id}",
+    "summary": "Delete Profile",
+    "tags": [
+      "Profile"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/profile/{user_id}/refresh",
+    "summary": "Refresh Learner Profile",
+    "tags": [
+      "Profile"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/profile/{user_id}/context",
+    "summary": "Get User Context",
+    "tags": [
+      "Profile"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/profile/{user_id}/subjects",
+    "summary": "Get User Subjects",
+    "tags": [
+      "Profile"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/subjects/filter",
+    "summary": "Filter Subjects",
+    "tags": [
+      "Profile"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/onboarding/manual",
+    "summary": "Create Profile Manual",
+    "tags": [
+      "Onboarding",
+      "onboarding"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/onboarding/parse-hall-ticket",
+    "summary": "Parse Hall Ticket Endpoint",
+    "tags": [
+      "Onboarding",
+      "onboarding"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/onboarding/confirm-hall-ticket",
+    "summary": "Confirm Hall Ticket Profile",
+    "tags": [
+      "Onboarding",
+      "onboarding"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/knowledge-base/status",
+    "summary": "Get Knowledge Base Status",
+    "tags": [
+      "Admin"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/knowledge-base/build",
+    "summary": "Build Knowledge Base",
+    "tags": [
+      "Admin"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/knowledge-base/discover-papers",
+    "summary": "Discover Papers",
+    "tags": [
+      "Admin"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/r22/subjects",
+    "summary": "List R22 Subjects",
+    "tags": [
+      "R22"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/r22/subjects/{subject_code}",
+    "summary": "Get R22 Subject",
+    "tags": [
+      "R22"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/r22/analyze",
+    "summary": "Analyze R22 Subject",
+    "tags": [
+      "R22"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/r22/job/{job_id}",
+    "summary": "Get R22 Job Status",
+    "tags": [
+      "R22"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/vision/vote",
+    "summary": "Vote Feature",
+    "tags": [
+      "Vision"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/vision/votes/{feature_id}",
+    "summary": "Get Votes",
+    "tags": [
+      "Vision"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/analysis/{subject_id}/cross-reference",
+    "summary": "Cross Reference Faculty Notes",
+    "tags": [
+      "Analysis"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/stats",
+    "summary": "Get Stats",
+    "tags": [
+      "System"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/feedback",
+    "summary": "Submit Feedback",
+    "tags": [
+      "Feedback"
+    ]
+  }
+]

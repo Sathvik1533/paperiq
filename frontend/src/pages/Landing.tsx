@@ -43,9 +43,23 @@ function useCountUp(target: number, isVisible: boolean, duration = 1500) {
   return count
 }
 
-// Live stats pulled from backend API
+// Live stats pulled from backend API with truthful state handling
 function useLiveStats() {
-  const [stats, setStats] = useState({ papers: 72, questions: 5730, subjects: 10 })
+  const [stats, setStats] = useState<{
+    papers: number | null
+    questions: number | null
+    subjects: number | null
+    is_live: boolean
+    is_demo?: boolean
+    label?: string
+  }>({
+    papers: null,
+    questions: null,
+    subjects: null,
+    is_live: false,
+    label: '',
+  })
+
   useEffect(() => {
     async function fetchStats() {
       try {
@@ -53,7 +67,7 @@ function useLiveStats() {
         const data = await getStats()
         setStats(data)
       } catch {
-        // silently keep defaults
+        // Fallback handled inside getStats()
       }
     }
     fetchStats()
@@ -225,18 +239,31 @@ export function Landing() {
               </p>
             </div>
 
-            <div className="pt-xl flex flex-wrap justify-center gap-xl md:gap-huge text-sm font-mono opacity-60">
-              {[
-                { value: String(stats.papers), label: 'Papers Analyzed' },
-                { value: stats.questions.toLocaleString(), label: 'Questions Indexed' },
-                { value: String(stats.subjects), label: 'Subjects Covered' },
-              ].map(s => (
-                <div key={s.label} className="flex flex-col items-center">
-                  <span className="text-white font-bold text-lg">{s.value}</span>
-                  <span className="uppercase tracking-tighter text-[10px]">{s.label}</span>
+            {stats.papers !== null && stats.questions !== null && stats.subjects !== null ? (
+              <div className="pt-xl flex flex-col items-center gap-2">
+                <div className="flex flex-wrap justify-center gap-xl md:gap-huge text-sm font-mono opacity-80">
+                  {[
+                    { value: String(stats.papers), label: 'Papers Analyzed' },
+                    { value: stats.questions.toLocaleString(), label: 'Questions Indexed' },
+                    { value: String(stats.subjects), label: 'Subjects Covered' },
+                  ].map(s => (
+                    <div key={s.label} className="flex flex-col items-center">
+                      <span className="text-white font-bold text-lg">{s.value}</span>
+                      <span className="uppercase tracking-tighter text-[10px] text-on-surface-variant">{s.label}</span>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+                {!stats.is_live && (
+                  <span className="text-[10px] font-mono text-amber-400/80 uppercase tracking-widest">
+                    {stats.label ? `[${stats.label}]` : '[Demo Snapshot]'}
+                  </span>
+                )}
+              </div>
+            ) : (
+              <div className="pt-xl text-center text-xs font-mono text-on-surface/40 uppercase tracking-widest">
+                Autonomous Academic Intelligence · R22 MLRIT
+              </div>
+            )}
           </div>
 
           <motion.div

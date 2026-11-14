@@ -24,7 +24,9 @@ interface SearchResult {
 
 const PAGES: SearchResult[] = [
   { id: 'dashboard', type: 'page', title: 'Dashboard',       subtitle: 'Your subject hub',          icon: 'dashboard',     path: '/dashboard' },
+  { id: 'companion', type: 'page', title: 'AI Companion',    subtitle: 'Unified academic tutor & intelligence', icon: 'smart_toy', path: '/companion' },
   { id: 'analysis',  type: 'page', title: 'Analysis',        subtitle: 'AI exam insights',           icon: 'analytics',     path: '/analysis'  },
+  { id: 'planner',   type: 'page', title: 'Study Planner',   subtitle: 'Adaptive exam schedule',     icon: 'calendar_today', path: '/planner'  },
   { id: 'papers',    type: 'page', title: 'Papers',          subtitle: 'Browse past papers',         icon: 'library_books', path: '/papers'    },
   { id: 'about',     type: 'page', title: 'About Creator',   subtitle: 'Meet the developer',        icon: 'info',          path: '/about'     },
   { id: 'profile',   type: 'page', title: 'Profile',         subtitle: 'Your account & semester',   icon: 'person',        path: '/profile'   },

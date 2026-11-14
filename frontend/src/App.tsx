@@ -16,6 +16,8 @@ import { Papers } from './pages/Papers'
 import { PaperView } from './pages/PaperView'
 import { Profile } from './pages/Profile'
 import { Settings } from './pages/Settings'
+import { Planner } from './pages/Planner'
+import { Companion } from './pages/Companion'
 import { NotFound } from './pages/NotFound'
 import { OfflinePage } from './pages/OfflinePage'
 import { Vision } from './pages/Vision'
@@ -204,6 +206,10 @@ export default function App() {
               {/* Papers */}
               <Route path="/papers" element={<ProtectedRoute><Papers /></ProtectedRoute>} />
               <Route path="/papers/:paperId" element={<ProtectedRoute><PaperView /></ProtectedRoute>} />
+              {/* Study Planner */}
+              <Route path="/planner" element={<ProtectedRoute><Planner /></ProtectedRoute>} />
+              {/* PaperIQ AI Companion */}
+              <Route path="/companion" element={<ProtectedRoute><Companion /></ProtectedRoute>} />
               {/* Profile & Settings */}
               <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />

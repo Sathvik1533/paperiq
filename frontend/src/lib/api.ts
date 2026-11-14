@@ -35,7 +35,7 @@ export async function fetchWithAuth<T>(path: string, options: RequestInit = {}):
     const data = await res.json()
     
     // Silently update cache in the background
-    if (isGet) {
+    if (isGet && typeof localStorage !== 'undefined' && typeof localStorage.setItem === 'function') {
       localStorage.setItem(cacheKey, JSON.stringify(data))
     }
     return data
@@ -44,7 +44,7 @@ export async function fetchWithAuth<T>(path: string, options: RequestInit = {}):
     // If a network connection drops or the backend dies ("Failed to fetch"), we intercept the exception immediately.
     // Instead of letting the component throw a red layout error, we silently catch it, pull the last valid
     // dataset from localStorage, and serve it directly back to the component as if the server succeeded.
-    if (isGet) {
+    if (isGet && typeof localStorage !== 'undefined' && typeof localStorage.getItem === 'function') {
       const cached = localStorage.getItem(cacheKey)
       if (cached) {
         console.warn(`[NETWORK SHIELD] Backend connection dropped for ${path}. Suppressing error and hydrating directly from local cache.`);
@@ -389,9 +389,79 @@ export async function generateAnalysis(
 
 // ── Stats ────────────────────────────────────────────────────────────────
 
-export async function getStats(): Promise<{ papers: number; questions: number; subjects: number }> {
-  const res = await fetchWithAuth<{ data: { papers: number; questions: number; subjects: number } }>('/stats')
-  return res.data
+export interface PlatformStats {
+  papers: number | null
+  questions: number | null
+  subjects: number | null
+  is_live: boolean
+  is_demo?: boolean
+  label?: string
+}
+
+export async function getStats(timeoutMs = 5000): Promise<PlatformStats> {
+  // Public endpoint — must NOT force authentication or call signOut
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
+  const CACHE_KEY = 'paperiq_verified_stats'
+
+  try {
+    const res = await fetch(`${BASE_URL}/stats`, { signal: controller.signal })
+    clearTimeout(timeoutId)
+
+    if (!res.ok) {
+      const text = await res.text()
+      throw new Error(`API ${res.status}: ${text}`)
+    }
+
+    const json = await res.json()
+    if (json && json.data) {
+      const isLive = Boolean(json.data.is_live && json.success)
+      const data: PlatformStats = {
+        papers: typeof json.data.papers === 'number' ? json.data.papers : null,
+        questions: typeof json.data.questions === 'number' ? json.data.questions : null,
+        subjects: typeof json.data.subjects === 'number' ? json.data.subjects : null,
+        is_live: isLive,
+        is_demo: Boolean(json.data.is_demo),
+        label: json.data.label ?? (isLive ? 'Live' : 'Snapshot'),
+      }
+
+      if (data.is_live && typeof localStorage !== 'undefined' && typeof localStorage.setItem === 'function') {
+        localStorage.setItem(CACHE_KEY, JSON.stringify(data))
+      }
+      return data
+    }
+
+    throw new Error('Invalid stats payload received from backend')
+  } catch (err) {
+    clearTimeout(timeoutId)
+
+    // Check for verified cached stats in localStorage
+    if (typeof localStorage !== 'undefined' && typeof localStorage.getItem === 'function') {
+      const cached = localStorage.getItem(CACHE_KEY)
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached)
+          return {
+            ...parsed,
+            is_live: false,
+            label: 'Verified Cache',
+          }
+        } catch {
+          // Ignore parse errors on cached item
+        }
+      }
+    }
+
+    // Never present fabricated numbers as live data! Return truthful unavailable state.
+    return {
+      papers: null,
+      questions: null,
+      subjects: null,
+      is_live: false,
+      is_demo: false,
+      label: 'Unavailable',
+    }
+  }
 }
 
 // ── Feedback ─────────────────────────────────────────────────────────────
@@ -438,4 +508,100 @@ export async function getQuestionsBatch(paperIds: string[]): Promise<any[]> {
     body: JSON.stringify({ paper_ids: paperIds }),
   })
   return res.data ?? []
+}
+
+// ── AI Companion ─────────────────────────────────────────────────────────
+
+export interface Citation {
+  source_type: string
+  reference_id?: string
+  title: string
+  url?: string
+  metadata?: Record<string, any>
+}
+
+export interface SuggestedAction {
+  label: string
+  action_type: 'navigate' | 'query' | 'filter'
+  payload: string
+}
+
+export interface CompanionMessage {
+  id: string
+  conversation_id: string
+  role: 'student' | 'assistant' | 'system'
+  content: string
+  intent?: string
+  specialist?: string
+  citations: Citation[]
+  suggested_actions: SuggestedAction[]
+  created_at: string
+}
+
+export interface CompanionConversation {
+  id: string
+  user_id: string
+  title: string
+  subject_code?: string
+  regulation: string
+  created_at: string
+  updated_at: string
+  messages: CompanionMessage[]
+}
+
+export interface ConversationSummary {
+  id: string
+  title: string
+  subject_code?: string
+  regulation: string
+  message_count: number
+  last_message_preview?: string
+  created_at: string
+  updated_at: string
+}
+
+export interface ChatResponse {
+  conversation_id: string
+  message: CompanionMessage
+  specialist_badge: string
+  specialist_description: string
+  suggested_actions: SuggestedAction[]
+}
+
+export interface SpecialistCapabilityInfo {
+  id: string
+  name: string
+  description: string
+  sample_queries: string[]
+  badge_color: string
+}
+
+export async function sendCompanionMessage(payload: {
+  message: string
+  conversation_id?: string
+  subject_code?: string
+  regulation?: string
+}): Promise<ChatResponse> {
+  return fetchWithAuth<ChatResponse>('/companion/chat', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function getCompanionConversations(): Promise<ConversationSummary[]> {
+  return fetchWithAuth<ConversationSummary[]>('/companion/conversations')
+}
+
+export async function getCompanionConversation(conversationId: string): Promise<CompanionConversation> {
+  return fetchWithAuth<CompanionConversation>(`/companion/conversations/${conversationId}`)
+}
+
+export async function deleteCompanionConversation(conversationId: string): Promise<{ success: boolean }> {
+  return fetchWithAuth<{ success: boolean }>(`/companion/conversations/${conversationId}`, {
+    method: 'DELETE',
+  })
+}
+
+export async function getCompanionSpecialists(): Promise<SpecialistCapabilityInfo[]> {
+  return fetchWithAuth<SpecialistCapabilityInfo[]>('/companion/specialists')
 }

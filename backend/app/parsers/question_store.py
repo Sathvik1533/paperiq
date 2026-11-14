@@ -4,7 +4,7 @@ Gap #4 fix: writes regulation, college_id, branch_id, semester, exam_year
 directly on insert from the parent paper — no backfill dependency.
 """
 from app.parsers.models import ParseResult
-from app.database import get_admin_db
+from app.database import get_db, get_admin_db
 from app.logger import get_logger
 
 log = get_logger(__name__)
@@ -28,7 +28,7 @@ def store_parse_result(result: ParseResult) -> dict:
     the parent paper on every insert — no backfill dependency.
     Returns: {inserted, skipped_duplicate, failed}
     """
-    db = get_admin_db()
+    db = get_db()
 
     # Fetch parent paper metadata once for the whole batch
     paper_meta = _fetch_paper_meta(db, result.paper_id)
@@ -97,7 +97,7 @@ def store_parse_result(result: ParseResult) -> dict:
 
 
 def get_questions_for_paper(paper_id: str) -> list[dict]:
-    db = get_admin_db()
+    db = get_db()
     return (
         db.table("questions")
         .select("*")
@@ -115,7 +115,7 @@ def get_questions_for_subject(
     section: str | None = None,
     regulation: str | None = None,
 ) -> list[dict]:
-    db = get_admin_db()
+    db = get_db()
     q = db.table("questions").select(
         "id, paper_id, question_number, part, question_text, "
         "question_type, marks, co, is_or_question, question_hash, "

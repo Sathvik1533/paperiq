@@ -36,13 +36,17 @@ class ReportBuilder:
         exam_category: Optional[str] = None,
         exam_attempt: Optional[str] = None,
         user_profile: Optional[dict] = None,
+        user_id: Optional[str] = None,
     ) -> dict:
         """
         Builds and stores a full AnalysisReport. Returns the report dict.
         """
+        if not user_id and user_profile:
+            user_id = user_profile.get("id") or user_profile.get("user_id")
+
         log.info(f"Building report: subject={subject_id} reg={regulation} "
                  f"branch={branch_id} years={year_from}-{year_to} "
-                 f"category={exam_category} attempt={exam_attempt}")
+                 f"category={exam_category} attempt={exam_attempt} user={user_id}")
 
         # 1. Backfill unit/topic tags for this subject+regulation
         try:
@@ -92,6 +96,7 @@ class ReportBuilder:
         now = datetime.utcnow()
         report = {
             "id": report_id,
+            "user_id": user_id,
             "subject_id": subject_id,
             "regulation": regulation,
             "branch_id": branch_id,
@@ -387,7 +392,7 @@ class ReportBuilder:
     def _store_report(self, report: dict) -> None:
         """Upsert into analysis_reports table."""
         try:
-            self.db.table("analysis_reports").upsert({
+            payload = {
                 "id": report["id"],
                 "subject_id": report["subject_id"],
                 "regulation": report["regulation"],
@@ -398,7 +403,11 @@ class ReportBuilder:
                 "status": "ready",
                 "generated_at": report["generated_at"],
                 "expires_at": report["expires_at"],
-            }).execute()
+            }
+            if report.get("user_id"):
+                payload["user_id"] = report["user_id"]
+
+            self.db.table("analysis_reports").upsert(payload).execute()
             log.info(f"Stored analysis report {report['id']}")
         except Exception as e:
             log.error(f"Failed to store report: {e}")

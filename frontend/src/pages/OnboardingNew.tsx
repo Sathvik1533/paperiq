@@ -185,10 +185,10 @@ export function OnboardingNew() {
         
         
         // Read the actual extracted text parameters verified from our March 2026 Hall Ticket layout
-        const extractedText = extracted?.raw_text || ""; 
+        const extractedText = (extracted as any)?.raw_text || ""; 
         let finalSemesterRoutingStr = "Semester 2-1";
 
-        if (extractedText.includes("II SEMESTER") || extractedText.includes("2-2") || extracted?.semester === 4 || extracted?.semester === "2-2") {
+        if (extractedText.includes("II SEMESTER") || extractedText.includes("2-2") || Number(extracted?.semester) === 4 || String(extracted?.semester) === "2-2") {
           finalSemesterRoutingStr = "Semester 2-2";
         }
 
@@ -202,10 +202,10 @@ export function OnboardingNew() {
         console.log("Bypassing offline local backend for manual testing. Injecting profile variables.");
         
         // Read the actual extracted text parameters verified from our March 2026 Hall Ticket layout
-        const extractedText = extracted?.raw_text || ""; 
+        const extractedText = (extracted as any)?.raw_text || ""; 
         let finalSemesterRoutingStr = "Semester 2-1";
 
-        if (extractedText.includes("II SEMESTER") || extractedText.includes("2-2") || extracted?.semester === 4 || extracted?.semester === "2-2") {
+        if (extractedText.includes("II SEMESTER") || extractedText.includes("2-2") || Number(extracted?.semester) === 4 || String(extracted?.semester) === "2-2") {
           finalSemesterRoutingStr = "Semester 2-2";
         }
 

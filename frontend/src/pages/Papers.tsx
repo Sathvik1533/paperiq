@@ -626,7 +626,7 @@ export function Papers() {
             )}
 
             {/* ── Empty State ───────────────────────────────────────── */}
-            {semesterFilteredPapers && semesterFilteredPapers.length === 0 && !papersLoading && (
+            {semesterFilteredPapers && semesterFilteredPapers.length === 0 && !isLoading && (
               <div className="text-center py-24 glass-card rounded-2xl mx-auto w-full max-w-2xl mt-12">
                 <span className="material-symbols-outlined text-[64px] text-on-surface-variant/50 block mb-6">search_off</span>
                 <h3 className="text-headline-sm font-headline text-on-surface mb-2">No papers found</h3>

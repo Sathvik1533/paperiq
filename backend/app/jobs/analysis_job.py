@@ -17,6 +17,7 @@ async def run_analysis_job(
     exam_category: Optional[str] = None,
     exam_attempt: Optional[str] = None,
     user_profile: Optional[dict] = None,
+    user_id: Optional[str] = None,
 ) -> dict:
     """
     Async wrapper — runs ReportBuilder synchronously inside an async context.
@@ -25,7 +26,7 @@ async def run_analysis_job(
     log.info(
         f"run_analysis_job: subject={subject_id} reg={regulation} "
         f"branch={branch_id} years={year_from}-{year_to} "
-        f"category={exam_category} attempt={exam_attempt}"
+        f"category={exam_category} attempt={exam_attempt} user={user_id}"
     )
     builder = ReportBuilder()
     report = builder.build(
@@ -37,6 +38,7 @@ async def run_analysis_job(
         exam_category=exam_category,
         exam_attempt=exam_attempt,
         user_profile=user_profile,
+        user_id=user_id,
     )
     log.info(f"run_analysis_job complete: report_id={report['id']}")
     return report

@@ -9,11 +9,12 @@ GET  /syllabus/{syllabus_id}/coverage  — evidence-based coverage (Gap #6)
 POST /topics/map            — map questions→syllabus topics (Gap #7)
 """
 from typing import Optional
-from fastapi import APIRouter, HTTPException, BackgroundTasks, Query
+from fastapi import APIRouter, HTTPException, BackgroundTasks, Query, Depends
 from pydantic import BaseModel
 from datetime import datetime, timezone, timedelta
 
 from app.database import get_db
+from app.auth import get_current_user_id, verify_user_ownership, verify_resource_access
 from app.jobs.analysis_job import run_analysis_job
 from app.intelligence.coverage_analyzer import compute_coverage
 from app.intelligence.topic_mapper import map_questions_to_topics
@@ -98,10 +99,14 @@ async def _set_to_cache(key: str, val: dict, ttl_seconds: int = 3600):
 # ---------------------------------------------------------------------------
 
 @router.post("/analysis/generate")
-async def generate_analysis(req: RunAnalysisRequest):
+async def generate_analysis(
+    req: RunAnalysisRequest,
+    user_id: str = Depends(get_current_user_id),
+):
     """
     Beta Student Experience: Synchronous analysis generation.
     Returns complete report immediately (no background job).
+    Requires authentication. Associating report with user.
     """
     from app.analysis.report_builder import ReportBuilder
     
@@ -115,6 +120,7 @@ async def generate_analysis(req: RunAnalysisRequest):
             year_to=req.year_to,
             exam_category=req.exam_category,
             exam_attempt=req.exam_attempt,
+            user_id=user_id,
         )
         return {"success": True, "data": report}
     except Exception as e:
@@ -124,6 +130,7 @@ async def generate_analysis(req: RunAnalysisRequest):
             "success": False,
             "error": str(e),
             "data": {
+                "user_id": user_id,
                 "unit_distribution_classified": {},
                 "most_asked_topics": [],
                 "high_probability_topics_classified": [],
@@ -141,17 +148,22 @@ async def generate_analysis(req: RunAnalysisRequest):
 
 
 @router.post("/analysis/run", response_model=RunAnalysisResponse, status_code=202)
-async def run_analysis(req: RunAnalysisRequest, background_tasks: BackgroundTasks):
+async def run_analysis(
+    req: RunAnalysisRequest,
+    background_tasks: BackgroundTasks,
+    user_id: str = Depends(get_current_user_id),
+):
     """
     Trigger an analysis job. Returns report_id immediately.
     The heavy work runs in background.
+    Requires authentication. Associating report with user.
     
     Use this endpoint for manual/advanced analysis with full control.
     For normal users, use POST /analysis/simple instead.
     """
     import uuid
     report_id = str(uuid.uuid4())
-    _job_store[report_id] = {"status": "processing", "report": None, "error": None}
+    _job_store[report_id] = {"status": "processing", "user_id": user_id, "report": None, "error": None}
 
     async def _run():
         try:
@@ -163,20 +175,27 @@ async def run_analysis(req: RunAnalysisRequest, background_tasks: BackgroundTask
                 year_to=req.year_to,
                 exam_category=req.exam_category,
                 exam_attempt=req.exam_attempt,
+                user_id=user_id,
             )
             # Use the DB-assigned report id
             actual_id = report.get("id", report_id)
-            _job_store[report_id] = {"status": "ready", "report": report, "actual_id": actual_id}
+            _job_store[report_id] = {"status": "ready", "user_id": user_id, "report": report, "actual_id": actual_id}
+            if actual_id != report_id:
+                _job_store[actual_id] = _job_store[report_id]
         except Exception as e:
             log.error(f"Analysis job {report_id} failed: {e}")
-            _job_store[report_id] = {"status": "failed", "report": None, "error": str(e)}
+            _job_store[report_id] = {"status": "failed", "user_id": user_id, "report": None, "error": str(e)}
 
     background_tasks.add_task(_run)
     return RunAnalysisResponse(report_id=report_id)
 
 
 @router.post("/analysis/simple", response_model=RunAnalysisResponse, status_code=202)
-async def run_simple_analysis(req: SimplifiedAnalysisRequest, background_tasks: BackgroundTasks):
+async def run_simple_analysis(
+    req: SimplifiedAnalysisRequest,
+    background_tasks: BackgroundTasks,
+    authenticated_user_id: str = Depends(get_current_user_id),
+):
     """
     Simplified analysis for normal users.
     
@@ -190,7 +209,9 @@ async def run_simple_analysis(req: SimplifiedAnalysisRequest, background_tasks: 
     - Exam attempt (Regular/Supplementary)
     
     Everything else is automatic.
+    Enforces user ownership.
     """
+    verify_user_ownership(req.user_id, authenticated_user_id)
     db = get_db()
     
     # Fetch user profile
@@ -222,7 +243,7 @@ async def run_simple_analysis(req: SimplifiedAnalysisRequest, background_tasks: 
     # Trigger analysis job with inferred context
     import uuid
     report_id = str(uuid.uuid4())
-    _job_store[report_id] = {"status": "processing", "report": None, "error": None}
+    _job_store[report_id] = {"status": "processing", "user_id": req.user_id, "report": None, "error": None}
 
     async def _run():
         try:
@@ -234,13 +255,16 @@ async def run_simple_analysis(req: SimplifiedAnalysisRequest, background_tasks: 
                 year_to=year_to,
                 exam_category=req.exam_category,
                 exam_attempt=req.exam_attempt,
-                user_profile=profile
+                user_profile=profile,
+                user_id=req.user_id,
             )
             actual_id = report.get("id", report_id)
-            _job_store[report_id] = {"status": "ready", "report": report, "actual_id": actual_id}
+            _job_store[report_id] = {"status": "ready", "user_id": req.user_id, "report": report, "actual_id": actual_id}
+            if actual_id != report_id:
+                _job_store[actual_id] = _job_store[report_id]
         except Exception as e:
             log.error(f"Simple analysis job {report_id} failed: {e}")
-            _job_store[report_id] = {"status": "failed", "report": None, "error": str(e)}
+            _job_store[report_id] = {"status": "failed", "user_id": req.user_id, "report": None, "error": str(e)}
 
     background_tasks.add_task(_run)
     return RunAnalysisResponse(report_id=report_id)
@@ -255,12 +279,15 @@ async def get_cached_report(
     year_to: Optional[int] = Query(None),
     exam_category: Optional[str] = Query(None),
     exam_attempt: Optional[str] = Query(None),
+    user_id: str = Depends(get_current_user_id),
 ):
     """
-    Returns the most recent non-expired cached report matching the params.
+    Returns the most recent non-expired cached report matching the params for the authenticated user.
+    Requires authentication. Isolates cached reports by user_id to prevent data leakage.
     """
-    # Check memory cache first
+    # Check memory cache first (scoped by user_id)
     cache_key = _get_cache_key({
+        "user_id": user_id,
         "subject_id": subject_id,
         "regulation": regulation,
         "branch_id": branch_id,
@@ -270,7 +297,7 @@ async def get_cached_report(
         "exam_attempt": exam_attempt
     })
     
-    mem_cached = _get_from_cache(cache_key)
+    mem_cached = await _get_from_cache(cache_key)
     if mem_cached:
         log.info("Returned analysis from memory cache")
         return mem_cached
@@ -281,6 +308,7 @@ async def get_cached_report(
     query = (
         db.table("analysis_reports")
         .select("*")
+        .eq("user_id", user_id)
         .eq("subject_id", subject_id)
         .eq("regulation", regulation)
         .eq("status", "ready")
@@ -305,33 +333,101 @@ async def get_cached_report(
         raise HTTPException(status_code=404, detail="No cached report found")
 
     report = rows[0].get("report_data") or rows[0]
-    _set_to_cache(cache_key, report, ttl_seconds=3600)
+    await _set_to_cache(cache_key, report, ttl_seconds=3600)
     return report
 
 
+@router.get("/analysis/overview")
+async def get_analysis_overview(
+    user_id: str = Depends(get_current_user_id),
+    subject_id: Optional[str] = Query(None),
+    regulation: Optional[str] = Query(None),
+):
+    """
+    Returns analysis overview for the authenticated user.
+    Requires valid authentication. Filters by user_id to prevent cross-user data leakage.
+    """
+    try:
+        db = get_db()
+        query = (
+            db.table("analysis_reports")
+            .select("id, subject_id, regulation, branch_id, generated_at, status")
+            .eq("user_id", user_id)
+            .order("generated_at", desc=True)
+        )
+        if subject_id:
+            query = query.eq("subject_id", subject_id)
+        if regulation:
+            query = query.eq("regulation", regulation)
+
+        result = query.limit(10).execute()
+        reports = result.data or []
+    except Exception as e:
+        log.warning(f"Failed to fetch analysis overview: {e}")
+        reports = []
+
+    return {
+        "success": True,
+        "data": {
+            "user_id": user_id,
+            "total_reports": len(reports),
+            "reports": reports,
+        }
+    }
+
+
 @router.get("/analysis/{report_id}/status")
-async def get_report_status(report_id: str):
-    """Returns current status of an analysis job."""
+async def get_report_status(
+    report_id: str,
+    user_id: str = Depends(get_current_user_id),
+):
+    """
+    Returns current status of an analysis job.
+    Requires authentication. Verifies ownership of report.
+    """
     # Check in-memory store first
     if report_id in _job_store:
         entry = _job_store[report_id]
+        owner = entry.get("user_id")
+        is_public = bool(entry.get("is_public") or entry.get("is_system") or entry.get("is_cached"))
+        verify_resource_access(owner, user_id, is_public=is_public, resource_type="analysis report")
         return {"report_id": report_id, "status": entry["status"]}
 
     # Fall back to DB
-    db = get_db()
-    result = db.table("analysis_reports").select("id, status").eq("id", report_id).limit(1).execute()
-    rows = result.data or []
+    try:
+        db = get_db()
+        result = db.table("analysis_reports").select("id, status, user_id, is_cached").eq("id", report_id).limit(1).execute()
+        rows = result.data or []
+    except Exception as e:
+        log.warning(f"Error querying analysis report status '{report_id}': {e}")
+        rows = []
+
     if not rows:
         raise HTTPException(status_code=404, detail="Report not found")
-    return {"report_id": report_id, "status": rows[0]["status"]}
+
+    row = rows[0]
+    owner = row.get("user_id")
+    is_public = bool(row.get("is_cached") or row.get("is_public") or row.get("is_system"))
+    verify_resource_access(owner, user_id, is_public=is_public, resource_type="analysis report")
+
+    return {"report_id": report_id, "status": row["status"]}
 
 
 @router.get("/analysis/{report_id}")
-async def get_report(report_id: str):
-    """Returns the full analysis report."""
+async def get_report(
+    report_id: str,
+    user_id: str = Depends(get_current_user_id),
+):
+    """
+    Returns the full analysis report.
+    Requires authentication. Verifies ownership of report.
+    """
     # Check in-memory store for freshly generated reports
     if report_id in _job_store:
         entry = _job_store[report_id]
+        owner = entry.get("user_id")
+        is_public = bool(entry.get("is_public") or entry.get("is_system") or entry.get("is_cached"))
+        verify_resource_access(owner, user_id, is_public=is_public, resource_type="analysis report")
         if entry["status"] == "processing":
             return {"report_id": report_id, "status": "processing"}
         if entry["status"] == "failed":
@@ -340,13 +436,31 @@ async def get_report(report_id: str):
             return entry["report"]
 
     # Fetch from DB
-    db = get_db()
-    result = db.table("analysis_reports").select("*").eq("id", report_id).limit(1).execute()
-    rows = result.data or []
+    try:
+        db = get_db()
+        result = db.table("analysis_reports").select("*").eq("id", report_id).limit(1).execute()
+        rows = result.data or []
+    except Exception as e:
+        log.warning(f"Error querying analysis report '{report_id}': {e}")
+        rows = []
+
     if not rows:
         raise HTTPException(status_code=404, detail="Report not found")
 
     row = rows[0]
+    owner = row.get("user_id")
+    if not owner and isinstance(row.get("report_data"), dict):
+        owner = row["report_data"].get("user_id")
+
+    is_public = bool(
+        row.get("is_cached")
+        or row.get("is_public")
+        or row.get("is_system")
+        or (isinstance(row.get("report_data"), dict) and (row["report_data"].get("is_public") or row["report_data"].get("is_system") or row["report_data"].get("is_cached")))
+    )
+
+    verify_resource_access(owner, user_id, is_public=is_public, resource_type="analysis report")
+
     return row.get("report_data") or row
 
 

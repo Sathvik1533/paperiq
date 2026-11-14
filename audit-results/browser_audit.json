@@ -1,0 +1,1531 @@
+{
+  "tests": [
+    {
+      "name": "Landing Page Desktop",
+      "url": "https://paperiq-9yrq.vercel.app/auth",
+      "status": 200,
+      "duration_s": 5.23,
+      "title": "PaperIQ \u2014 AI Exam Intelligence"
+    },
+    {
+      "name": "Landing Page Mobile Viewport",
+      "url": "https://paperiq-9yrq.vercel.app/auth",
+      "viewport": "375x812"
+    },
+    {
+      "name": "Auth Page - Login View",
+      "url": "https://paperiq-9yrq.vercel.app/auth",
+      "status": 200
+    },
+    {
+      "name": "Auth Page - Sign Up Toggle",
+      "result": "PASS"
+    },
+    {
+      "name": "Auth Form Error Handling",
+      "result": "PASS"
+    },
+    {
+      "name": "Google OAuth Redirect Target",
+      "result": "PASS",
+      "destination_url_prefix": "https://accounts.google.com/v3/signin/identifier?opparams=%2"
+    },
+    {
+      "name": "Protected Guard /dashboard",
+      "requested_path": "/dashboard",
+      "final_url": "https://paperiq-9yrq.vercel.app/auth",
+      "redirected_to_auth": true,
+      "result": "PASS"
+    },
+    {
+      "name": "Protected Guard /papers",
+      "requested_path": "/papers",
+      "final_url": "https://paperiq-9yrq.vercel.app/auth",
+      "redirected_to_auth": true,
+      "result": "PASS"
+    },
+    {
+      "name": "Protected Guard /analysis",
+      "requested_path": "/analysis",
+      "final_url": "https://paperiq-9yrq.vercel.app/auth",
+      "redirected_to_auth": true,
+      "result": "PASS"
+    },
+    {
+      "name": "Protected Guard /profile",
+      "requested_path": "/profile",
+      "final_url": "https://paperiq-9yrq.vercel.app/auth",
+      "redirected_to_auth": true,
+      "result": "PASS"
+    },
+    {
+      "name": "Protected Guard /settings",
+      "requested_path": "/settings",
+      "final_url": "https://paperiq-9yrq.vercel.app/auth",
+      "redirected_to_auth": true,
+      "result": "PASS"
+    },
+    {
+      "name": "Protected Guard /onboarding",
+      "requested_path": "/onboarding",
+      "final_url": "https://paperiq-9yrq.vercel.app/auth",
+      "redirected_to_auth": true,
+      "result": "PASS"
+    },
+    {
+      "name": "Public Route /about",
+      "status": 200,
+      "title": "PaperIQ \u2014 AI Exam Intelligence",
+      "url": "https://paperiq-9yrq.vercel.app/about"
+    },
+    {
+      "name": "Public Route /vision",
+      "status": 200,
+      "title": "PaperIQ \u2014 AI Exam Intelligence",
+      "url": "https://paperiq-9yrq.vercel.app/vision"
+    },
+    {
+      "name": "Public Route /offline",
+      "status": 200,
+      "title": "PaperIQ \u2014 AI Exam Intelligence",
+      "url": "https://paperiq-9yrq.vercel.app/offline"
+    },
+    {
+      "name": "Public Route /nonexistent-404-test",
+      "status": 200,
+      "title": "PaperIQ \u2014 AI Exam Intelligence",
+      "url": "https://paperiq-9yrq.vercel.app/nonexistent-404-test"
+    },
+    {
+      "name": "Preview Deployment Target Protection",
+      "url": "https://paperiq-9yrs-931ia8kwe-24r21a05hr-8498s-projects.vercel.app/auth",
+      "final_url": "https://vercel.com/login?next=%2Fsso-api%3Furl%3Dhttps%253A%252F%252Fpaperiq-9yrs-931ia8kwe-24r21a05hr-8498s-projects.vercel.app%252Fauth%26nonce%3D25eea9fd6ae7f623c5d8e39e8930a11404966e42b3d1377ef101c9a51ca8b277",
+      "is_vercel_sso": true
+    }
+  ],
+  "console_errors": [
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 400 ()",
+      "location": {
+        "url": "https://jkocmlgaovfchjkxvwfp.supabase.co/auth/v1/token?grant_type=password",
+        "line": 0,
+        "column": 0,
+        "lineNumber": 0,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 500 ()",
+      "location": {
+        "url": "https://paperiq-backend-vug0.onrender.com/api/v1/vision/votes/the_future",
+        "line": 0,
+        "column": 0,
+        "lineNumber": 0,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 500 ()",
+      "location": {
+        "url": "https://paperiq-backend-vug0.onrender.com/api/v1/vision/votes/exam_mentor",
+        "line": 0,
+        "column": 0,
+        "lineNumber": 0,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 500 ()",
+      "location": {
+        "url": "https://paperiq-backend-vug0.onrender.com/api/v1/vision/votes/exam_intelligence",
+        "line": 0,
+        "column": 0,
+        "lineNumber": 0,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 500 ()",
+      "location": {
+        "url": "https://paperiq-backend-vug0.onrender.com/api/v1/vision/votes/academic_os",
+        "line": 0,
+        "column": 0,
+        "lineNumber": 0,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "warning",
+      "text": "[GSI_LOGGER]: Your client application uses one of the Google One Tap prompt UI status methods that may stop functioning when FedCM becomes mandatory. Refer to the migration guide to update your code accordingly and opt-in to FedCM to test your changes. Learn more: https://developers.google.com/identity/gsi/web/guides/fedcm-migration?s=dc#display_moment and https://developers.google.com/identity/gsi/web/guides/fedcm-migration?s=dc#skipped_moment",
+      "location": {
+        "url": "https://accounts.google.com/gsi/client",
+        "line": 88,
+        "column": 86,
+        "lineNumber": 88,
+        "columnNumber": 86
+      }
+    },
+    {
+      "type": "warning",
+      "text": "Deprecated API for given entry type.",
+      "location": {
+        "url": "https://vercel.com/_next/static/immutable/chunks/3lwjmh8j74rp5.js",
+        "line": 18,
+        "column": 0,
+        "lineNumber": 18,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 403 ()",
+      "location": {
+        "url": "https://vercel.com/api/jwt",
+        "line": 0,
+        "column": 0,
+        "lineNumber": 0,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "error",
+      "text": "Provider's accounts list is empty.",
+      "location": {
+        "url": "https://vercel.com/login?next=%2Fsso-api%3Furl%3Dhttps%253A%252F%252Fpaperiq-9yrs-931ia8kwe-24r21a05hr-8498s-projects.vercel.app%252Fauth%26nonce%3D25eea9fd6ae7f623c5d8e39e8930a11404966e42b3d1377ef101c9a51ca8b277",
+        "line": 0,
+        "column": 0,
+        "lineNumber": 0,
+        "columnNumber": 0
+      }
+    }
+  ],
+  "network_failures": [
+    {
+      "url": "https://jkocmlgaovfchjkxvwfp.supabase.co/auth/v1/token?grant_type=password",
+      "status": 400,
+      "status_text": ""
+    },
+    {
+      "url": "https://paperiq-backend-vug0.onrender.com/api/v1/vision/votes/the_future",
+      "status": 500,
+      "status_text": ""
+    },
+    {
+      "url": "https://paperiq-backend-vug0.onrender.com/api/v1/vision/votes/exam_mentor",
+      "status": 500,
+      "status_text": ""
+    },
+    {
+      "url": "https://paperiq-backend-vug0.onrender.com/api/v1/vision/votes/exam_intelligence",
+      "status": 500,
+      "status_text": ""
+    },
+    {
+      "url": "https://paperiq-backend-vug0.onrender.com/api/v1/vision/votes/academic_os",
+      "status": 500,
+      "status_text": ""
+    },
+    {
+      "url": "https://vercel.com/api/jwt",
+      "status": 403,
+      "status_text": ""
+    }
+  ],
+  "network_requests": [
+    {
+      "url": "https://paperiq-9yrq.vercel.app/",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://paperiq-9yrq.vercel.app/assets/index-DkLRh3v_.css",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://paperiq-9yrq.vercel.app/assets/index-BJPcxNLD.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Geist:wght@100;300;400;500;600;700;800;900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://paperiq-9yrq.vercel.app/vite.svg",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://paperiq-9yrq.vercel.app/auth",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Geist:wght@100;300;400;500;600;700;800;900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://paperiq-9yrq.vercel.app/assets/index-BJPcxNLD.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://paperiq-9yrq.vercel.app/assets/index-DkLRh3v_.css",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://paperiq-9yrq.vercel.app/vite.svg",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/geist/v5/gyByhwUxId8gMEwcGFWNOITd.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/spacegrotesk/v22/V8mDoQDjQSkFtoMM3T6r8E7mPbF4C_k3HqU.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/jetbrainsmono/v24/tDbV2o-flEEny0FZhsfKu5WU4xD7OwGtT0rU.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v385/kJEhBvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oFsLjBuVY.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://paperiq-9yrq.vercel.app/auth",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Geist:wght@100;300;400;500;600;700;800;900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://paperiq-9yrq.vercel.app/assets/index-BJPcxNLD.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://paperiq-9yrq.vercel.app/assets/index-DkLRh3v_.css",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/geist/v5/gyByhwUxId8gMEwcGFWNOITd.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/jetbrainsmono/v24/tDbV2o-flEEny0FZhsfKu5WU4xD7OwGtT0rU.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/spacegrotesk/v22/V8mDoQDjQSkFtoMM3T6r8E7mPbF4C_k3HqU.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v385/kJEhBvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oFsLjBuVY.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://paperiq-9yrq.vercel.app/vite.svg",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://paperiq-9yrq.vercel.app/vite.svg",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://paperiq-9yrq.vercel.app/vite.svg",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://jkocmlgaovfchjkxvwfp.supabase.co/auth/v1/token?grant_type=password",
+      "status": 400,
+      "method": "POST"
+    },
+    {
+      "url": "https://paperiq-9yrq.vercel.app/dashboard",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Geist:wght@100;300;400;500;600;700;800;900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://paperiq-9yrq.vercel.app/assets/index-BJPcxNLD.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://paperiq-9yrq.vercel.app/assets/index-DkLRh3v_.css",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/geist/v5/gyByhwUxId8gMEwcGFWNOITd.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/jetbrainsmono/v24/tDbV2o-flEEny0FZhsfKu5WU4xD7OwGtT0rU.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/spacegrotesk/v22/V8mDoQDjQSkFtoMM3T6r8E7mPbF4C_k3HqU.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v385/kJEhBvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oFsLjBuVY.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://paperiq-9yrq.vercel.app/vite.svg",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://paperiq-9yrq.vercel.app/vite.svg",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://paperiq-9yrq.vercel.app/papers",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Geist:wght@100;300;400;500;600;700;800;900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://paperiq-9yrq.vercel.app/assets/index-BJPcxNLD.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://paperiq-9yrq.vercel.app/assets/index-DkLRh3v_.css",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/geist/v5/gyByhwUxId8gMEwcGFWNOITd.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/jetbrainsmono/v24/tDbV2o-flEEny0FZhsfKu5WU4xD7OwGtT0rU.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/spacegrotesk/v22/V8mDoQDjQSkFtoMM3T6r8E7mPbF4C_k3HqU.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v385/kJEhBvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oFsLjBuVY.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://paperiq-9yrq.vercel.app/vite.svg",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://paperiq-9yrq.vercel.app/vite.svg",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://paperiq-9yrq.vercel.app/analysis",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Geist:wght@100;300;400;500;600;700;800;900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://paperiq-9yrq.vercel.app/assets/index-BJPcxNLD.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://paperiq-9yrq.vercel.app/assets/index-DkLRh3v_.css",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/geist/v5/gyByhwUxId8gMEwcGFWNOITd.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/jetbrainsmono/v24/tDbV2o-flEEny0FZhsfKu5WU4xD7OwGtT0rU.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/spacegrotesk/v22/V8mDoQDjQSkFtoMM3T6r8E7mPbF4C_k3HqU.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v385/kJEhBvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oFsLjBuVY.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://paperiq-9yrq.vercel.app/vite.svg",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://paperiq-9yrq.vercel.app/vite.svg",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://paperiq-9yrq.vercel.app/profile",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Geist:wght@100;300;400;500;600;700;800;900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://paperiq-9yrq.vercel.app/assets/index-BJPcxNLD.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://paperiq-9yrq.vercel.app/assets/index-DkLRh3v_.css",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/geist/v5/gyByhwUxId8gMEwcGFWNOITd.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/jetbrainsmono/v24/tDbV2o-flEEny0FZhsfKu5WU4xD7OwGtT0rU.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/spacegrotesk/v22/V8mDoQDjQSkFtoMM3T6r8E7mPbF4C_k3HqU.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v385/kJEhBvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oFsLjBuVY.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://paperiq-9yrq.vercel.app/vite.svg",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://paperiq-9yrq.vercel.app/vite.svg",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://paperiq-9yrq.vercel.app/settings",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Geist:wght@100;300;400;500;600;700;800;900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://paperiq-9yrq.vercel.app/assets/index-BJPcxNLD.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://paperiq-9yrq.vercel.app/assets/index-DkLRh3v_.css",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/geist/v5/gyByhwUxId8gMEwcGFWNOITd.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/jetbrainsmono/v24/tDbV2o-flEEny0FZhsfKu5WU4xD7OwGtT0rU.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/spacegrotesk/v22/V8mDoQDjQSkFtoMM3T6r8E7mPbF4C_k3HqU.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v385/kJEhBvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oFsLjBuVY.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://paperiq-9yrq.vercel.app/vite.svg",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://paperiq-9yrq.vercel.app/vite.svg",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://paperiq-9yrq.vercel.app/onboarding",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Geist:wght@100;300;400;500;600;700;800;900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://paperiq-9yrq.vercel.app/assets/index-BJPcxNLD.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://paperiq-9yrq.vercel.app/assets/index-DkLRh3v_.css",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/geist/v5/gyByhwUxId8gMEwcGFWNOITd.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/jetbrainsmono/v24/tDbV2o-flEEny0FZhsfKu5WU4xD7OwGtT0rU.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/spacegrotesk/v22/V8mDoQDjQSkFtoMM3T6r8E7mPbF4C_k3HqU.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v385/kJEhBvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oFsLjBuVY.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://paperiq-9yrq.vercel.app/vite.svg",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://paperiq-9yrq.vercel.app/vite.svg",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://paperiq-9yrq.vercel.app/about",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Geist:wght@100;300;400;500;600;700;800;900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://paperiq-9yrq.vercel.app/assets/index-BJPcxNLD.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://paperiq-9yrq.vercel.app/assets/index-DkLRh3v_.css",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/geist/v5/gyByhwUxId8gMEwcGFWNOITd.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/jetbrainsmono/v24/tDbV2o-flEEny0FZhsfKu5WU4xD7OwGtT0rU.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/spacegrotesk/v22/V8mDoQDjQSkFtoMM3T6r8E7mPbF4C_k3HqU.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v385/kJEhBvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oFsLjBuVY.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://paperiq-9yrq.vercel.app/vite.svg",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://paperiq-9yrq.vercel.app/assets/avatar-sathvik-BD6paFc8.jpg",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://paperiq-9yrq.vercel.app/vision",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Geist:wght@100;300;400;500;600;700;800;900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://paperiq-9yrq.vercel.app/assets/index-BJPcxNLD.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://paperiq-9yrq.vercel.app/assets/index-DkLRh3v_.css",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/geist/v5/gyByhwUxId8gMEwcGFWNOITd.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/jetbrainsmono/v24/tDbV2o-flEEny0FZhsfKu5WU4xD7OwGtT0rU.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/spacegrotesk/v22/V8mDoQDjQSkFtoMM3T6r8E7mPbF4C_k3HqU.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v385/kJEhBvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oFsLjBuVY.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://paperiq-9yrq.vercel.app/vite.svg",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://paperiq-backend-vug0.onrender.com/api/v1/vision/votes/the_future",
+      "status": 500,
+      "method": "GET"
+    },
+    {
+      "url": "https://paperiq-backend-vug0.onrender.com/api/v1/vision/votes/exam_mentor",
+      "status": 500,
+      "method": "GET"
+    },
+    {
+      "url": "https://paperiq-backend-vug0.onrender.com/api/v1/vision/votes/exam_intelligence",
+      "status": 500,
+      "method": "GET"
+    },
+    {
+      "url": "https://paperiq-backend-vug0.onrender.com/api/v1/vision/votes/academic_os",
+      "status": 500,
+      "method": "GET"
+    },
+    {
+      "url": "https://paperiq-9yrq.vercel.app/offline",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Geist:wght@100;300;400;500;600;700;800;900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://paperiq-9yrq.vercel.app/assets/index-BJPcxNLD.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://paperiq-9yrq.vercel.app/assets/index-DkLRh3v_.css",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/geist/v5/gyByhwUxId8gMEwcGFWNOITd.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/jetbrainsmono/v24/tDbV2o-flEEny0FZhsfKu5WU4xD7OwGtT0rU.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/spacegrotesk/v22/V8mDoQDjQSkFtoMM3T6r8E7mPbF4C_k3HqU.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v385/kJEhBvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oFsLjBuVY.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://paperiq-9yrq.vercel.app/vite.svg",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://paperiq-9yrq.vercel.app/nonexistent-404-test",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Geist:wght@100;300;400;500;600;700;800;900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://paperiq-9yrq.vercel.app/assets/index-BJPcxNLD.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://paperiq-9yrq.vercel.app/assets/index-DkLRh3v_.css",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/geist/v5/gyByhwUxId8gMEwcGFWNOITd.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/jetbrainsmono/v24/tDbV2o-flEEny0FZhsfKu5WU4xD7OwGtT0rU.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/spacegrotesk/v22/V8mDoQDjQSkFtoMM3T6r8E7mPbF4C_k3HqU.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v385/kJEhBvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oFsLjBuVY.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://paperiq-9yrq.vercel.app/vite.svg",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://paperiq-9yrs-931ia8kwe-24r21a05hr-8498s-projects.vercel.app/auth",
+      "status": 302,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/sso-api?url=https%3A%2F%2Fpaperiq-9yrs-931ia8kwe-24r21a05hr-8498s-projects.vercel.app%2Fauth&nonce=25eea9fd6ae7f623c5d8e39e8930a11404966e42b3d1377ef101c9a51ca8b277",
+      "status": 307,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/login?next=%2Fsso-api%3Furl%3Dhttps%253A%252F%252Fpaperiq-9yrs-931ia8kwe-24r21a05hr-8498s-projects.vercel.app%252Fauth%26nonce%3D25eea9fd6ae7f623c5d8e39e8930a11404966e42b3d1377ef101c9a51ca8b277",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/25v-9084u7gx8.css",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/1tc758yq159ic.css",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/2dqldb3hp5g-0.css",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/media/Geist_Variable-s.p.2wz-lhd5-5z0-.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/2k0u9ujxdy963.css",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/309vt3-amk6xy.css",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/media/GeistPixel_Square.p.3i-voztpvqxl2.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/media/07a39a8a4660cc7c.p.1v5bejj26fx9h.woff2",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/3nu_tsfltiw02.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/0ii6oew3ijc9c.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/32gei50b1h-m1.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/2u5_fxaqdbhp-.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/3jo4lsk5f36k7.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/01m84dvi--j96.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/18-nxswwdziu_.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/2xo2gbld4x7p6.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/1luzrab9bo1nk.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/0kzgjawmap9qv.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/2ly3x0g63b5wl.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/3blpeafhpprhh.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/44yvh1iq2mmze.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/40s80sg8or82m.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/0u6f2altbp2hd.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/1arg3vor-zr44.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/41-xyxwcfu5r5.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/3oz3ri_i_8ua4.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/20fz5nhv2wtvm.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/3ln-u-0n5e9nh.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/1-9xx-j744k81.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/222oyz_8l6peh.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/3cb5rx2hxhv-x.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/3k-nay713blsl.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/25zbfgkkeiwmo.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/3-8fl08h-c3n6.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/2oho0rr2khxnz.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/2-7o_fohsl3cn.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/27apvzxsuf-kb.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/0bv7q675ea4kt.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/3w-z_vtyfh59l.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/3c_3672vzuplk.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/2_4c7vftsqkuv.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/2nbjz07qnsih-.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/2n64u-mgi4dda.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/3lqqi0oenc1ay.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/1f0_vtmgnl7y0.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/1fawjswdbytn4.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/turbopack-3qj017aphhpwl.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/1i25ytfvk5d_w.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/35vst90o6-76r.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/3xeueuwckkdrw.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/1aod-61zlg42m.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/02yg5z1mpd5t-.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/2acukr15d_236.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/3m1nk28wr2a-9.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/2dgo4kvuon38f.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/2io2ax53kqdtn.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/3wjh09owzb5ww.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/3rd87nmavu4i0.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/286y6exf31-41.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/3fiww2t4-tnk8.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/0vhhaxubfutkl.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/3u2zmttjhv6mf.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/130ig_izsy49i.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/264fo4jutcp9n.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/2z9dttqyv_1_v.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/0opc6luvm61j0.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/0fwg4wx4381m1.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/2isoerznm318t.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/1jra2dgw2d6b_.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/1yd_u3gf9iogh.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/02w4rhsxix053.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/3jqkkn1rpsot2.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/20lqevfk5dh7k.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/1p5apa1_7j55c.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/0b33_cltnmx3q.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/1s28d6fm_ev5p.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/32a8iraxcrzt0.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/41gtvnchea-vk.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/media/logo-github-color-dark.1k-70sin_m3qn.svg",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/media/logo-google-color-light.2x6g4y99zlarz.svg",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/media/logo-github-color-light.1184n6l5g07-6.svg",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/media/logo-open-ai-color-light.19_d6xia9t_gb.svg",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/media/logo-open-ai-color-dark.2s69z6l-k1q-7.svg",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/media/logo-google-color-dark.3nr_e0zdganvm.svg",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/42yt1gr-3z2bf.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/.well-known/vercel/microfrontends/client-config",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/3ktflq6-21xw-.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/3m2ckwf8cdff-.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/0dn7k0n9rf64y.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/0--r4l2-cza_5.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/40ckr7cr1kvqd.css",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/44vd2t1r0s8ne.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/e62b3a9e28ed8bca/script.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/09zmw-52meq5z.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/0bx1difi6y07j.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://accounts.google.com/gsi/client",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/3lwjmh8j74rp5.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/api/jwt",
+      "status": 403,
+      "method": "POST"
+    },
+    {
+      "url": "https://vercel.com/api/stream/internal",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "url": "https://vercel.com/.well-known/vercel/microfrontends/client-config",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://accounts.google.com/gsi/style",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/signup?next=%2Fsso-api%3Furl%3Dhttps%253A%252F%252Fpaperiq-9yrs-931ia8kwe-24r21a05hr-8498s-projects.vercel.app%252Fauth%26nonce%3D25eea9fd6ae7f623c5d8e39e8930a11404966e42b3d1377ef101c9a51ca8b277&_rsc=_H_fFy2_Q06N8BA7",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://accounts.google.com/gsi/status?client_id=258013614557-nema0dumfbottebi6to7aqi85qot9pvs.apps.googleusercontent.com&cas=fP8KAfoaFaR6D2g6wwtmHIq8KlICFrpYPbEI1Jg4CyE&bs=0sJCHzif81P0nlYfA7oK2BjboAbEncjWRqmABs7gAOc",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://si-next.vercel-scripts.com/v1/speed-insights/script.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/signup?next=%2Fsso-api%3Furl%3Dhttps%253A%252F%252Fpaperiq-9yrs-931ia8kwe-24r21a05hr-8498s-projects.vercel.app%252Fauth%26nonce%3D25eea9fd6ae7f623c5d8e39e8930a11404966e42b3d1377ef101c9a51ca8b277&_rsc=ESMN0uHFtARRz41R",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/signup?next=%2Fsso-api%3Furl%3Dhttps%253A%252F%252Fpaperiq-9yrs-931ia8kwe-24r21a05hr-8498s-projects.vercel.app%252Fauth%26nonce%3D25eea9fd6ae7f623c5d8e39e8930a11404966e42b3d1377ef101c9a51ca8b277&_rsc=aqvIQFTrQXhwZMdq",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/signup?next=%2Fsso-api%3Furl%3Dhttps%253A%252F%252Fpaperiq-9yrs-931ia8kwe-24r21a05hr-8498s-projects.vercel.app%252Fauth%26nonce%3D25eea9fd6ae7f623c5d8e39e8930a11404966e42b3d1377ef101c9a51ca8b277&_rsc=vMXKetKx_uNlGRnr",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/3syxmp4lb5zv0.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/1_e66wnuslrwk.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/signup?_rsc=_H_fFy2_Q06N8BA7",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://vercel.com/_next/static/immutable/chunks/1avtb2fqys74x.js",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://o205439.ingest.sentry.io/api/1323670/envelope/?sentry_key=d00780d432ac4ccf882f60dd02062e14&sentry_version=7&sentry_client=sentry.javascript.browser%2F7.111.0",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "url": "https://accounts.google.com/gsi/fedcm/config/passive.json",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://google.com/.well-known/web-identity",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "url": "https://accounts.google.com/gsi/fedcm/listaccounts",
+      "status": 200,
+      "method": "GET"
+    }
+  ]
+}

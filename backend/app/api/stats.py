@@ -1,41 +1,49 @@
-"""
-Stats API — Public landing page statistics
-"""
 from fastapi import APIRouter
-from app.database import get_admin_db
+from app.database import get_db
 from app.logger import get_logger
 
-router = APIRouter()
 log = get_logger(__name__)
+router = APIRouter()
+
 
 @router.get("/stats")
 async def get_stats():
     """
-    Public endpoint — returns aggregate counts for landing page.
-    Uses admin client since this is public and doesn't need user context.
+    Return platform statistics for landing page counter.
+    Ground-truth rule: Never present invented numbers as live academic statistics.
+    When live database counts are available, returns actual counts with is_live=True.
+    When unavailable, returns explicit failure/unavailable state.
     """
-    db = get_admin_db()
     try:
-        papers = db.table("papers").select("*", count="exact", head=True).execute()
-        questions = db.table("questions").select("*", count="exact", head=True).execute()
-        subjects = db.table("subjects").select("*", count="exact", head=True).execute()
-        
+        db = get_db()
+        papers = db.table("papers").select("id", count="exact", head=True).execute()
+        questions = db.table("questions").select("id", count="exact", head=True).execute()
+        subjects = db.table("subjects").select("id", count="exact", head=True).execute()
+
+        paper_count = papers.count if papers.count is not None else 0
+        question_count = questions.count if questions.count is not None else 0
+        subject_count = subjects.count if subjects.count is not None else 0
+
         return {
             "success": True,
             "data": {
-                "papers": papers.count or 0,
-                "questions": questions.count or 0,
-                "subjects": subjects.count or 0,
-            }
+                "papers": paper_count,
+                "questions": question_count,
+                "subjects": subject_count,
+                "is_live": True,
+                "source": "database",
+            },
         }
     except Exception as e:
-        log.error(f"Failed to fetch stats: {e}")
-        # Return defaults if query fails — landing page should never break
+        log.warning(f"Failed to fetch live stats from DB: {e}")
         return {
-            "success": True,
+            "success": False,
             "data": {
-                "papers": 72,
-                "questions": 5730,
-                "subjects": 10,
-            }
+                "papers": None,
+                "questions": None,
+                "subjects": None,
+                "is_live": False,
+                "source": "unavailable",
+                "message": "Live database statistics currently unavailable",
+            },
         }

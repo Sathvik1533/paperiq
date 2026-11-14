@@ -33,8 +33,8 @@ def calculate_max_marks_by_regulation(
     Returns:
         Exact max marks (never None, never 0)
     """
-    # Priority 1: Use calculated marks from questions if it appears complete
-    if calculated_marks >= 50:
+    # Priority 1: Use calculated marks from questions if available
+    if calculated_marks > 0:
         return calculated_marks
     
     # Priority 2: Year-based evaluation MUST override regulation for 2022-2024

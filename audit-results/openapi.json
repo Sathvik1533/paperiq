@@ -1,0 +1,4220 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "PaperIQ API",
+    "description": "AI Exam Intelligence Platform \u2014 every feature helps students score better marks with less effort.",
+    "version": "0.3.0"
+  },
+  "paths": {
+    "/api/v1/health": {
+      "get": {
+        "tags": [
+          "System"
+        ],
+        "summary": "Health",
+        "operationId": "health_api_v1_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/llm/health": {
+      "get": {
+        "tags": [
+          "System"
+        ],
+        "summary": "Llm Health",
+        "operationId": "llm_health_api_v1_llm_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/llm/active": {
+      "get": {
+        "tags": [
+          "System"
+        ],
+        "summary": "Llm Active",
+        "operationId": "llm_active_api_v1_llm_active_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/colleges": {
+      "get": {
+        "tags": [
+          "Academic"
+        ],
+        "summary": "List Colleges",
+        "operationId": "list_colleges_api_v1_colleges_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/colleges/{college_id}/branches": {
+      "get": {
+        "tags": [
+          "Academic"
+        ],
+        "summary": "List Branches",
+        "operationId": "list_branches_api_v1_colleges__college_id__branches_get",
+        "parameters": [
+          {
+            "name": "college_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "College Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/colleges/{college_id}/subjects": {
+      "get": {
+        "tags": [
+          "Academic"
+        ],
+        "summary": "List Subjects",
+        "operationId": "list_subjects_api_v1_colleges__college_id__subjects_get",
+        "parameters": [
+          {
+            "name": "college_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "College Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/subjects": {
+      "get": {
+        "tags": [
+          "Academic"
+        ],
+        "summary": "Search Subjects",
+        "operationId": "search_subjects_api_v1_subjects_get",
+        "parameters": [
+          {
+            "name": "college",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "College"
+            }
+          },
+          {
+            "name": "branch",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Branch"
+            }
+          },
+          {
+            "name": "year",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Year"
+            }
+          },
+          {
+            "name": "regulation",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Regulation"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/scrape/trigger": {
+      "post": {
+        "tags": [
+          "Scraping"
+        ],
+        "summary": "Trigger Scrape",
+        "operationId": "trigger_scrape_api_v1_scrape_trigger_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScrapeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/scrape/jobs/{job_id}": {
+      "get": {
+        "tags": [
+          "Scraping"
+        ],
+        "summary": "Get Job Status",
+        "operationId": "get_job_status_api_v1_scrape_jobs__job_id__get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/scrape/jobs": {
+      "get": {
+        "tags": [
+          "Scraping"
+        ],
+        "summary": "List Jobs",
+        "operationId": "list_jobs_api_v1_scrape_jobs_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/papers/{paper_id}/download": {
+      "get": {
+        "tags": [
+          "Papers"
+        ],
+        "summary": "Download Paper Pdf",
+        "description": "Generate and download paper as PDF from questions in database.\nIMPORTANT: This generates a PDF with 100% authentic MLRIT questions extracted from\noriginal DOCX files. The questions are identical, but the format is PDF not DOCX.\nOriginal DOCX files were discarded after extraction to database.",
+        "operationId": "download_paper_pdf_api_v1_papers__paper_id__download_get",
+        "parameters": [
+          {
+            "name": "paper_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Paper Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/papers/{paper_id}/view": {
+      "get": {
+        "tags": [
+          "Papers"
+        ],
+        "summary": "View Paper",
+        "description": "Views the browser-friendly PDF version of the paper.\nIf original was DOCX, this serves the server-converted PDF.",
+        "operationId": "view_paper_api_v1_papers__paper_id__view_get",
+        "parameters": [
+          {
+            "name": "paper_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Paper Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/papers": {
+      "get": {
+        "tags": [
+          "Papers"
+        ],
+        "summary": "List Papers",
+        "description": "Returns papers with their parsed questions included.\nB7 fix: joins questions so the Paper Viewer can display them.\n\nCRITICAL: Uses relational join to ensure questions are never clipped before hitting client.",
+        "operationId": "list_papers_api_v1_papers_get",
+        "parameters": [
+          {
+            "name": "subject_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Subject Id"
+            }
+          },
+          {
+            "name": "year",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Year"
+            }
+          },
+          {
+            "name": "exam_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Exam Type"
+            }
+          },
+          {
+            "name": "exam_category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Exam Category"
+            }
+          },
+          {
+            "name": "regulation",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Regulation"
+            }
+          },
+          {
+            "name": "college_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "College Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/papers/{paper_id}": {
+      "get": {
+        "tags": [
+          "Papers"
+        ],
+        "summary": "Get Paper",
+        "operationId": "get_paper_api_v1_papers__paper_id__get",
+        "parameters": [
+          {
+            "name": "paper_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Paper Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/papers/{paper_id}/questions": {
+      "get": {
+        "tags": [
+          "Papers"
+        ],
+        "summary": "Get Paper Questions",
+        "operationId": "get_paper_questions_api_v1_papers__paper_id__questions_get",
+        "parameters": [
+          {
+            "name": "paper_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Paper Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/papers/{paper_id}/analysis-report": {
+      "get": {
+        "tags": [
+          "Papers"
+        ],
+        "summary": "Download Analysis Report",
+        "description": "Alias for backward compatibility. Redirects to /download endpoint.",
+        "operationId": "download_analysis_report_api_v1_papers__paper_id__analysis_report_get",
+        "parameters": [
+          {
+            "name": "paper_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Paper Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/papers/{paper_id}/cache": {
+      "post": {
+        "tags": [
+          "CDN"
+        ],
+        "summary": "Cache Paper To Cdn",
+        "description": "Pre-generate PDF and cache to Supabase Storage CDN.\n\n- First request: generates PDF (500ms-2s)\n- Subsequent requests: served from CDN (10-50ms)\n\nCan be called manually or triggered automatically after paper ingestion.",
+        "operationId": "cache_paper_to_cdn_api_v1_papers__paper_id__cache_post",
+        "parameters": [
+          {
+            "name": "paper_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Paper Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/papers/{paper_id}/cdn-url": {
+      "get": {
+        "tags": [
+          "CDN"
+        ],
+        "summary": "Get Cdn Url",
+        "description": "Get CDN URL for a paper if it exists, otherwise return None.\nFrontend can use this to decide whether to direct-link CDN or fallback to generation.",
+        "operationId": "get_cdn_url_api_v1_papers__paper_id__cdn_url_get",
+        "parameters": [
+          {
+            "name": "paper_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Paper Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/papers/cache-all": {
+      "post": {
+        "tags": [
+          "CDN"
+        ],
+        "summary": "Cache All Papers",
+        "description": "Batch cache papers to CDN.\nUse this to pre-warm the CDN cache for popular papers.\n\nRuns in background to avoid timeout.",
+        "operationId": "cache_all_papers_api_v1_papers_cache_all_post",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 100,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/extract/trigger": {
+      "post": {
+        "tags": [
+          "Extraction"
+        ],
+        "summary": "Trigger Extraction",
+        "operationId": "trigger_extraction_api_v1_extract_trigger_post",
+        "parameters": [
+          {
+            "name": "paper_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Paper Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/extract/run": {
+      "post": {
+        "tags": [
+          "Extraction"
+        ],
+        "summary": "Run Extraction Sync",
+        "operationId": "run_extraction_sync_api_v1_extract_run_post",
+        "parameters": [
+          {
+            "name": "paper_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Paper Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/extract/status": {
+      "get": {
+        "tags": [
+          "Extraction"
+        ],
+        "summary": "Extraction Status",
+        "operationId": "extraction_status_api_v1_extract_status_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/syllabus/upload": {
+      "post": {
+        "tags": [
+          "Extraction"
+        ],
+        "summary": "Upload Syllabus",
+        "operationId": "upload_syllabus_api_v1_syllabus_upload_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_syllabus_api_v1_syllabus_upload_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/syllabus": {
+      "get": {
+        "tags": [
+          "Extraction"
+        ],
+        "summary": "List Syllabi",
+        "operationId": "list_syllabi_api_v1_syllabus_get",
+        "parameters": [
+          {
+            "name": "subject_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Subject Id"
+            }
+          },
+          {
+            "name": "regulation",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Regulation"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/syllabus/{syllabus_id}/topics": {
+      "get": {
+        "tags": [
+          "Extraction"
+        ],
+        "summary": "Get Syllabus Topics",
+        "operationId": "get_syllabus_topics_api_v1_syllabus__syllabus_id__topics_get",
+        "parameters": [
+          {
+            "name": "syllabus_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Syllabus Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/parse/trigger": {
+      "post": {
+        "tags": [
+          "Questions"
+        ],
+        "summary": "Trigger Parsing",
+        "description": "Queue question parsing for one paper or all extracted papers.",
+        "operationId": "trigger_parsing_api_v1_parse_trigger_post",
+        "parameters": [
+          {
+            "name": "paper_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Paper Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/parse/run": {
+      "post": {
+        "tags": [
+          "Questions"
+        ],
+        "summary": "Run Parsing Sync",
+        "description": "Synchronous parse \u2014 waits for result (use for testing).",
+        "operationId": "run_parsing_sync_api_v1_parse_run_post",
+        "parameters": [
+          {
+            "name": "paper_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Paper Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/parse/preview": {
+      "get": {
+        "tags": [
+          "Questions"
+        ],
+        "summary": "Preview Parse",
+        "description": "Parse a paper in memory and return structured questions WITHOUT storing.\nUseful for verifying parse quality before committing to DB.",
+        "operationId": "preview_parse_api_v1_parse_preview_get",
+        "parameters": [
+          {
+            "name": "paper_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Paper Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/questions": {
+      "get": {
+        "tags": [
+          "Questions"
+        ],
+        "summary": "List Questions",
+        "description": "List questions with filters. Returns evidence trail (paper_id on each).",
+        "operationId": "list_questions_api_v1_questions_get",
+        "parameters": [
+          {
+            "name": "subject_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Subject Id"
+            }
+          },
+          {
+            "name": "paper_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Paper Id"
+            }
+          },
+          {
+            "name": "question_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Question Type"
+            }
+          },
+          {
+            "name": "marks",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Marks"
+            }
+          },
+          {
+            "name": "section",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Section"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/questions/batch": {
+      "post": {
+        "tags": [
+          "Questions"
+        ],
+        "summary": "Batch Questions",
+        "description": "Get questions for multiple papers in one call.",
+        "operationId": "batch_questions_api_v1_questions_batch_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BatchQuestionsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/questions/{question_id}": {
+      "get": {
+        "tags": [
+          "Questions"
+        ],
+        "summary": "Get Question",
+        "description": "Single question with full evidence trail:\nquestion -> paper -> original_url",
+        "operationId": "get_question_api_v1_questions__question_id__get",
+        "parameters": [
+          {
+            "name": "question_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Question Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/parse/stats": {
+      "get": {
+        "tags": [
+          "Questions"
+        ],
+        "summary": "Parse Stats",
+        "description": "Returns question counts by type, section, marks.",
+        "operationId": "parse_stats_api_v1_parse_stats_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analysis/generate": {
+      "post": {
+        "tags": [
+          "Analysis"
+        ],
+        "summary": "Generate Analysis",
+        "description": "Beta Student Experience: Synchronous analysis generation.\nReturns complete report immediately (no background job).",
+        "operationId": "generate_analysis_api_v1_analysis_generate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunAnalysisRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analysis/run": {
+      "post": {
+        "tags": [
+          "Analysis"
+        ],
+        "summary": "Run Analysis",
+        "description": "Trigger an analysis job. Returns report_id immediately.\nThe heavy work runs in background.\n\nUse this endpoint for manual/advanced analysis with full control.\nFor normal users, use POST /analysis/simple instead.",
+        "operationId": "run_analysis_api_v1_analysis_run_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunAnalysisRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunAnalysisResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analysis/simple": {
+      "post": {
+        "tags": [
+          "Analysis"
+        ],
+        "summary": "Run Simple Analysis",
+        "description": "Simplified analysis for normal users.\n\nAuto-infers from user profile:\n- College, branch, regulation (from onboarding)\n- Year range (last 5 years)\n\nUser only provides:\n- Subject ID (from dropdown)\n- Exam category (Mid-1, Mid-2, Semester)\n- Exam attempt (Regular/Supplementary)\n\nEverything else is automatic.",
+        "operationId": "run_simple_analysis_api_v1_analysis_simple_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SimplifiedAnalysisRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunAnalysisResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analysis/cached": {
+      "get": {
+        "tags": [
+          "Analysis"
+        ],
+        "summary": "Get Cached Report",
+        "description": "Returns the most recent non-expired cached report matching the params.",
+        "operationId": "get_cached_report_api_v1_analysis_cached_get",
+        "parameters": [
+          {
+            "name": "subject_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Subject Id"
+            }
+          },
+          {
+            "name": "regulation",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Regulation"
+            }
+          },
+          {
+            "name": "branch_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Branch Id"
+            }
+          },
+          {
+            "name": "year_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Year From"
+            }
+          },
+          {
+            "name": "year_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Year To"
+            }
+          },
+          {
+            "name": "exam_category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Exam Category"
+            }
+          },
+          {
+            "name": "exam_attempt",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Exam Attempt"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analysis/{report_id}/status": {
+      "get": {
+        "tags": [
+          "Analysis"
+        ],
+        "summary": "Get Report Status",
+        "description": "Returns current status of an analysis job.",
+        "operationId": "get_report_status_api_v1_analysis__report_id__status_get",
+        "parameters": [
+          {
+            "name": "report_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Report Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analysis/{report_id}": {
+      "get": {
+        "tags": [
+          "Analysis"
+        ],
+        "summary": "Get Report",
+        "description": "Returns the full analysis report.",
+        "operationId": "get_report_api_v1_analysis__report_id__get",
+        "parameters": [
+          {
+            "name": "report_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Report Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/syllabus/{syllabus_id}/coverage": {
+      "get": {
+        "tags": [
+          "Analysis"
+        ],
+        "summary": "Get Syllabus Coverage",
+        "description": "Gap #6: Evidence-based syllabus coverage analysis.\nMaps questions with topic_tags to syllabus topics via fuzzy matching.\nReturns per-unit and overall coverage percentages backed by real question evidence.",
+        "operationId": "get_syllabus_coverage_api_v1_syllabus__syllabus_id__coverage_get",
+        "parameters": [
+          {
+            "name": "syllabus_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Syllabus Id"
+            }
+          },
+          {
+            "name": "subject_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Subject Id"
+            }
+          },
+          {
+            "name": "regulation",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Regulation"
+            }
+          },
+          {
+            "name": "branch_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Branch Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/topics/map": {
+      "post": {
+        "tags": [
+          "Analysis"
+        ],
+        "summary": "Map Topics",
+        "description": "Gap #7: Map questions \u2192 syllabus topics via fuzzy matching.\nPopulates question_topics junction table with confidence scores.\nIdempotent \u2014 safe to re-run.",
+        "operationId": "map_topics_api_v1_topics_map_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MapTopicsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analysis/{analysis_id}/marks-breakdown": {
+      "get": {
+        "tags": [
+          "Analysis"
+        ],
+        "summary": "Get Marks Breakdown",
+        "description": "Get question distribution by marks ranges.\n\nReturns breakdown of questions into:\n- 1-2 marks: Short answer questions\n- 3-5 marks: Medium answer questions  \n- 6-10 marks: Long answer questions\n- 11+ marks: Very long answer / essay questions",
+        "operationId": "get_marks_breakdown_api_v1_analysis__analysis_id__marks_breakdown_get",
+        "parameters": [
+          {
+            "name": "analysis_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Analysis Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/planner/generate": {
+      "post": {
+        "tags": [
+          "Planner"
+        ],
+        "summary": "Generate Plan",
+        "description": "Generate a personalised study plan from an analysis report.\nThe report must belong to the same regulation as the request.",
+        "operationId": "generate_plan_api_v1_planner_generate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GeneratePlanRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/planner/{plan_id}": {
+      "get": {
+        "tags": [
+          "Planner"
+        ],
+        "summary": "Get Plan",
+        "operationId": "get_plan_api_v1_planner__plan_id__get",
+        "parameters": [
+          {
+            "name": "plan_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Plan Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/readiness/calculate": {
+      "post": {
+        "tags": [
+          "Planner"
+        ],
+        "summary": "Calculate Readiness",
+        "operationId": "calculate_readiness_api_v1_readiness_calculate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReadinessRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/readiness": {
+      "get": {
+        "tags": [
+          "Planner"
+        ],
+        "summary": "Get Readiness",
+        "operationId": "get_readiness_api_v1_readiness_get",
+        "parameters": [
+          {
+            "name": "subject_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Subject Id"
+            }
+          },
+          {
+            "name": "regulation",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Regulation"
+            }
+          },
+          {
+            "name": "user_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "User Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/mock/generate": {
+      "post": {
+        "tags": [
+          "Planner"
+        ],
+        "summary": "Generate Mock",
+        "operationId": "generate_mock_api_v1_mock_generate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MockGenerateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/mock/{mock_id}": {
+      "get": {
+        "tags": [
+          "Planner"
+        ],
+        "summary": "Get Mock",
+        "operationId": "get_mock_api_v1_mock__mock_id__get",
+        "parameters": [
+          {
+            "name": "mock_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Mock Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/activity": {
+      "post": {
+        "tags": [
+          "Planner"
+        ],
+        "summary": "Log Activity",
+        "operationId": "log_activity_api_v1_activity_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LogActivityRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/activity/summary": {
+      "get": {
+        "tags": [
+          "Planner"
+        ],
+        "summary": "Get Activity Summary",
+        "operationId": "get_activity_summary_api_v1_activity_summary_get",
+        "parameters": [
+          {
+            "name": "subject_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Subject Id"
+            }
+          },
+          {
+            "name": "regulation",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Regulation"
+            }
+          },
+          {
+            "name": "user_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "User Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/onboarding": {
+      "post": {
+        "tags": [
+          "Profile"
+        ],
+        "summary": "Complete Onboarding",
+        "description": "Simplified onboarding for MLRIT R22 CSE students.\n\nAutomatic context resolution:\n- College: MLRIT (fixed)\n- Branch: CSE (fixed for now)\n- Regulation: R22 (inferred from semester)\n- Year: Inferred from semester (2-1/2-2 \u2192 Year 2)\n\nAI auto-detects:\n- Skill level from CGPA and backlogs\n- Academic risk level\n- Study intensity needs\n\nReturns learner profile with inferred characteristics.",
+        "operationId": "complete_onboarding_api_v1_onboarding_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OnboardingRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/profile/{user_id}": {
+      "get": {
+        "tags": [
+          "Profile"
+        ],
+        "summary": "Get Learner Profile",
+        "description": "Get current learner profile.\nRe-computes on every request to ensure fresh data.",
+        "operationId": "get_learner_profile_api_v1_profile__user_id__get",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "User Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Profile"
+        ],
+        "summary": "Upsert Profile",
+        "description": "Upsert user profile \u2014 updates only provided fields.",
+        "operationId": "upsert_profile_api_v1_profile__user_id__put",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "User Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfileUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Profile"
+        ],
+        "summary": "Delete Profile",
+        "description": "Delete user account \u2014 removes user_profiles and learner_profiles.",
+        "operationId": "delete_profile_api_v1_profile__user_id__delete",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "User Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/profile/{user_id}/refresh": {
+      "post": {
+        "tags": [
+          "Profile"
+        ],
+        "summary": "Refresh Learner Profile",
+        "description": "Force refresh learner profile.\nCall this after:\n- Mock exam completion\n- Readiness score calculation\n- Major study session",
+        "operationId": "refresh_learner_profile_api_v1_profile__user_id__refresh_post",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "User Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/profile/{user_id}/context": {
+      "get": {
+        "tags": [
+          "Profile"
+        ],
+        "summary": "Get User Context",
+        "description": "Get user academic context for filtering.",
+        "operationId": "get_user_context_api_v1_profile__user_id__context_get",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "User Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/profile/{user_id}/subjects": {
+      "get": {
+        "tags": [
+          "Profile"
+        ],
+        "summary": "Get User Subjects",
+        "description": "Get subjects available for user's semester.\nAuto-filtered by regulation, branch, semester from onboarding.\n\nReturns list of subjects user can select from.",
+        "operationId": "get_user_subjects_api_v1_profile__user_id__subjects_get",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "User Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/subjects/filter": {
+      "get": {
+        "tags": [
+          "Profile"
+        ],
+        "summary": "Filter Subjects",
+        "description": "Get subjects by semester+regulation (no college_id required).",
+        "operationId": "filter_subjects_api_v1_subjects_filter_get",
+        "parameters": [
+          {
+            "name": "semester",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Semester"
+            }
+          },
+          {
+            "name": "regulation",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Regulation"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/onboarding/manual": {
+      "post": {
+        "tags": [
+          "Onboarding",
+          "onboarding"
+        ],
+        "summary": "Create Profile Manual",
+        "description": "Method 1: Manual onboarding (existing flow)\nUser selects everything manually",
+        "operationId": "create_profile_manual_api_v1_onboarding_manual_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ManualProfileCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Create Profile Manual Api V1 Onboarding Manual Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/onboarding/parse-hall-ticket": {
+      "post": {
+        "tags": [
+          "Onboarding",
+          "onboarding"
+        ],
+        "summary": "Parse Hall Ticket Endpoint",
+        "description": "Method 2: Hall ticket upload\nExtract profile data from uploaded PDF or image",
+        "operationId": "parse_hall_ticket_endpoint_api_v1_onboarding_parse_hall_ticket_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_parse_hall_ticket_endpoint_api_v1_onboarding_parse_hall_ticket_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HallTicketParseResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/onboarding/confirm-hall-ticket": {
+      "post": {
+        "tags": [
+          "Onboarding",
+          "onboarding"
+        ],
+        "summary": "Confirm Hall Ticket Profile",
+        "description": "Confirm and save profile extracted from hall ticket\nCalled after user reviews and approves the parsed data",
+        "operationId": "confirm_hall_ticket_profile_api_v1_onboarding_confirm_hall_ticket_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HallTicketParseResponse"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Confirm Hall Ticket Profile Api V1 Onboarding Confirm Hall Ticket Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/knowledge-base/status": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Get Knowledge Base Status",
+        "operationId": "get_knowledge_base_status_api_v1_knowledge_base_status_get",
+        "parameters": [
+          {
+            "name": "college",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "MLRIT",
+              "title": "College"
+            }
+          },
+          {
+            "name": "regulation",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "R22",
+              "title": "Regulation"
+            }
+          },
+          {
+            "name": "x-admin-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Admin-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/knowledge-base/build": {
+      "post": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Build Knowledge Base",
+        "operationId": "build_knowledge_base_api_v1_knowledge_base_build_post",
+        "parameters": [
+          {
+            "name": "x-admin-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Admin-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/knowledge-base/discover-papers": {
+      "post": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Discover Papers",
+        "operationId": "discover_papers_api_v1_knowledge_base_discover_papers_post",
+        "parameters": [
+          {
+            "name": "college_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "College Id"
+            }
+          },
+          {
+            "name": "branch_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Branch Id"
+            }
+          },
+          {
+            "name": "regulation",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Regulation"
+            }
+          },
+          {
+            "name": "btech_year",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 2,
+              "title": "Btech Year"
+            }
+          },
+          {
+            "name": "x-admin-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Admin-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/r22/subjects": {
+      "get": {
+        "tags": [
+          "R22"
+        ],
+        "summary": "List R22 Subjects",
+        "description": "List all R22 subjects (both 2-1 and 2-2).\nOptionally filter by branch (CSE, IT, BS, HS) or semester (1 or 2).",
+        "operationId": "list_r22_subjects_api_v1_r22_subjects_get",
+        "parameters": [
+          {
+            "name": "branch",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Branch"
+            }
+          },
+          {
+            "name": "semester",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Semester"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/r22/subjects/{subject_code}": {
+      "get": {
+        "tags": [
+          "R22"
+        ],
+        "summary": "Get R22 Subject",
+        "description": "Get subject info and available paper count.",
+        "operationId": "get_r22_subject_api_v1_r22_subjects__subject_code__get",
+        "parameters": [
+          {
+            "name": "subject_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Subject Code"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/r22/analyze": {
+      "post": {
+        "tags": [
+          "R22"
+        ],
+        "summary": "Analyze R22 Subject",
+        "description": "Full auto-pipeline for one R22 2-2 subject.\n\nSteps (all automatic):\n1. Crawl MLRIT portal \u2192 download matching archives\n2. Extract docx files matching subject_code\n3. Parse questions\n4. Run analysis\n5. Return report_id\n\nReturns {job_id, status, subject_code, subject_name}",
+        "operationId": "analyze_r22_subject_api_v1_r22_analyze_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalyzeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/r22/job/{job_id}": {
+      "get": {
+        "tags": [
+          "R22"
+        ],
+        "summary": "Get R22 Job Status",
+        "description": "Poll job status. When status=completed, check error_log[0].report_id for the analysis.",
+        "operationId": "get_r22_job_status_api_v1_r22_job__job_id__get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/vision/vote": {
+      "post": {
+        "tags": [
+          "Vision"
+        ],
+        "summary": "Vote Feature",
+        "description": "Increment vote count for a vision roadmap feature.",
+        "operationId": "vote_feature_api_v1_vision_vote_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VoteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/vision/votes/{feature_id}": {
+      "get": {
+        "tags": [
+          "Vision"
+        ],
+        "summary": "Get Votes",
+        "description": "Retrieve vote count for a specific feature.",
+        "operationId": "get_votes_api_v1_vision_votes__feature_id__get",
+        "parameters": [
+          {
+            "name": "feature_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Feature Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analysis/{subject_id}/cross-reference": {
+      "post": {
+        "tags": [
+          "Analysis"
+        ],
+        "summary": "Cross Reference Faculty Notes",
+        "operationId": "cross_reference_faculty_notes_api_v1_analysis__subject_id__cross_reference_post",
+        "parameters": [
+          {
+            "name": "subject_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Subject Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_cross_reference_faculty_notes_api_v1_analysis__subject_id__cross_reference_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/stats": {
+      "get": {
+        "tags": [
+          "System"
+        ],
+        "summary": "Get Stats",
+        "description": "Public endpoint \u2014 returns aggregate counts for landing page.\nUses admin client since this is public and doesn't need user context.",
+        "operationId": "get_stats_api_v1_stats_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/feedback": {
+      "post": {
+        "tags": [
+          "Feedback"
+        ],
+        "summary": "Submit Feedback",
+        "description": "Submit user feedback. Works for both authenticated and anonymous users.",
+        "operationId": "submit_feedback_api_v1_feedback_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FeedbackRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AnalyzeRequest": {
+        "properties": {
+          "subject_code": {
+            "type": "string",
+            "title": "Subject Code"
+          },
+          "year_from": {
+            "type": "integer",
+            "title": "Year From",
+            "default": 2021
+          },
+          "year_to": {
+            "type": "integer",
+            "title": "Year To",
+            "default": 2025
+          },
+          "force_refresh": {
+            "type": "boolean",
+            "title": "Force Refresh",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "subject_code"
+        ],
+        "title": "AnalyzeRequest"
+      },
+      "BatchQuestionsRequest": {
+        "properties": {
+          "paper_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Paper Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "paper_ids"
+        ],
+        "title": "BatchQuestionsRequest"
+      },
+      "Body_cross_reference_faculty_notes_api_v1_analysis__subject_id__cross_reference_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_cross_reference_faculty_notes_api_v1_analysis__subject_id__cross_reference_post"
+      },
+      "Body_parse_hall_ticket_endpoint_api_v1_onboarding_parse_hall_ticket_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_parse_hall_ticket_endpoint_api_v1_onboarding_parse_hall_ticket_post"
+      },
+      "Body_upload_syllabus_api_v1_syllabus_upload_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "title": "File"
+          },
+          "subject_id": {
+            "type": "string",
+            "title": "Subject Id"
+          },
+          "regulation": {
+            "type": "string",
+            "title": "Regulation"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file",
+          "subject_id",
+          "regulation"
+        ],
+        "title": "Body_upload_syllabus_api_v1_syllabus_upload_post"
+      },
+      "FeedbackRequest": {
+        "properties": {
+          "page": {
+            "type": "string",
+            "title": "Page"
+          },
+          "rating": {
+            "type": "integer",
+            "title": "Rating"
+          },
+          "hours_saved": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hours Saved"
+          },
+          "trigger": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trigger"
+          }
+        },
+        "type": "object",
+        "required": [
+          "page",
+          "rating"
+        ],
+        "title": "FeedbackRequest"
+      },
+      "GeneratePlanRequest": {
+        "properties": {
+          "report_id": {
+            "type": "string",
+            "title": "Report Id"
+          },
+          "exam_date": {
+            "type": "string",
+            "title": "Exam Date"
+          },
+          "hours_per_day": {
+            "type": "number",
+            "title": "Hours Per Day",
+            "default": 4.0
+          },
+          "target_grade": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Grade"
+          },
+          "regulation": {
+            "type": "string",
+            "title": "Regulation"
+          },
+          "syllabus_id": {
+            "type": "string",
+            "title": "Syllabus Id"
+          },
+          "subject_id": {
+            "type": "string",
+            "title": "Subject Id"
+          },
+          "preparation_level": {
+            "type": "string",
+            "title": "Preparation Level",
+            "default": "intermediate"
+          }
+        },
+        "type": "object",
+        "required": [
+          "report_id",
+          "exam_date",
+          "regulation",
+          "syllabus_id",
+          "subject_id"
+        ],
+        "title": "GeneratePlanRequest"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HallTicketParseResponse": {
+        "properties": {
+          "branch": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Branch"
+          },
+          "regulation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Regulation"
+          },
+          "year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Year"
+          },
+          "semester": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Semester"
+          },
+          "semester_display": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Semester Display"
+          },
+          "subject_codes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Subject Codes"
+          },
+          "subjects": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Subjects"
+          },
+          "confidence": {
+            "type": "string",
+            "title": "Confidence"
+          }
+        },
+        "type": "object",
+        "required": [
+          "branch",
+          "regulation",
+          "year",
+          "semester",
+          "semester_display",
+          "subject_codes",
+          "subjects",
+          "confidence"
+        ],
+        "title": "HallTicketParseResponse",
+        "description": "Hall ticket parse result"
+      },
+      "LogActivityRequest": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "activity_type": {
+            "type": "string",
+            "title": "Activity Type"
+          },
+          "subject_id": {
+            "type": "string",
+            "title": "Subject Id"
+          },
+          "regulation": {
+            "type": "string",
+            "title": "Regulation"
+          },
+          "reference_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference Id"
+          },
+          "metadata": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Metadata"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "activity_type",
+          "subject_id",
+          "regulation"
+        ],
+        "title": "LogActivityRequest"
+      },
+      "ManualProfileCreate": {
+        "properties": {
+          "college_id": {
+            "type": "string",
+            "title": "College Id"
+          },
+          "branch": {
+            "type": "string",
+            "title": "Branch"
+          },
+          "regulation": {
+            "type": "string",
+            "title": "Regulation"
+          },
+          "year": {
+            "type": "integer",
+            "maximum": 4.0,
+            "minimum": 1.0,
+            "title": "Year"
+          },
+          "semester": {
+            "type": "integer",
+            "maximum": 2.0,
+            "minimum": 1.0,
+            "title": "Semester"
+          },
+          "subject_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Subject Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "college_id",
+          "branch",
+          "regulation",
+          "year",
+          "semester",
+          "subject_ids"
+        ],
+        "title": "ManualProfileCreate",
+        "description": "Manual profile creation (existing flow)"
+      },
+      "MapTopicsRequest": {
+        "properties": {
+          "subject_id": {
+            "type": "string",
+            "title": "Subject Id"
+          },
+          "regulation": {
+            "type": "string",
+            "title": "Regulation"
+          },
+          "branch_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Branch Id"
+          },
+          "syllabus_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Syllabus Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "subject_id",
+          "regulation"
+        ],
+        "title": "MapTopicsRequest"
+      },
+      "MockGenerateRequest": {
+        "properties": {
+          "report_id": {
+            "type": "string",
+            "title": "Report Id"
+          },
+          "regulation": {
+            "type": "string",
+            "title": "Regulation"
+          },
+          "subject_id": {
+            "type": "string",
+            "title": "Subject Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "report_id",
+          "regulation",
+          "subject_id"
+        ],
+        "title": "MockGenerateRequest"
+      },
+      "OnboardingRequest": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "current_semester": {
+            "type": "integer",
+            "title": "Current Semester"
+          },
+          "current_cgpa": {
+            "type": "number",
+            "title": "Current Cgpa"
+          },
+          "backlogs_count": {
+            "type": "integer",
+            "title": "Backlogs Count"
+          },
+          "upcoming_exam_type": {
+            "type": "string",
+            "title": "Upcoming Exam Type"
+          },
+          "study_hours_per_day": {
+            "type": "number",
+            "title": "Study Hours Per Day"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "current_semester",
+          "current_cgpa",
+          "backlogs_count",
+          "upcoming_exam_type",
+          "study_hours_per_day"
+        ],
+        "title": "OnboardingRequest",
+        "description": "Simplified onboarding \u2014 collect only essential data.\n\nFor MLRIT R22 CSE students:\n- College, branch, regulation inferred automatically\n- Subject list auto-populated from knowledge base\n- Skill level auto-detected from CGPA and backlogs"
+      },
+      "ProfileUpdateRequest": {
+        "properties": {
+          "full_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Full Name"
+          },
+          "college_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "College Id"
+          },
+          "branch_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Branch Id"
+          },
+          "regulation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Regulation"
+          },
+          "current_year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Year"
+          },
+          "current_semester": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Semester"
+          },
+          "current_cgpa": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Cgpa"
+          },
+          "target_cgpa": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Cgpa"
+          },
+          "study_hours_per_day": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Study Hours Per Day"
+          },
+          "preparation_level": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preparation Level"
+          },
+          "has_completed_tour": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Has Completed Tour"
+          },
+          "onboarding_complete": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Onboarding Complete"
+          }
+        },
+        "type": "object",
+        "title": "ProfileUpdateRequest"
+      },
+      "ReadinessRequest": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "subject_id": {
+            "type": "string",
+            "title": "Subject Id"
+          },
+          "regulation": {
+            "type": "string",
+            "title": "Regulation"
+          },
+          "study_plan_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Study Plan Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "subject_id",
+          "regulation"
+        ],
+        "title": "ReadinessRequest"
+      },
+      "RunAnalysisRequest": {
+        "properties": {
+          "subject_id": {
+            "type": "string",
+            "title": "Subject Id"
+          },
+          "regulation": {
+            "type": "string",
+            "title": "Regulation"
+          },
+          "branch_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Branch Id"
+          },
+          "year_from": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Year From"
+          },
+          "year_to": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Year To"
+          },
+          "exam_category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exam Category"
+          },
+          "exam_attempt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exam Attempt"
+          }
+        },
+        "type": "object",
+        "required": [
+          "subject_id",
+          "regulation"
+        ],
+        "title": "RunAnalysisRequest"
+      },
+      "RunAnalysisResponse": {
+        "properties": {
+          "report_id": {
+            "type": "string",
+            "title": "Report Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "default": "processing"
+          }
+        },
+        "type": "object",
+        "required": [
+          "report_id"
+        ],
+        "title": "RunAnalysisResponse"
+      },
+      "ScrapeRequest": {
+        "properties": {
+          "college_id": {
+            "type": "string",
+            "title": "College Id"
+          },
+          "subject_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subject Id"
+          },
+          "year_from": {
+            "type": "integer",
+            "title": "Year From",
+            "default": 2021
+          },
+          "year_to": {
+            "type": "integer",
+            "title": "Year To",
+            "default": 2025
+          },
+          "force_refresh": {
+            "type": "boolean",
+            "title": "Force Refresh",
+            "default": false
+          },
+          "btech_year": {
+            "type": "integer",
+            "title": "Btech Year",
+            "default": 2
+          },
+          "regulation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Regulation"
+          },
+          "exam_categories": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Exam Categories",
+            "description": "Filter: Semester | Mid-1 | Mid-2. Default = all."
+          },
+          "exam_attempts": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Exam Attempts",
+            "description": "Filter: Regular | Supplementary. Default = both."
+          }
+        },
+        "type": "object",
+        "required": [
+          "college_id"
+        ],
+        "title": "ScrapeRequest"
+      },
+      "SimplifiedAnalysisRequest": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "subject_id": {
+            "type": "string",
+            "title": "Subject Id"
+          },
+          "exam_category": {
+            "type": "string",
+            "title": "Exam Category"
+          },
+          "exam_attempt": {
+            "type": "string",
+            "title": "Exam Attempt",
+            "default": "Regular"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "subject_id",
+          "exam_category"
+        ],
+        "title": "SimplifiedAnalysisRequest",
+        "description": "Simplified analysis request for normal users.\nAuto-infers context from user profile."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "VoteRequest": {
+        "properties": {
+          "feature_id": {
+            "type": "string",
+            "title": "Feature Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "feature_id"
+        ],
+        "title": "VoteRequest"
+      }
+    }
+  }
+}

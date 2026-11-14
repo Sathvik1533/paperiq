@@ -1,0 +1,119 @@
+[
+  {
+    "endpoint": "/api/v1/health",
+    "method": "GET",
+    "expected_auth": false,
+    "unauth_status": 200,
+    "bad_jwt_status": 200,
+    "cors_allow_origin": "*",
+    "sample_response": "{\"success\":true,\"data\":{\"status\":\"ok\",\"version\":\"0.1.0\",\"db\":\"ok\",\"storage\":\"supabase\"}}"
+  },
+  {
+    "endpoint": "/api/v1/stats",
+    "method": "GET",
+    "expected_auth": false,
+    "unauth_status": 200,
+    "bad_jwt_status": 200,
+    "cors_allow_origin": "*",
+    "sample_response": "{\"success\":true,\"data\":{\"papers\":0,\"questions\":0,\"subjects\":0}}"
+  },
+  {
+    "endpoint": "/api/v1/llm/health",
+    "method": "GET",
+    "expected_auth": false,
+    "unauth_status": 200,
+    "bad_jwt_status": 200,
+    "cors_allow_origin": "*",
+    "sample_response": "{\"success\":true,\"data\":{\"providers\":[{\"name\":\"groq\",\"status\":\"available\",\"cooldown_remaining_seconds\":0,\"models\":{\"fast\":\"llama-3.1-8b-instant\",\"medium\":\"llama-3.3-70b-versatile\",\"reasoning\":\"deepseek"
+  },
+  {
+    "endpoint": "/api/v1/llm/active",
+    "method": "GET",
+    "expected_auth": false,
+    "unauth_status": 200,
+    "bad_jwt_status": 200,
+    "cors_allow_origin": "*",
+    "sample_response": "{\"success\":true,\"data\":{\"active_provider\":\"groq\"}}"
+  },
+  {
+    "endpoint": "/api/v1/colleges",
+    "method": "GET",
+    "expected_auth": false,
+    "unauth_status": 200,
+    "bad_jwt_status": 200,
+    "cors_allow_origin": "*",
+    "sample_response": "{\"success\":true,\"data\":[{\"id\":\"a0000000-0000-0000-0000-000000000001\",\"name\":\"MLR Institute of Technology\",\"short_name\":\"MLRIT\",\"portal_url\":\"https://exams.mlrinstitutions.ac.in/Old_Qp/Old_QP.html\",\"sc"
+  },
+  {
+    "endpoint": "/api/v1/subjects",
+    "method": "GET",
+    "expected_auth": false,
+    "unauth_status": 200,
+    "bad_jwt_status": 200,
+    "cors_allow_origin": "*",
+    "sample_response": "{\"success\":true,\"data\":[{\"id\":\"f1b8018e-d71a-4f24-bdae-a44baf73ac0f\",\"college_id\":\"a0000000-0000-0000-0000-000000000001\",\"name\":\"Digital Electronics and Computer Organization\",\"code\":\"A6CS28\",\"semeste"
+  },
+  {
+    "endpoint": "/api/v1/papers",
+    "method": "GET",
+    "expected_auth": false,
+    "unauth_status": 200,
+    "bad_jwt_status": 200,
+    "cors_allow_origin": "*",
+    "sample_response": "{\"success\":true,\"data\":[{\"id\":\"5434c5f4-0339-4948-b23c-58eeb78c0f97\",\"title\":\"Discrete Mathematics \u2014 June 2025\",\"exam_year\":2025,\"exam_month\":\"June\",\"exam_type\":\"Regular\",\"exam_category\":\"Semester\",\"r"
+  },
+  {
+    "endpoint": "/api/v1/profile/me",
+    "method": "GET",
+    "expected_auth": true,
+    "unauth_status": 401,
+    "bad_jwt_status": 401,
+    "cors_allow_origin": "*",
+    "sample_response": "{\"success\":false,\"error\":{\"code\":\"HTTP_401\",\"message\":\"Authentication required: Invalid or expired token\"},\"request_id\":\"934802ad-c12\"}"
+  },
+  {
+    "endpoint": "/api/v1/planner/progress",
+    "method": "GET",
+    "expected_auth": true,
+    "unauth_status": 500,
+    "bad_jwt_status": 500,
+    "cors_allow_origin": null,
+    "sample_response": "{\"success\":false,\"error\":{\"code\":\"INTERNAL_ERROR\",\"message\":\"An unexpected error occurred.\"},\"request_id\":\"cb9626ca-eb7\"}"
+  },
+  {
+    "endpoint": "/api/v1/analysis/overview",
+    "method": "GET",
+    "expected_auth": true,
+    "unauth_status": 500,
+    "bad_jwt_status": 500,
+    "cors_allow_origin": null,
+    "sample_response": "{\"success\":false,\"error\":{\"code\":\"INTERNAL_ERROR\",\"message\":\"An unexpected error occurred.\"},\"request_id\":\"07f48b08-018\"}"
+  },
+  {
+    "endpoint": "/api/v1/onboarding/status",
+    "method": "GET",
+    "expected_auth": true,
+    "unauth_status": 404,
+    "bad_jwt_status": 404,
+    "cors_allow_origin": "*",
+    "sample_response": "{\"success\":false,\"error\":{\"code\":\"HTTP_404\",\"message\":\"Not Found\"},\"request_id\":\"2ef7730a-65d\"}"
+  },
+  {
+    "endpoint": "/api/v1/r22/curriculum/3-1",
+    "method": "GET",
+    "expected_auth": false,
+    "unauth_status": 404,
+    "bad_jwt_status": 404,
+    "cors_allow_origin": "*",
+    "sample_response": "{\"success\":false,\"error\":{\"code\":\"HTTP_404\",\"message\":\"Not Found\"},\"request_id\":\"6ec0d864-b9a\"}"
+  },
+  {
+    "endpoint": "/api/v1/r22/curriculum/3-2",
+    "method": "GET",
+    "expected_auth": false,
+    "unauth_status": 404,
+    "bad_jwt_status": 404,
+    "cors_allow_origin": "*",
+    "sample_response": "{\"success\":false,\"error\":{\"code\":\"HTTP_404\",\"message\":\"Not Found\"},\"request_id\":\"0f24a745-5f2\"}"
+  }
+]
