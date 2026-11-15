@@ -258,7 +258,7 @@ class TestProtectedExpensiveEndpoints:
     # --- POST /api/v1/r22/analyze ---
 
     def test_r22_analyze_unauthenticated_returns_401(self):
-        res = client.post("/api/v1/r22/analyze", json={"subject_code": "A6CS09"})
+        res = client.post("/api/v1/r22/analyze", json={"subject_code": "A6CS15"})
         assert res.status_code == 401
         assert "Authentication required" in res.json()["error"]["message"]
 
@@ -267,12 +267,12 @@ class TestProtectedExpensiveEndpoints:
     @patch("app.jobs.job_manager._persist_job")
     def test_r22_analyze_authenticated_creates_job_bound_to_user(self, mock_persist, mock_user_jwt, mock_jwt):
         headers = {"Authorization": "Bearer alice.jwt"}
-        res = client.post("/api/v1/r22/analyze", json={"subject_code": "A6CS09"}, headers=headers)
+        res = client.post("/api/v1/r22/analyze", json={"subject_code": "A6CS15"}, headers=headers)
         assert res.status_code == 200
         body = res.json()
         assert body["success"] is True
         assert body["data"]["status"] == "running"
-        assert body["data"]["subject_code"] == "A6CS09"
+        assert body["data"]["subject_code"] == "A6CS15"
 
     # --- GET /api/v1/r22/job/{job_id} ---
 

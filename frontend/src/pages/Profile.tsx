@@ -376,8 +376,7 @@ export function Profile() {
                         <label className="text-[11px] uppercase tracking-wider text-on-surface-variant mb-xs block">Semester</label>
                         <CustomSelect value={String(form.current_semester)} onChange={v => setForm(f => ({...f, current_semester: Number(v)}))}
                           options={[
-                            { value: '3', label: '2-1 (Sem 3)' },
-                            { value: '4', label: '2-2 (Sem 4)' },
+                            { value: '1', label: '3-1 (Sem 5)' },
                           ]} />
                       </div>
                     </div>

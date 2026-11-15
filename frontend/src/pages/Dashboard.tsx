@@ -20,6 +20,7 @@ import { GuidedTour, type TourStep } from '../components/GuidedTour'
 import { useAuthStore } from '../store/authStore'
 import { getUserProfile, getSubjectsForSemester } from '../lib/api'
 import { supabase } from '../lib/supabase'
+import { OFFICIAL_R22_3_1_SUBJECTS, filterTo31Subjects } from '../constants/r22_3_1'
 import { PageTransition } from '../components/ui/PageTransition'
 import { StaggerContainer, StaggerItem } from '../components/ui/StaggerContainer'
 import { AnimatedCard } from '../components/ui/AnimatedCard'
@@ -138,10 +139,12 @@ export function Dashboard() {
         setProfile(prof)
         
         if (prof?.current_semester && prof?.regulation) {
-          const subs = await getSubjectsForSemester(prof.current_semester, prof.regulation)
+          const rawSubs = await getSubjectsForSemester(prof.current_semester, prof.regulation)
           if (isCancelled) return
           
-          setSubjects(subs || [])
+          const filteredSubs = filterTo31Subjects(rawSubs || [])
+          const subs = filteredSubs.length > 0 ? filteredSubs : (OFFICIAL_R22_3_1_SUBJECTS as unknown as Subject[])
+          setSubjects(subs)
 
           if (subs?.length) {
             // Batch all queries in parallel for speed
@@ -184,34 +187,15 @@ export function Dashboard() {
         
       } catch (err: any) {
         if (isCancelled) return
-        console.error("Backend error intercepted. Using mock fallback.", err)
+        console.error("Backend error intercepted. Using 3-1 canonical fallback.", err)
         
-        const currentSemesterString = localStorage.getItem('user_selected_semester') || "Semester 2-2";
-        const is22 = currentSemesterString.includes("2-2");
+        setProfile({ current_semester: 1, year: 3, regulation: "R22", branch: "CSE" })
         
-        setProfile({ current_semester: is22 ? 4 : 3, regulation: "R22", branch: "CSE" })
-        
-        const verified21Subjects = [
-          { id: "A6CS05", code: "A6CS05", name: "Data Structures", priority: 0, status: "UNINITIALIZED", semester: 3, regulation: 'R22' },
-          { id: "A6IT02", code: "A6IT02", name: "Object Oriented Programming through Java", priority: 0, status: "UNINITIALIZED", semester: 3, regulation: 'R22' },
-          { id: "A6CS28", code: "A6CS28", name: "Digital Electronics and Computer Organization", priority: 0, status: "UNINITIALIZED", semester: 3, regulation: 'R22' },
-          { id: "A6CS07", code: "A6CS07", name: "Software Engineering", priority: 0, status: "UNINITIALIZED", semester: 3, regulation: 'R22' },
-          { id: "A6BS03", code: "A6BS03", name: "Computer Oriented Statistical Methods", priority: 0, status: "UNINITIALIZED", semester: 3, regulation: 'R22' }
-        ];
-
-        const verified22Subjects = [
-          { id: "A6HS08", code: "A6HS08", name: "Business Economics and Financial Analysis", priority: 0, status: "UNINITIALIZED", semester: 4, regulation: 'R22' },
-          { id: "A6CS08", code: "A6CS08", name: "Discrete Mathematics", priority: 0, status: "UNINITIALIZED", semester: 4, regulation: 'R22' },
-          { id: "A6CS09", code: "A6CS09", name: "Database Management Systems", priority: 0, status: "UNINITIALIZED", semester: 4, regulation: 'R22' },
-          { id: "A6CS11", code: "A6CS11", name: "Operating System", priority: 0, status: "UNINITIALIZED", semester: 4, regulation: 'R22' },
-          { id: "A6CS13", code: "A6CS13", name: "Software Testing Fundamentals", priority: 0, status: "UNINITIALIZED", semester: 4, regulation: 'R22' }
-        ];
-        
-        const activeSubjectsArray = is22 ? verified22Subjects : verified21Subjects;
-        setSubjects(activeSubjectsArray as unknown as Subject[]);
+        const activeSubjectsArray = OFFICIAL_R22_3_1_SUBJECTS as unknown as Subject[]
+        setSubjects(activeSubjectsArray);
         
         const mockScores: Record<string, number> = {};
-        activeSubjectsArray.forEach(sub => mockScores[sub.id] = sub.priority);
+        activeSubjectsArray.forEach(sub => mockScores[sub.id] = 0);
         setPriorityScores(mockScores);
         
         setHasAnyScores(false)
@@ -389,9 +373,7 @@ export function Dashboard() {
                   Welcome back , {displayName} 👋
                 </h1>
                 <p className="font-data-label text-data-label text-on-surface-variant uppercase tracking-widest">
-                  EXAM INTELLIGENCE · {profile.regulation} · {
-                    (profile.current_semester === 4 || profile.current_semester === "2-2") ? 'SEMESTER 2-2' : 'SEMESTER 2-1'
-                  }
+                  EXAM INTELLIGENCE · {profile.regulation || 'R22'} · SEMESTER 3-1
                 </p>
               </div>
               {/* Tour trigger button — always visible so user can replay */}
@@ -591,7 +573,7 @@ export function Dashboard() {
                     {topSubject.name}
                   </h2>
                   <p className="text-on-surface-variant text-body-md mt-xs">
-                    {subjects.length} subjects tracked · {paperCount} papers in database · Start with this subject for maximum exam yield
+                    {subjects.length} subjects tracked · {paperCount} papers in question bank · Start with this subject for maximum exam yield
                   </p>
                 </div>
                 <button
@@ -699,7 +681,7 @@ export function Dashboard() {
                           {/* CTA link */}
                           <div className="flex items-center justify-between pt-sm border-t border-outline-variant">
                             <span className="text-on-surface-variant text-body-sm">
-                              {subject.semester === 3 ? '2-1' : subject.semester === 4 ? '2-2' : `Sem ${subject.semester}`} · {subject.regulation}
+                              3-1 · {subject.regulation || 'R22'}
                             </span>
                             <span className="text-primary font-bold text-body-sm flex items-center gap-xs group-hover:gap-md transition-all">
                               {hasData ? 'View Analysis' : 'Run Analysis'}
@@ -748,12 +730,7 @@ export function Dashboard() {
                   <Icon name="library_books" size={64} color="text-on-surface-variant" className="mb-base block" />
                   <h3 className="font-headline text-headline-md text-on-surface mb-sm">No Subjects Found</h3>
                   <p className="text-on-surface-variant text-body-md mb-xl max-w-sm mx-auto">
-                    No subjects for {profile.regulation} {
-                      profile.current_semester === 3 ? '2-1 (Sem 3)' :
-                      profile.current_semester === 4 ? '2-2 (Sem 4)' :
-                      `Semester ${profile.current_semester}`
-                    }.
-                    Try updating your profile with the correct regulation and semester.
+                    PaperIQ currently supports MLRIT Autonomous R22 Semester 3-1.
                   </p>
                   <div className="flex gap-base justify-center flex-wrap">
                     <button

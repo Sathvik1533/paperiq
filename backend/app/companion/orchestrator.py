@@ -9,6 +9,7 @@ from app.companion.models import (
     CompanionIntent, SpecialistType, CompanionMessage, MessageRole,
     Citation, SuggestedAction, ChatResponse
 )
+from app.intelligence.academic_question_intel import AcademicQuestionIntelligence
 from app.companion.specialists.base import BaseSpecialist
 from app.companion.specialists.academic_tutor import AcademicTutorSpecialist
 from app.companion.specialists.syllabus_intelligence import SyllabusIntelligenceSpecialist
@@ -115,6 +116,9 @@ class CompanionOrchestrator:
         conversation_id: str | None = None,
         subject_code: str | None = None,
         regulation: str = "R22",
+        answer_format: str | None = None,
+        tone_preference: str | None = None,
+        unit_number: int | None = None,
     ) -> ChatResponse:
         # 1. Get or create conversation record
         conv = CompanionStore.get_or_create_conversation(
@@ -122,13 +126,23 @@ class CompanionOrchestrator:
             conversation_id=conversation_id,
             subject_code=subject_code,
             regulation=regulation,
+            answer_format=answer_format or "auto",
+            tone_preference=tone_preference or "exam_ready",
+            unit_number=unit_number,
         )
+
+        # Resolve effective preferences: student request overrides conversation preferences
+        eff_format = answer_format or conv.answer_format or "auto"
+        eff_tone = tone_preference or conv.tone_preference or "exam_ready"
+        eff_unit = unit_number if unit_number is not None else conv.unit_number
+        eff_subject = subject_code or conv.subject_code
 
         # 2. Record student's incoming message
         student_msg = CompanionMessage(
             conversation_id=conv.id,
             role=MessageRole.STUDENT,
             content=message_text,
+            answer_format=eff_format,
         )
         CompanionStore.add_message(user_id=user_id, conversation_id=conv.id, message=student_msg)
 
@@ -136,16 +150,32 @@ class CompanionOrchestrator:
         intent, specialist_type = self.classify_intent(message_text)
         specialist = self._specialists.get(specialist_type, self._specialists[SpecialistType.GENERAL_MENTOR])
 
-        # 4. Context assembly
+        # 4. Verified Academic Question Intelligence matching
+        match_result = AcademicQuestionIntelligence.find_matching_question(
+            query=message_text,
+            subject_code=eff_subject,
+            regulation=regulation,
+        )
+
+        # Resolve format if set to auto
+        resolved_format = eff_format
+        if resolved_format == "auto":
+            resolved_format = match_result.default_format or "detailed"
+
+        # 5. Context assembly
         context = {
             "user_id": user_id,
             "conversation_id": conv.id,
-            "subject_code": subject_code or conv.subject_code,
+            "subject_code": eff_subject,
             "regulation": regulation,
             "history": conv.messages[-6:],
+            "answer_format": resolved_format,
+            "tone_preference": eff_tone,
+            "unit_number": eff_unit,
+            "question_match": match_result,
         }
 
-        # 5. Execute Specialist
+        # 6. Execute Specialist
         res = await specialist.handle(message_text, context)
         if len(res) == 4:
             response_content, citations, suggested_actions, meta = res
@@ -156,8 +186,14 @@ class CompanionOrchestrator:
         provider = meta.get("provider", "system")
         model_used = meta.get("model_used")
         is_fallback = meta.get("is_fallback", False)
+        ans_format = meta.get("resolved_format", resolved_format)
+        ans_tone = meta.get("resolved_tone", eff_tone)
+        is_verified = meta.get("is_verified_exam_question", match_result.is_verified_exam_question)
+        matched_marks = meta.get("matched_exam_marks", match_result.detected_marks)
+        matched_year = meta.get("matched_exam_year", match_result.matched_question.exam_year if match_result.matched_question else None)
+        source_ref = meta.get("source_reference", match_result.matched_question.source_reference if match_result.matched_question else None)
 
-        # 6. Record assistant's response message
+        # 7. Record assistant's response message
         assistant_msg = CompanionMessage(
             conversation_id=conv.id,
             role=MessageRole.ASSISTANT,
@@ -169,6 +205,9 @@ class CompanionOrchestrator:
             provider=provider,
             model_used=model_used,
             is_fallback=is_fallback,
+            answer_format=ans_format,
+            is_verified_exam_question=is_verified,
+            source_reference=source_ref,
         )
         CompanionStore.add_message(user_id=user_id, conversation_id=conv.id, message=assistant_msg)
 
@@ -181,6 +220,12 @@ class CompanionOrchestrator:
             provider=provider,
             model_used=model_used,
             is_fallback=is_fallback,
+            resolved_format=ans_format,
+            resolved_tone=ans_tone,
+            is_verified_exam_question=is_verified,
+            matched_exam_marks=matched_marks,
+            matched_exam_year=matched_year,
+            source_reference=source_ref,
         )
 
 

@@ -10,7 +10,7 @@ export default defineConfig({
   timeout: 60000,
   
   use: {
-    baseURL: 'http://127.0.0.1:3001',
+    baseURL: 'http://127.0.0.1:3005',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'off',
@@ -35,8 +35,8 @@ export default defineConfig({
   ],
 
   webServer: {
-    command: 'npm run dev -- --host 127.0.0.1 --port 3001',
-    url: 'http://127.0.0.1:3001',
+    command: 'npm run dev -- --host 127.0.0.1 --port 3005',
+    url: 'http://127.0.0.1:3005',
     reuseExistingServer: !process.env.CI,
     timeout: 120000,
   },

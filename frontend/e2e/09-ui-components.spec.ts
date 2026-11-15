@@ -18,7 +18,7 @@ test.describe('UI Components', () => {
   test('Navigation/Header renders consistently', async ({ page }) => {
     await page.goto('/');
     
-    const nav = page.locator('nav, header');
+    const nav = page.locator('nav, header').first();
     await expect(nav.first()).toBeVisible();
     
     // Navigate to another page

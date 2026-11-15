@@ -296,7 +296,7 @@ export function Auth() {
                       <h3 className="font-headline text-on-surface text-base">Concept Breakdown</h3>
                       <span className="font-data-label text-primary-container text-[11px] bg-primary-container/10 px-md py-xs rounded-full">ACTIVE ANALYTICS</span>
                     </div>
-                    {[{label:'DBMS',pct:88},{label:'Operating Systems',pct:72},{label:'Computer Networks',pct:64},{label:'Python Programming',pct:45}].map(r => (
+                    {[{label:'Algorithms (DAA)',pct:88},{label:'Cloud & DevOps',pct:76},{label:'Computer Networks',pct:64},{label:'Information Retrieval',pct:52}].map(r => (
                       <div key={r.label} className="grid grid-cols-12 items-center gap-base">
                         <div className="col-span-4 font-body-md text-on-surface">{r.label}</div>
                         <div className="col-span-6 h-2 bg-surface-container-highest rounded-full overflow-hidden">

@@ -139,15 +139,26 @@ describe('API functions', () => {
 
   describe('getSubjectsByFilter', () => {
     it('fetches subjects with semester and regulation params', async () => {
+      const mockSubject = {
+        id: 'A6CS15',
+        code: 'A6CS15',
+        name: 'Design and Analysis of Algorithms',
+        short: 'DAA',
+        semester: 1,
+        year: 3,
+        regulation: 'R22',
+        branch: 'CSE',
+        category: 'PCC',
+      }
       vi.mocked(globalThis.fetch).mockResolvedValue({
         ok: true,
-        json: async () => ({ success: true, data: [{ id: '1', name: 'DSA' }] }),
+        json: async () => ({ success: true, data: [mockSubject] }),
       } as Response)
 
-      const result = await getSubjectsByFilter(3, 'R22')
-      expect(result).toEqual([{ id: '1', name: 'DSA' }])
+      const result = await getSubjectsByFilter(1, 'R22')
+      expect(result).toEqual([mockSubject])
       expect(globalThis.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('/subjects/filter?semester=3&regulation=R22'),
+        expect.stringContaining('/subjects/filter?semester=1&regulation=R22'),
         expect.anything()
       )
     })

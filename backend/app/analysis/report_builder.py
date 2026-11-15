@@ -5,12 +5,19 @@ Evidence enforcement: any insight without evidence[] is stripped before storage.
 import uuid
 from datetime import datetime, timedelta
 from typing import Optional
+from collections import defaultdict
 from app.database import get_admin_db
 from app.analysis.unit_classifier import classify_unit, backfill_questions
 from app.analysis.topic_classifier import classify_topics
 from app.analysis.frequency_analyzer import FrequencyAnalyzer
 from app.analysis.trend_analyzer import TrendAnalyzer
 from app.analysis.prediction_engine import PredictionEngine
+from app.utils.exam_pattern_validator import (
+    validate_paper_60m_structure,
+    analyze_60m_question_frequencies,
+    classify_question_mark_type,
+    PaperEligibilityStatus,
+)
 from app.logger import get_logger
 
 log = get_logger(__name__)
@@ -61,6 +68,47 @@ class ReportBuilder:
         )
         log.info(f"Fetched {len(questions)} questions for analysis")
 
+        # Exclude 70-mark papers and supplementary papers for R22; enforce 2024–2025 Regular 60M structure
+        paper_lookup = {}
+        if regulation == "R22":
+            # Exclude supplementary and enforce 2024–2025 examination years only
+            questions = [
+                q for q in questions 
+                if (q.get("exam_type") or "Regular").title() == "Regular"
+                and q.get("exam_year") in (2024, 2025)
+            ]
+            
+            # Validate paper structures and exclude 70M, missing marks, or inconsistent papers
+            paper_ids = list(set(q.get("paper_id") for q in questions if q.get("paper_id")))
+            if paper_ids and self.db:
+                try:
+                    p_res = self.db.table("papers").select("id, title, exam_year, exam_type, regulation").in_("id", paper_ids).execute()
+                    papers_list = p_res.data or []
+                    qs_by_paper = defaultdict(list)
+                    for q in questions:
+                        qs_by_paper[q.get("paper_id")].append(q)
+
+                    eligible_pids = set()
+                    for p in papers_list:
+                        pid = p["id"]
+                        p_qs = qs_by_paper.get(pid, [])
+                        val = validate_paper_60m_structure(p, p_qs)
+                        if val.get("is_eligible") and val.get("status") == PaperEligibilityStatus.ELIGIBLE_60M:
+                            eligible_pids.add(pid)
+                            paper_lookup[pid] = p
+
+                    if eligible_pids:
+                        excluded_count = len(paper_ids) - len(eligible_pids)
+                        if excluded_count > 0:
+                            log.info(f"Filtered to {len(eligible_pids)} eligible 60M paper(s), excluded {excluded_count} unverified/70M paper(s)")
+                        questions = [q for q in questions if q.get("paper_id") in eligible_pids]
+                        for q in questions:
+                            p_info = paper_lookup.get(q.get("paper_id"))
+                            if p_info:
+                                q["paper_title"] = p_info.get("title")
+                except Exception as e:
+                    log.warning(f"Error validating papers in ReportBuilder: {e}")
+
         if not questions:
             log.warning("No questions found — returning empty report")
 
@@ -70,7 +118,7 @@ class ReportBuilder:
         pred_engine = PredictionEngine(questions)
 
         topic_freq = freq_analyzer.topic_frequency()
-        question_freq = freq_analyzer.question_frequency()
+        question_freq = freq_analyzer.question_frequency(separate_mark_types=True)
         unit_dist = freq_analyzer.unit_distribution()
 
         heatmap = trend_analyzer.topic_heatmap()
@@ -85,6 +133,9 @@ class ReportBuilder:
         coverage_analysis = self._build_coverage_analysis(questions)
         high_probability_topics_classified = self._build_high_probability_topics(questions)
         study_priority_order = self._build_study_priority(questions, user_profile)
+
+        # 3c. 60-Mark Pattern & Question Segregation Analysis (Direct 10M vs 5M subquestions)
+        pattern_60m = analyze_60m_question_frequencies(questions, paper_lookup=paper_lookup)
 
         # 4. Evidence enforcement — strip insights with empty evidence
         topic_freq = [t for t in topic_freq if t.get("paper_ids")]
@@ -122,7 +173,14 @@ class ReportBuilder:
             "most_asked_topics": most_asked_topics,
             "high_probability_topics_classified": high_probability_topics_classified,
             "study_priority_order": study_priority_order.get("order", []) if isinstance(study_priority_order, dict) else study_priority_order,
-            "coverage_analysis": coverage_analysis
+            "coverage_analysis": coverage_analysis,
+            # NEW: 60-Mark Pattern Intelligence
+            "pattern_60m_summary": pattern_60m.get("summary", {}),
+            "direct_10m_questions": pattern_60m.get("direct_10m_questions", []),
+            "subquestions_5m": pattern_60m.get("subquestions_5m", []),
+            "one_mark_questions": pattern_60m.get("one_mark_questions", []),
+            "repeated_questions_60m": pattern_60m.get("repeated_questions", []),
+            "is_60m_rule_applied": regulation == "R22",
         }
 
         # 6. Persist to analysis_reports
@@ -367,6 +425,8 @@ class ReportBuilder:
             query = query.eq("exam_category", exam_category)
         if exam_attempt:
             query = query.eq("exam_type", exam_attempt)
+        elif regulation == "R22":
+            query = query.eq("exam_type", "Regular")
 
         # Apply year filters only when explicit (many papers have NULL exam_year —
         # filtering on them would silently return 0 rows).

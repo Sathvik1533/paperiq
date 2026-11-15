@@ -32,14 +32,16 @@ class DocxExtractor(BaseExtractor):
             # Tables — question papers store questions in table rows
             for table in doc.tables:
                 for row in table.rows:
-                    row_cells = [cell.text.strip() for cell in row.cells if cell.text.strip()]
-                    # Deduplicate merged cells (python-docx repeats merged cells)
-                    seen = []
-                    for c in row_cells:
-                        if c not in seen:
-                            seen.append(c)
-                    if seen:
-                        parts.append(" | ".join(seen))
+                    # Deduplicate merged cells (python-docx repeats merged cells across adjacent columns)
+                    row_cells = []
+                    prev_text = None
+                    for cell in row.cells:
+                        t = cell.text.strip()
+                        if t and t != prev_text:
+                            row_cells.append(t)
+                            prev_text = t
+                    if row_cells:
+                        parts.append(" | ".join(row_cells))
 
             raw_text = "\n".join(parts).strip()
             log.info(f"[DocxExtractor] Extracted {len(parts)} text blocks from {os.path.basename(file_path)}")

@@ -35,8 +35,8 @@ export function OnboardingNew() {
   const [manualForm, setManualForm] = useState({
     branch: 'CSE',
     regulation: 'R22',
-    year: 2,
-    semester: 3,
+    year: 3,
+    semester: 1,
   })
 
   // Personalization form
@@ -168,14 +168,14 @@ export function OnboardingNew() {
       setError('')
       
       try {
-        // Clamp year/semester to only 2-1 (Sem 3) or 2-2 (Sem 4) — only supported range
-        const clampedSemester = extracted.semester === 4 ? 4 : 3
-        const clampedYear = 2
+        // Enforce strict MLRIT R22 3-1 only
+        const clampedSemester = 1
+        const clampedYear = 3
 
         // Save all extracted fields including branch
         await upsertUserProfile(user.id, {
           full_name:        user.user_metadata?.full_name || null,
-          regulation:       extracted.regulation || 'R22',
+          regulation:       'R22',
           current_year:     clampedYear,
           current_semester: clampedSemester,
           branch:           extracted.branch || 'CSE',
@@ -183,14 +183,7 @@ export function OnboardingNew() {
           has_completed_tour: false,
         })
         
-        
-        // Read the actual extracted text parameters verified from our March 2026 Hall Ticket layout
-        const extractedText = (extracted as any)?.raw_text || ""; 
-        let finalSemesterRoutingStr = "Semester 2-1";
-
-        if (extractedText.includes("II SEMESTER") || extractedText.includes("2-2") || Number(extracted?.semester) === 4 || String(extracted?.semester) === "2-2") {
-          finalSemesterRoutingStr = "Semester 2-2";
-        }
+        const finalSemesterRoutingStr = "Semester 3-1";
 
         // Update local storage variables dynamically using our verified string
         localStorage.setItem('user_selected_semester', finalSemesterRoutingStr);
@@ -201,17 +194,10 @@ export function OnboardingNew() {
       } catch (err) {
         console.log("Bypassing offline local backend for manual testing. Injecting profile variables.");
         
-        // Read the actual extracted text parameters verified from our March 2026 Hall Ticket layout
-        const extractedText = (extracted as any)?.raw_text || ""; 
-        let finalSemesterRoutingStr = "Semester 2-1";
+        const finalSemesterRoutingStr = "Semester 3-1";
 
-        if (extractedText.includes("II SEMESTER") || extractedText.includes("2-2") || Number(extracted?.semester) === 4 || String(extracted?.semester) === "2-2") {
-          finalSemesterRoutingStr = "Semester 2-2";
-        }
-
-        // Update local storage variables dynamically using our verified string
         localStorage.setItem('user_selected_semester', finalSemesterRoutingStr);
-        localStorage.setItem('has_completed_tour', 'false'); // Force-launch our proactive platform guide
+        localStorage.setItem('has_completed_tour', 'false');
 
         setStep('personalize')
       } finally {
@@ -247,12 +233,12 @@ export function OnboardingNew() {
               </div>
               <div>
                 <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">Year</div>
-                <div className="font-semibold text-lg">2nd Year</div>
+                <div className="font-semibold text-lg">3rd Year</div>
               </div>
               <div>
                 <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">Semester</div>
                 <div className="font-semibold text-lg">
-                  {extracted.semester === 4 ? '2-2 (Sem 4)' : '2-1 (Sem 3)'}
+                  3-1 (Sem 5)
                 </div>
               </div>
             </div>
@@ -261,7 +247,7 @@ export function OnboardingNew() {
             <div className="flex items-start gap-2 px-4 py-3 rounded-xl bg-white/5 border border-white/10">
               <span className="material-symbols-outlined text-[16px] text-[#f97316] mt-0.5 shrink-0">info</span>
               <p className="text-xs text-gray-400 leading-relaxed">
-                PaperIQ currently supports <span className="text-white font-semibold">2nd Year (2-1 & 2-2)</span> only. Your semester has been set accordingly. More years unlocking soon.
+                PaperIQ currently supports <span className="text-white font-semibold">3rd Year (3-1)</span> only. Your semester has been set accordingly. More semesters unlocking soon.
               </p>
             </div>
 
@@ -324,17 +310,13 @@ export function OnboardingNew() {
       try {
         await upsertUserProfile(user.id, {
           full_name: user.user_metadata?.full_name,
-          regulation: manualForm.regulation,
-          current_year: manualForm.year,
-          current_semester: manualForm.semester,
+          regulation: 'R22',
+          current_year: 3,
+          current_semester: 1,
           onboarding_complete: true,
           has_completed_tour: false,
         })
-        // Read the manual entry semester value
-        let finalSemesterRoutingStr = "Semester 2-1";
-        if (manualForm.semester === 4 || String(manualForm.semester) === "4" || String(manualForm.semester) === "2-2") {
-          finalSemesterRoutingStr = "Semester 2-2";
-        }
+        const finalSemesterRoutingStr = "Semester 3-1";
 
         // Update local storage variables dynamically using our verified string
         localStorage.setItem('user_selected_semester', finalSemesterRoutingStr);
@@ -345,15 +327,10 @@ export function OnboardingNew() {
       } catch (err) {
         console.log("Bypassing offline local backend for manual testing. Injecting profile variables.");
         
-        // Read the manual entry semester value
-        let finalSemesterRoutingStr = "Semester 2-1";
-        if (manualForm.semester === 4 || String(manualForm.semester) === "4" || String(manualForm.semester) === "2-2") {
-          finalSemesterRoutingStr = "Semester 2-2";
-        }
+        const finalSemesterRoutingStr = "Semester 3-1";
 
-        // Update local storage variables dynamically using our verified string
         localStorage.setItem('user_selected_semester', finalSemesterRoutingStr);
-        localStorage.setItem('has_completed_tour', 'false'); // Force-launch our proactive platform guide
+        localStorage.setItem('has_completed_tour', 'false');
 
         setStep('personalize')
       } finally {
@@ -441,7 +418,7 @@ export function OnboardingNew() {
                   value={String(manualForm.year)}
                   onChange={(v) => setManualForm({...manualForm, year: Number(v)})}
                   options={[
-                    { value: '2', label: '2nd Year' },
+                    { value: '3', label: '3rd Year' },
                   ]}
                 />
               </div>
@@ -451,8 +428,7 @@ export function OnboardingNew() {
                   value={String(manualForm.semester)}
                   onChange={(v) => setManualForm({...manualForm, semester: Number(v)})}
                   options={[
-                    { value: '3', label: '2-1 (Sem 3)' },
-                    { value: '4', label: '2-2 (Sem 4)' },
+                    { value: '1', label: '3-1 (Sem 5)' },
                   ]}
                 />
               </div>
@@ -462,7 +438,7 @@ export function OnboardingNew() {
             <div className="flex items-start gap-2 px-4 py-3 rounded-xl bg-white/5 border border-white/10">
               <span className="material-symbols-outlined text-[16px] text-[#f97316] mt-0.5 shrink-0">info</span>
               <p className="text-xs text-gray-400 leading-relaxed">
-                PaperIQ currently supports <span className="text-white font-semibold">2nd Year (2-1 & 2-2)</span> only. More years unlocking soon.
+                PaperIQ currently supports <span className="text-white font-semibold">3rd Year (3-1)</span> only. More semesters unlocking soon.
               </p>
             </div>
             </div>
@@ -631,43 +607,22 @@ function HallTicketUpload({ onBack, onSuccess }: HallTicketUploadProps) {
       onSuccess(result)
     } catch (err) {
       console.warn("Backend offline. Simulating successful hall ticket extraction for testing.");
-      const isFirstSem = file.name.toUpperCase().includes('I SEMESTER') || file.name.includes('1') || file.name.toLowerCase().includes('first');
-      
-      if (isFirstSem) {
-        onSuccess({
-          branch: "CSE",
-          regulation: "R22",
-          year: 2,
-          semester: 3,
-          semester_display: "2-1 (Sem 3)",
-          subject_codes: ["A6CS03", "A6CS01", "A6CS05", "A6CS10", "A6BS04"],
-          subjects: [
-            {code: "A6CS03", name: "Object Oriented Programming through Java"},
-            {code: "A6CS01", name: "Digital Electronics and Computer Organization"},
-            {code: "A6CS05", name: "Data Structures"},
-            {code: "A6CS10", name: "Software Engineering"},
-            {code: "A6BS04", name: "Computer Oriented Statistical Methods"}
-          ],
-          confidence: "99%"
-        });
-      } else {
-        onSuccess({
-          branch: "CSE",
-          regulation: "R22",
-          year: 2,
-          semester: 4,
-          semester_display: "2-2 (Sem 4)",
-          subject_codes: ["A6CS11", "A6BS05", "A6CS09", "A6CS08", "A6CS13"],
-          subjects: [
-            {code: "A6CS11", name: "Operating System"},
-            {code: "A6BS05", name: "Business Economics and Financial Analysis"},
-            {code: "A6CS09", name: "Database Management Systems"},
-            {code: "A6CS08", name: "Discrete Mathematics"},
-            {code: "A6CS13", name: "Software Testing Fundamentals"}
-          ],
-          confidence: "99%"
-        });
-      }
+      onSuccess({
+        branch: "CSE",
+        regulation: "R22",
+        year: 3,
+        semester: 1,
+        semester_display: "3-1 (Sem 5)",
+        subject_codes: ["A6CS15", "A6IT13", "A6CS18", "A6IT26", "A6AI14"],
+        subjects: [
+          { code: "A6CS15", name: "Design and Analysis of Algorithms" },
+          { code: "A6IT13", name: "Cloud and DevOps" },
+          { code: "A6CS18", name: "Computer Networks" },
+          { code: "A6IT26", name: "Information Retrieval Systems" },
+          { code: "A6AI14", name: "Natural Language Processing" }
+        ],
+        confidence: "99%"
+      });
     } finally {
       setExtracting(false)
     }

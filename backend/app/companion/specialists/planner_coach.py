@@ -2,10 +2,15 @@
 Student Planning and Progress Specialist.
 Constructs personalized daily study schedules, monitors exam readiness,
 and guides revision strategies based on exam deadlines.
+
+v2.1: LLM-enhanced planner with day-by-day structured schedules,
+      explicit study-day elicitation, and improved fallback.
 """
+import re
 from typing import Dict, Any, List, Tuple
 from app.companion.specialists.base import BaseSpecialist, resolve_subject
 from app.companion.models import Citation, SuggestedAction, SpecialistType
+from app.llm.base import TaskType
 from app.database import get_db
 from app.constants.r22_subjects import ALL_R22_SUBJECTS
 from app.logger import get_logger
@@ -20,10 +25,160 @@ def _safe_get_db():
         return None
 
 
+def _extract_days_from_query(query: str) -> int | None:
+    """
+    Pull an explicit number of study days from the user's query.
+    Returns None if no number is detected so we can ask for it.
+    """
+    # e.g. "7-day", "7 day", "seven day", "in 5 days"
+    word_map = {
+        "one": 1, "two": 2, "three": 3, "four": 4, "five": 5,
+        "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10,
+        "fourteen": 14, "fifteen": 15, "thirty": 30,
+    }
+    # Numeric match
+    num_match = re.search(r"\b(\d+)\s*[-\s]?days?\b", query, re.IGNORECASE)
+    if num_match:
+        return int(num_match.group(1))
+    # Word match
+    for word, val in word_map.items():
+        if re.search(r"\b" + word + r"\b", query, re.IGNORECASE):
+            return val
+    return None
+
+
+# ---------------------------------------------------------------------------
+# Static, subject-specific 7-day schedules (deterministic fallback)
+# ---------------------------------------------------------------------------
+
+_SCHEDULE_7DAY: dict[str, str] = {
+    "A6CS15": """\
+| Day | Focus Area | Topics & Deliverables | Hours |
+| :---: | :--- | :--- | :---: |
+| **Day 1** | **Unit I – Divide & Conquer** | Asymptotic notations (O/Ω/Θ), Master Theorem (3 cases), Merge Sort trace, Quick Sort worst-case analysis, Strassen's matrix multiply | 3.0 |
+| **Day 2** | **Unit II – Greedy Method** | Fractional Knapsack proof, Job Sequencing with Deadlines (table trace), Prim's MST on 6-vertex graph, Kruskal's with Union-Find, Dijkstra's SSSP | 3.0 |
+| **Day 3** | **Unit III – Dynamic Programming** | Principle of Optimality, Floyd-Warshall D^(k) matrix step-by-step, OBST e[i,j]/w[i,j]/root[i,j] tables, 0/1 Knapsack DP table trace | 3.5 |
+| **Day 4** | **Unit IV – Backtracking** | 4-Queens & 8-Queens state-space tree with place(k,i) bounding, Sum of Subsets problem tree, Graph m-colorability pruning | 3.0 |
+| **Day 5** | **Unit V – Branch & Bound + NP** | LC B&B for 0/1 Knapsack (upper bound = greedy relaxation), TSP LC B&B tour expansion, Cook's Theorem proof sketch, NP-Hard vs NP-Complete | 3.5 |
+| **Day 6** | **High-Frequency PYQ Drill** | 10-mark timed questions from MLRIT 2021–2024 papers: Knapsack (DP + LCBB), Floyd-Warshall, 8-Queens, Kruskal's, NP-Completeness | 3.5 |
+| **Day 7** | **Final Revision & Mock Exam** | Part A 2M blitz (20 definitions in 30 min) + full 3-hr mock exam (60 marks, autonomous pattern), review mistakes | 3.0 |""",
+
+    "A6CS18": """\
+| Day | Focus Area | Topics & Deliverables | Hours |
+| :---: | :--- | :--- | :---: |
+| **Day 1** | **Unit I – Network Models & Physical Layer** | OSI vs TCP/IP models, Packet vs Circuit Switching, Transmission Media, Framing | 2.5 |
+| **Day 2** | **Unit II – Data Link Layer & MAC** | Flow Control (Stop-and-Wait, Go-Back-N, Selective Repeat), Error Detection (CRC, Checksum), CSMA/CD | 3.0 |
+| **Day 3** | **Unit III – Network Layer & Routing** | IPv4/IPv6 Addressing, Subnetting, Distance Vector (Bellman-Ford) & Link State (Dijkstra) routing traces | 3.5 |
+| **Day 4** | **Unit IV – Transport Layer** | TCP vs UDP, TCP 3-Way Handshake, TCP Congestion Control (AIMD, Slow Start), Leaky Bucket / Token Bucket | 3.0 |
+| **Day 5** | **Unit V – Application Layer & Security** | DNS, HTTP/HTTPS, SMTP, RSA Cryptography numerical, Symmetric vs Asymmetric encryption | 3.0 |
+| **Day 6** | **PYQ Sprint (2024–2025 Regular)** | Timed 10M questions: CRC calculation, Dijkstra routing table, TCP connection management, Subnet calculation | 3.5 |
+| **Day 7** | **Final Revision & Mock Exam** | Part A 1M blitz (10 definitions in 20 min) + full 3-hr mock exam (60 marks autonomous pattern), review mistakes | 3.0 |""",
+}
+
+_SCHEDULE_GENERIC = """\
+| Day | Focus Area | Topics & Deliverables | Hours |
+| :---: | :--- | :--- | :---: |
+| **Day 1** | **Unit I – Foundations** | Core definitions, formal notations, architectural overview, key formulas | 2.5 |
+| **Day 2** | **Unit II – Core Mechanisms** | Mathematical representations, design principles, structured processes | 3.0 |
+| **Day 3** | **Unit III – Algorithms & Models** | High-probability Part B questions, algorithm traces, numerical problems | 3.5 |
+| **Day 4** | **Unit IV – Policies & Strategies** | Real-world policies, comparative analysis, edge-case walkthroughs | 3.0 |
+| **Day 5** | **Unit V – Advanced Topics & Numericals** | Derivations, proofs, complex numerical problems, boundary conditions | 3.0 |
+| **Day 6** | **PYQ Sprint** | Solve 5 previous 10M Part B questions under timed conditions | 3.5 |
+| **Day 7** | **Final Revision & Mock** | Part A 2M blitz + 3-hour full mock exam | 3.0 |"""
+
+
+def _build_plan_markdown(subject_code: str, subject_info: dict, days: int) -> str:
+    """
+    Construct the structured plan markdown deterministically.
+    Uses subject-specific schedules for known codes, generic for others.
+    When days != 7, we adjust the header label; for multi-day flexibility
+    we could interpolate, but keep the 7-day grid as the gold standard.
+    """
+    schedule_md = _SCHEDULE_7DAY.get(subject_code, _SCHEDULE_GENERIC)
+    days_label = f"{days}-Day" if days else "7-Day"
+    total_hours = round((days or 7) * 3.0, 1)
+
+    return f"""### 🗓️ {days_label} Study Masterplan — {subject_info['name']} (`{subject_code}`)
+
+**Target**: A+ Grade (80%+ SGPA Bracket) | **Daily Commitment**: 3.0–3.5 hrs  
+**Regulation**: MLRIT Autonomous R22 | **Projected Total**: {total_hours} hrs across {days or 7} days
+
+---
+
+{schedule_md}
+
+---
+
+#### 📈 Exam-Focused Strategy (R22 Autonomous Pattern)
+
+| Priority | Action | Why |
+| :--- | :--- | :--- |
+| 🔴 **High** | Cover Units III & V first if short on time | Algorithmic numericals = deterministic 10M scores |
+| 🟡 **Medium** | Write Part A definitions by hand each morning | 10M in Part A; zero partial credit if skipped |
+| 🟢 **Habit** | Solve one past 10M question under timed conditions daily | Exam simulation beats passive re-reading every time |
+
+> **Format drill**: Each 10M answer = Introduction (2 lines) + Algorithm/Derivation (steps, diagrams) + Example trace + Time complexity. Write it in 15–18 minutes.
+"""
+
+
 class PlannerCoachSpecialist(BaseSpecialist):
     specialist_type = SpecialistType.PLANNER_COACH
     badge = "Study Planner Coach"
     description = "Adaptive study planning, daily revision schedules, and exam readiness tracking."
+
+    # LLM system context for study plan generation
+    _SYSTEM_INSTRUCTION = (
+        "You are PaperIQ Study Planner Coach for MLRIT Autonomous R22 engineering students. "
+        "Your sole purpose is to build realistic, day-by-day study schedules. Rules:\n"
+        "1. ALWAYS produce a Markdown table with Day | Focus Area | Topics & Deliverables | Hours columns.\n"
+        "2. Each day maps to exactly ONE R22 syllabus unit (5 units total); Days 6–7 are PYQ drill and mock exam.\n"
+        "3. Topics must be specific exam-ready items (algorithm names, numerical problem types) — NEVER generic advice like 'stay motivated' or 'take breaks'.\n"
+        "4. If the student hasn't stated how many days they have, ask ONCE: 'How many days do you have before the exam?'\n"
+        "5. Never invent subject codes or units not in the R22 curriculum."
+    )
+
+    _LLM_PROMPT_TEMPLATE = """\
+Student request: "{query}"
+Subject: {subject_name} ({subject_code}), R22 Autonomous
+Study days available: {days_label}
+Syllabus units (5 total):
+{units_summary}
+
+Task: Produce a precise day-by-day study schedule as a Markdown table.
+Columns: Day | Focus Area | Topics & Deliverables | Hours
+Rules:
+- Day 1–5: one R22 unit per day, with specific topic names (not generic headings)
+- Day 6: High-frequency Past Year Question (PYQ) drill — name the specific 10M questions likely to appear
+- Day 7: Final revision + full mock exam simulation
+- Hours per day: 2.5–3.5 (realistic for a college student)
+- NO filler text. NO motivational quotes. NO generic headings like "Advanced Topics".
+After the table, add a 3-row Priority Table (High / Medium / Habit) with actionable exam tips.
+"""
+
+    # Short unit summaries for LLM context injection
+    _UNIT_SUMMARIES: dict[str, str] = {
+        "A6CS15": (
+            "Unit I: Divide & Conquer (Master Theorem, Merge/Quick Sort, Strassen's)\n"
+            "Unit II: Greedy Method (Fractional Knapsack, MST, Dijkstra)\n"
+            "Unit III: Dynamic Programming (Floyd-Warshall, OBST, 0/1 Knapsack DP)\n"
+            "Unit IV: Backtracking (N-Queens, Sum of Subsets, Graph Coloring)\n"
+            "Unit V: Branch & Bound + NP-Completeness (LCBB 0/1 Knapsack, TSP, Cook's Theorem)"
+        ),
+        "A6CS18": (
+            "Unit I: Network Models & Physical Layer (OSI, TCP/IP, Switching, Transmission)\n"
+            "Unit II: Data Link Layer & MAC (Flow Control, Error Detection, CSMA/CD)\n"
+            "Unit III: Network Layer & Routing (IPv4/IPv6, Subnetting, Distance Vector, Link State)\n"
+            "Unit IV: Transport Layer (TCP vs UDP, 3-Way Handshake, Congestion Control)\n"
+            "Unit V: Application Layer & Security (DNS, HTTP, SMTP, RSA Cryptography)"
+        ),
+    }
+    _UNIT_SUMMARIES_DEFAULT = (
+        "Unit I: Foundational concepts and formal definitions\n"
+        "Unit II: Core mechanisms and mathematical models\n"
+        "Unit III: Algorithms, design patterns and optimizations\n"
+        "Unit IV: Management policies and system strategies\n"
+        "Unit V: Advanced topics, verification and applications"
+    )
 
     async def handle(
         self,
@@ -34,78 +189,77 @@ class PlannerCoachSpecialist(BaseSpecialist):
         user_id = context.get("user_id")
         subject_code, subject_info = resolve_subject(query, context)
 
-        # Check existing study plan in DB
+        # ── 1. Check existing DB study plan ──────────────────────────────────
         existing_plan = None
-        readiness_score = None
         try:
             if db and user_id:
                 plan_res = db.table("study_plans").select("*").eq("user_id", user_id).limit(1).execute()
                 if plan_res.data:
                     existing_plan = plan_res.data[0]
-                score_res = db.table("readiness_scores").select("*").eq("user_id", user_id).limit(1).execute()
-                if score_res.data:
-                    readiness_score = score_res.data[0]
         except Exception as e:
             log.debug(f"[PlannerCoach] Plan check: {e}")
 
-        # Subject-specific daily schedule definitions
-        schedule_tables = {
-            "A6CS15": """| Day | Focus Area | High-Yield Topics & Study Deliverables | Target Hours |
-| :---: | :--- | :--- | :---: |
-| **Day 1** | **Unit I: Divide & Conquer** | Master Theorem, Recurrence Relations, Merge Sort, Quick Sort, Strassen's Matrix Multiplication | 3.0 hrs |
-| **Day 2** | **Unit II: Greedy Method** | Fractional Knapsack, Job Sequencing with Deadlines, Prim's and Kruskal's MST, Dijkstra's Algorithm | 3.0 hrs |
-| **Day 3** | **Unit III: Dynamic Programming** | All-Pairs Shortest Paths (Floyd-Warshall), Optimal Binary Search Trees (OBST), 0/1 Knapsack Tabulation | 3.5 hrs |
-| **Day 4** | **Unit IV: Backtracking** | 8-Queens / 4-Queens State Space Tree, Sum of Subsets Problem, Graph Coloring (m-colorability) | 3.0 hrs |
-| **Day 5** | **Unit V: Branch & Bound / NP** | Least-Cost Branch and Bound (0/1 Knapsack LCBB), TSP with LCBB, Cook's Theorem & NP-Completeness | 3.5 hrs |
-| **Day 6** | **High-Frequency PYQ Drill** | Solve repeated 10-Mark questions from 2021–2024 MLRIT examination papers under timed exam conditions | 3.5 hrs |
-| **Day 7** | **Final Revision & Mock Exam** | Part A 2M definitions blitz + 3-Hour Full Timed Mock Exam (60 Marks autonomous pattern) | 3.0 hrs |""",
-            "A6CS09": """| Day | Focus Area | High-Yield Topics & Study Deliverables | Target Hours |
-| :---: | :--- | :--- | :---: |
-| **Day 1** | **Unit I: OS Overview & CPU Scheduling** | System Calls, Dual-Mode Operations, Process State Transitions, Scheduling (FCFS, SJF, RR) | 2.5 hrs |
-| **Day 2** | **Unit II: Process Synchronization** | Critical Section Problem, Peterson's Solution, Semaphores, Dining Philosophers & Producer-Consumer | 3.0 hrs |
-| **Day 3** | **Unit III: Deadlocks** | Banker's Algorithm (Safety & Resource Request), Resource Allocation Graphs, Avoidance vs Detection | 3.5 hrs |
-| **Day 4** | **Unit IV: Memory Management** | Paging vs Segmentation, Demand Paging, Page Replacement Algorithms (FIFO, LRU, Optimal numericals) | 3.0 hrs |
-| **Day 5** | **Unit V: Storage & Disk Scheduling** | File System Allocation, Disk Scheduling Algorithms (FCFS, SSTF, SCAN, C-SCAN head movement traces) | 3.0 hrs |
-| **Day 6** | **PYQ Sprint (2021–2024)** | Solve repeated 10M questions under timed conditions | 3.5 hrs |
-| **Day 7** | **Final Revision & Mock Exam** | Part A 2M definitions blitz + full 3-hr mock test | 3.0 hrs |"""
-        }
+        # ── 2. Extract days from query ────────────────────────────────────────
+        days = _extract_days_from_query(query)
 
-        schedule_md = schedule_tables.get(subject_code, f"""| Day | Focus Area | High-Yield Topics | Estimated Time |
-| :---: | :--- | :--- | :---: |
-| **Day 1** | **Unit I: Foundations** | Core Architecture, Principles, Definitions | 2.5 hrs |
-| **Day 2** | **Unit II: Mechanisms** | Mathematical representations, Structured processes | 3.0 hrs |
-| **Day 3** | **Unit III: Heavyweight Algorithms** | High-probability Part B questions & traces | 3.5 hrs |
-| **Day 4** | **Unit IV: Management Policies** | Real-world policies, trade-off comparisons | 3.0 hrs |
-| **Day 5** | **Unit V: Advanced & Numericals** | Scoring numericals, derivations & proofs | 3.0 hrs |
-| **Day 6** | **PYQ Sprint (2021–2024)** | Solve repeated 10M questions under timed conditions | 3.5 hrs |
-| **Day 7** | **Final Revision & Mock Exam** | Part A 2M definitions blitz + full 3-hr mock test | 3.0 hrs |""")
+        # ── 3. Try LLM-enhanced plan ──────────────────────────────────────────
+        response_content = ""
+        provider_name = "system"
+        model_name = "deterministic_fallback"
+        is_fallback = True
 
-        # Construct adaptive 7-day study plan
-        plan_markdown = f"""### 🗓️ Recommended 7-Day Study Masterplan: {subject_info['name']} (`{subject_code}`)
+        if days is not None:
+            # We have enough info — ask LLM for a fully personalized schedule
+            units_summary = self._UNIT_SUMMARIES.get(subject_code, self._UNIT_SUMMARIES_DEFAULT)
+            days_label = f"{days} days"
 
-**Target**: Scoring A+ (80%+ SGPA Grade Bracket) | **Daily Commitment**: 3.0 – 3.5 Hours/Day  
-**Regulation**: MLRIT Autonomous R22 | **Total Projected Study Time**: 22.5 Hours
+            llm_prompt = self._LLM_PROMPT_TEMPLATE.format(
+                query=query,
+                subject_name=subject_info["name"],
+                subject_code=subject_code,
+                days_label=days_label,
+                units_summary=units_summary,
+            )
 
----
+            llm_resp = await self.call_llm_response(llm_prompt, TaskType.STUDY_PLAN_GENERATION)
+            if llm_resp and llm_resp.content.strip():
+                response_content = (
+                    f"### 🗓️ {days}-Day Study Masterplan — {subject_info['name']} (`{subject_code}`)\n\n"
+                    + llm_resp.content.strip()
+                )
+                provider_name = llm_resp.provider
+                model_name = llm_resp.model_used
+                is_fallback = False
+                log.info(f"[PlannerCoach] LLM plan generated via {provider_name} (model={model_name})")
 
-{schedule_md}
+        # ── 4. Deterministic fallback ─────────────────────────────────────────
+        if not response_content:
+            # days is None → prompt student; also used when LLM unavailable
+            if days is None:
+                day_question = (
+                    f"\n\n> 📅 **Quick question**: How many days do you have before your "
+                    f"**{subject_info['name']}** exam? "
+                    f"Reply with a number (e.g. *7 days*) and I'll tailor this plan precisely.\n\n"
+                    f"In the meantime, here's the standard 7-day masterplan:\n"
+                )
+            else:
+                day_question = ""
 
----
+            response_content = day_question + _build_plan_markdown(subject_code, subject_info, days or 7)
+            is_fallback = (days is None) or True  # LLM was unavailable
 
-#### 📈 Strategic Readiness Guidance:
-1. **Prioritize High-Scoring Units**: Units 2, 3, and 5 contain algorithmic numericals and deterministic proofs with zero subjective marking deduction.
-2. **Daily Active Recall**: Begin each day with 15 minutes of blank-sheet writing of key formulas and recurrences before reviewing notes.
-3. **Practice Booklet Formatting**: Allocate 15-18 minutes per 10-Mark question with neat diagrams, step numbering, and boxed final answers.
-"""
-
-        citations = []
+        # ── 5. Citations ──────────────────────────────────────────────────────
+        citations: List[Citation] = []
         if existing_plan:
             citations.append(Citation(
                 source_type="schedule",
                 reference_id=existing_plan.get("id"),
                 title="Active Study Plan from Dashboard",
                 url=None,
-                metadata={"exam_date": existing_plan.get("exam_date"), "hours": existing_plan.get("hours_per_day")},
+                metadata={
+                    "exam_date": existing_plan.get("exam_date"),
+                    "hours": existing_plan.get("hours_per_day"),
+                },
             ))
         else:
             citations.append(Citation(
@@ -113,14 +267,31 @@ class PlannerCoachSpecialist(BaseSpecialist):
                 reference_id=subject_code,
                 title=f"R22 Curriculum Structure — {subject_info['name']} ({subject_code})",
                 url=None,
-                metadata={"credit_weight": subject_info.get("credits", 3.0), "semester": subject_info.get("semester", 1)},
+                metadata={
+                    "credit_weight": subject_info.get("credits", 3.0),
+                    "semester": subject_info.get("semester", 1),
+                },
             ))
 
         suggested_actions = [
             SuggestedAction(label="Open Study Planner", action_type="navigate", payload="/planner"),
-            SuggestedAction(label="Check Repeated DAA Questions", action_type="query", payload=f"Which questions are frequently repeated in previous {subject_info.get('short', 'DAA')} papers?"),
-            SuggestedAction(label="Retrieve DAA Past Papers", action_type="query", payload=f"Find previous {subject_info.get('short', 'DAA')} question papers"),
+            SuggestedAction(
+                label=f"Check Repeated {subject_info.get('short', 'DAA')} Questions",
+                action_type="query",
+                payload=f"Which questions are frequently repeated in previous {subject_info.get('short', 'DAA')} papers?",
+            ),
+            SuggestedAction(
+                label=f"Retrieve {subject_info.get('short', 'DAA')} Past Papers",
+                action_type="query",
+                payload=f"Find previous {subject_info.get('short', 'DAA')} question papers",
+            ),
         ]
 
-        return plan_markdown, citations, suggested_actions
+        meta = {
+            "provider": provider_name,
+            "model_used": model_name,
+            "is_fallback": is_fallback,
+        }
+
+        return response_content, citations, suggested_actions, meta
 

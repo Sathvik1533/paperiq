@@ -39,16 +39,16 @@ export function NotFound() {
               <span className="font-data-label text-data-label text-primary">ERR_404_INDEX_MISSING</span>
             </div>
             <div className="absolute bottom-8 -left-12 glass-card px-md py-sm rounded-xl animate-pulse">
-              <span className="font-data-label text-data-label text-on-surface-variant">NODE_UNREACHABLE</span>
+              <span className="font-data-label text-data-label text-on-surface-variant">PAGE NOT FOUND</span>
             </div>
           </div>
 
           <div className="flex flex-col gap-base">
             <h1 className="font-headline text-display-hero-mobile md:text-headline-lg font-bold text-on-surface tracking-tighter">
-              404 — Research Path Not Found
+              404 — Page Not Found
             </h1>
             <p className="font-body-lg text-body-lg text-on-surface-variant max-w-[600px] mx-auto opacity-80">
-              The page you're looking for has been moved or doesn't exist in the current database.
+              The page you are looking for could not be found or has been moved.
             </p>
           </div>
 

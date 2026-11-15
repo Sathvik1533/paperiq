@@ -9,7 +9,11 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo ""
 
 BASE_URL="http://localhost:8000/api/v1"
-FRONTEND_URL="http://localhost:3000"
+if curl -s -o /dev/null "http://127.0.0.1:3005"; then
+    FRONTEND_URL="http://127.0.0.1:3005"
+else
+    FRONTEND_URL="http://localhost:3000"
+fi
 PASSED=0
 FAILED=0
 

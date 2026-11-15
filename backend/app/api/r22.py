@@ -15,6 +15,12 @@ from pydantic import BaseModel
 from typing import Optional
 
 from app.scrapers.colleges.mlrit_r22 import R22_SUBJECTS
+from app.constants.r22_3_1_allowlist import (
+    validate_3_1_subject_code,
+    get_3_1_subjects_list,
+    is_supported_3_1_code,
+    OFFICIAL_3_1_SUBJECTS
+)
 from app.database import get_db
 from app.auth import get_current_user_id, verify_resource_access
 from app.limiter import limiter
@@ -36,23 +42,22 @@ class AnalyzeRequest(BaseModel):
 @router.get("/r22/subjects")
 async def list_r22_subjects(branch: Optional[str] = None, semester: Optional[int] = None):
     """
-    List all R22 subjects (both 2-1 and 2-2).
-    Optionally filter by branch (CSE, IT, BS, HS) or semester (1 or 2).
+    List supported R22 subjects — STRICTLY 3-1 (Third Year, First Semester) only.
     """
+    all_31 = get_3_1_subjects_list()
     subjects = []
-    for code, info in R22_SUBJECTS.items():
+    for info in all_31:
         if branch and info["branch"] not in (branch.upper(), "ALL") and branch.upper() != "ALL":
             continue
-        if semester is not None and info["semester"] != semester:
-            continue
         subjects.append({
-            "code"       : code,
+            "code"       : info["code"],
             "name"       : info["name"],
             "branch"     : info["branch"],
             "short"      : info["short"],
             "regulation" : "R22",
             "semester"   : info["semester"],
-            "btech_year" : 2,
+            "btech_year" : 3,
+            "category"   : info.get("category", "PCC"),
         })
 
     return {"success": True, "data": subjects, "meta": {"total": len(subjects)}}
@@ -60,11 +65,11 @@ async def list_r22_subjects(branch: Optional[str] = None, semester: Optional[int
 
 @router.get("/r22/subjects/{subject_code}")
 async def get_r22_subject(subject_code: str):
-    """Get subject info and available paper count."""
-    code = subject_code.upper()
-    info = R22_SUBJECTS.get(code)
+    """Get subject info and available paper count — strictly validated for 3-1 only."""
+    code = validate_3_1_subject_code(subject_code)
+    info = OFFICIAL_3_1_SUBJECTS.get(code)
     if not info:
-        raise HTTPException(404, f"Unknown R22 subject code: {code}")
+        raise HTTPException(404, f"Unknown or unsupported R22 3-1 subject code: {code}")
 
     db = get_db()
     # Find subject_id
@@ -88,11 +93,11 @@ async def get_r22_subject(subject_code: str):
             "short"            : info["short"],
             "regulation"       : "R22",
             "semester"         : info["semester"],
-            "btech_year"       : 2,
+            "btech_year"       : 3,
             "subject_id"       : subject_id,
             "papers_available" : paper_count,
             "questions_parsed" : question_count,
-            "ready_for_analysis": question_count > 0,
+            "ready_for_analysis": True,
         }
     }
 
@@ -117,10 +122,11 @@ async def analyze_r22_subject(
 
     Returns {job_id, status, subject_code, subject_name}
     """
-    code = req.subject_code.upper()
-    info = R22_SUBJECTS.get(code)
+    # Enforce strict 3-1 allowlist
+    code = validate_3_1_subject_code(req.subject_code)
+    info = OFFICIAL_3_1_SUBJECTS.get(code)
     if not info:
-        raise HTTPException(400, f"Unknown subject code '{code}'. Use GET /r22/subjects to see valid codes.")
+        raise HTTPException(400, f"Unknown 3-1 subject code '{code}'. Use GET /r22/subjects to see valid 3-1 codes.")
 
     from app.jobs.job_manager import create_job
     job = create_job(

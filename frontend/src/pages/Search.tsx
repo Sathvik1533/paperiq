@@ -1,5 +1,5 @@
 /**
- * Search page — R22 2-2 focused.
+ * Search page — R22 3-1 focused.
  * User picks a subject. PaperIQ does everything automatically:
  *   crawl → extract → parse → analyze → show dashboard.
  * No file uploads. No manual pipeline steps.
@@ -69,7 +69,7 @@ export function Search() {
     fetch(`${BASE_URL}/r22/subjects`)
       .then(r => r.json())
       .then(j => setSubjects(j.data ?? []))
-      .catch(() => setError('Cannot connect to backend. Is it running on port 8000?'))
+      .catch(() => setError('Unable to load subjects right now. Please try again.'))
   }, [])
 
   // Filtered subjects for selected branch
@@ -113,16 +113,16 @@ export function Search() {
             }
           } else if (data.status === 'failed') {
             stopPoll(); setStatus('error')
-            setError('Analysis failed. Check Settings → Pipeline Status for details.')
+            setError('Analysis could not be completed right now. Please try again.')
           }
         } catch {
-          stopPoll(); setStatus('error'); setError('Lost connection to backend.')
+          stopPoll(); setStatus('error'); setError('Connection lost. Please try again.')
         }
       }, 2000)
 
     } catch (e) {
       setStatus('error')
-      setError(e instanceof Error ? e.message : 'Failed to start.')
+      setError('Could not start analysis. Please try again.')
     }
   }
 
@@ -209,7 +209,7 @@ export function Search() {
               <span className="text-gray-500 ml-2">·</span>
               <span className="text-gray-400 ml-2">{selectedSubject.code}</span>
               <span className="text-gray-500 ml-2">·</span>
-              <span className="text-gray-400 ml-2">R22 · Sem 2-2</span>
+              <span className="text-gray-400 ml-2">R22 · Sem 3-1</span>
             </div>
           )}
 

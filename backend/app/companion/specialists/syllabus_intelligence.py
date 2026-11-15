@@ -43,17 +43,15 @@ class SyllabusIntelligenceSpecialist(BaseSpecialist):
 
 No official syllabus records match course code **`{queried_code}`** in the verified MLRIT Autonomous R22 curriculum registry.
 
-Please verify the course code. Supported R22 Semester 3-1 & 3-2 CSE courses include:
+Please verify the course code. Supported MLRIT R22 Semester 3-1 CSE courses include:
 - **`A6CS15`**: Design and Analysis of Algorithms (DAA)
 - **`A6IT13`**: Cloud and DevOps (CD)
 - **`A6CS18`**: Computer Networks (CN)
 - **`A6IT26`**: Information Retrieval Systems (IRS)
 - **`A6AI14`**: Natural Language Processing (NLP)
-- **`A6CS09`**: Operating Systems (OS)
-- **`A6CS07`**: Database Management Systems (DBMS)
 """
                 return error_msg, [], [
-                    SuggestedAction(label="View All Subjects", action_type="navigate", payload="/papers"),
+                    SuggestedAction(label="View All 3-1 Subjects", action_type="navigate", payload="/papers"),
                     SuggestedAction(label="Open DAA Syllabus", action_type="query", payload="Show me the syllabus for A6CS15"),
                 ]
 
@@ -88,19 +86,19 @@ Please verify the course code. Supported R22 Semester 3-1 & 3-2 CSE courses incl
                 ("Unit IV", "Backtracking", "General method, N-Queens problem (4-Queens, 8-Queens state space tree), Sum of Subsets problem, Graph Coloring (m-colorability), Hamiltonian Cycles."),
                 ("Unit V", "Branch and Bound & NP-Completeness", "Branch and Bound: General method, Least-Cost (LC) Branch and Bound, FIFO Branch and Bound, 0/1 Knapsack problem using LCBB, Traveling Salesperson Problem. NP-Hard and NP-Complete: Basic concepts, Non-deterministic algorithms, Cook's Theorem, NP-Hard and NP-Complete classes."),
             ],
-            "A6CS11": [
-                ("Unit I", "Operating System Overview & Process Management", "OS structure, system calls, process state transitions, PCB, scheduling algorithms (FCFS, SJF, RR, Priority)"),
-                ("Unit II", "Process Synchronization & Inter-Process Communication", "Critical section problem, Peterson's solution, Semaphores, Monitors, Classic IPC problems (Dining Philosophers, Producer-Consumer)"),
-                ("Unit III", "Deadlocks & Resource Allocation", "Deadlock characterization, Banker's Algorithm, safety algorithm, avoidance, detection and recovery mechanisms"),
-                ("Unit IV", "Memory Management Strategies", "Logical vs physical address space, Swapping, Contiguous memory allocation, Paging, Segmentation, Demand Paging, Page replacement algorithms (FIFO, LRU, Optimal)"),
-                ("Unit V", "File System Storage & Disk Scheduling", "File concept, access methods, directory structures, disk scheduling algorithms (FCFS, SSTF, SCAN, C-SCAN), I/O systems"),
+            "A6IT26": [
+                ("Unit I", "Introduction to Information Retrieval", "Boolean retrieval, inverted index construction, dictionary and postings lists, tokenization, stemming, lemmatization"),
+                ("Unit II", "Scoring & Vector Space Model", "Term frequency and weighting, TF-IDF, Vector Space Model, Cosine similarity, evaluation metrics: Precision, Recall, F-measure, MAP"),
+                ("Unit III", "Probabilistic Information Retrieval", "Probability ranking principle, Binary Independence Model, BM25 ranking function, Language models for IR"),
+                ("Unit IV", "Web Search & Link Analysis", "Web search architecture, web crawling, duplicate detection, Link analysis: PageRank and HITS algorithms"),
+                ("Unit V", "Text Classification & Clustering", "Text classification, Naive Bayes classifier, Vector space classification (k-NN), Clustering: k-means, hierarchical agglomerative clustering"),
             ],
-            "A6CS09": [
-                ("Unit I", "Introduction to Database Systems", "Database architecture, 3-tier schema, data models, ER diagrams, extended ER features"),
-                ("Unit II", "Relational Model & Relational Algebra", "Relational constraints, tuple and domain relational calculus, SQL DDL/DML, views, nested queries"),
-                ("Unit III", "Schema Refinement & Normal Forms", "Functional dependencies, closure, decomposition axioms, Normal forms (1NF, 2NF, 3NF, BCNF, 4NF)"),
-                ("Unit IV", "Transaction Management & Concurrency Control", "ACID properties, serializability, two-phase locking (2PL), timestamp ordering, deadlock handling"),
-                ("Unit V", "Indexing, Hashing & Storage", "File organization, Primary and secondary indexes, B-Trees, B+ Trees, Static and dynamic hashing"),
+            "A6AI14": [
+                ("Unit I", "Introduction & Language Modeling", "NLP overview, regular expressions, text normalization, N-gram language models, perplexity, smoothing techniques"),
+                ("Unit II", "POS Tagging & Sequence Models", "Part-of-speech tagging, Hidden Markov Models (HMM), Viterbi decoding algorithm, Maximum Entropy Markov Models"),
+                ("Unit III", "Syntax & Parsing", "Context-Free Grammars for natural language, Constituency parsing, CYK algorithm, Dependency parsing"),
+                ("Unit IV", "Lexical Semantics & Word Embeddings", "Word senses, WordNet, Distributional semantics, Word2Vec (Skip-gram, CBOW), GloVe, contextual embeddings"),
+                ("Unit V", "Core NLP Applications", "Text classification, Sentiment analysis, Information extraction, Machine translation, Transformer architecture overview"),
             ],
             "A6CS18": [
                 ("Unit I", "Introduction & Physical Layer", "Network hardware and software, reference models (OSI, TCP/IP), transmission media, guided and unguided media"),

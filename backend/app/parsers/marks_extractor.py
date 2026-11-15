@@ -1,6 +1,8 @@
 """
 Extracts marks value from question text or table cell strings.
-Handles: "5M", "10M", "7M", "5 Marks", "10 marks", "(5)", "(10M)"
+Handles: "5M", "10M", "7M", "5 Marks", "10 marks", "(5)", "[10]", "(10M)",
+and bare digits "1", "5", "10", "2" (with optional whitespace) as found in table cells.
+Guards against extracting numbers from ordinary sentence text.
 """
 import re
 from typing import Optional
@@ -10,8 +12,11 @@ _MARKS_PATTERNS = [
     re.compile(r"\b(\d{1,2})[Mm]\b"),                   # 5M, 10M, 7M
     re.compile(r"\((\d{1,2})[Mm]\)"),                   # (5M), (10M)
     re.compile(r"\b(\d{1,2})\s*[Mm]arks?\b", re.I),    # 5 marks, 5 Mark
+    re.compile(r"\b[Mm]arks?\s*[:\-]?\s*(\d{1,2})\b", re.I),  # Marks: 5, Marks - 10
     re.compile(r"\((\d{1,2})\)"),                        # (5), (10)
+    re.compile(r"\[(\d{1,2})\]"),                        # [5], [10]
     re.compile(r"\b(\d{1,2})\s*[Mm]\s*$"),              # trailing "5 M"
+    re.compile(r"^\s*(\d{1,2})\s*$"),                   # bare digit e.g. "1", "5", "10", "2" with optional whitespace
 ]
 
 # Valid mark values for academic papers

@@ -36,27 +36,27 @@ def calculate_max_marks_by_regulation(
     # Priority 1: Use calculated marks from questions if available
     if calculated_marks > 0:
         return calculated_marks
-    
-    # Priority 2: Year-based evaluation MUST override regulation for 2022-2024
+
+    # Priority 2: Regulation-based evaluation (authoritative curriculum standard)
+    if regulation:
+        reg_upper = regulation.upper().strip()
+        
+        # R22 papers are always 60 marks (MLRIT Autonomous standard for 2024 & 2025)
+        if reg_upper == 'R22':
+            return 60
+        
+        # R19/R20/R18 papers are always 70 marks (legacy standard)
+        if reg_upper in ('R19', 'R20', 'R18'):
+            return 70
+
+    # Priority 3: Year-based evaluation fallback when regulation is unspecified
     if exam_year:
         # 2025+ papers follow new 60-mark structure
         if exam_year >= 2025:
             return 60
         
-        # 2022-2024 papers follow legacy 70-mark structure
+        # 2022-2024 papers follow legacy 70-mark structure if regulation unknown
         if 2022 <= exam_year <= 2024:
-            return 70
-            
-    # Priority 3: Regulation-based evaluation (fallback)
-    if regulation:
-        reg_upper = regulation.upper().strip()
-        
-        # R22 papers are always 60 marks (new MLRIT standard)
-        if reg_upper == 'R22':
-            return 60
-        
-        # R19/R20 papers are always 70 marks (legacy standard)
-        if reg_upper in ('R19', 'R20', 'R18'):
             return 70
 
     
@@ -124,3 +124,12 @@ def validate_paper_marks(paper_data: dict) -> dict:
     paper_data['part_b_max_marks'] = part_b
     
     return paper_data
+
+
+# Re-export 60-mark exam pattern validation utilities
+from app.utils.exam_pattern_validator import (
+    validate_paper_60m_structure,
+    classify_question_mark_type,
+    analyze_60m_question_frequencies,
+    PaperEligibilityStatus,
+)

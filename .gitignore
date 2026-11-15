@@ -41,3 +41,9 @@ extracted/
 # Logs
 logs/
 *.log
+
+# Vercel & Test Artifacts
+.vercel/
+test-results/
+frontend/test-results/
+

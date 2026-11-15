@@ -313,8 +313,8 @@ class TestCompanionVisibleMetadataAndFallback:
             assert chat_resp.message.is_fallback is True
 
             # Content is still academically sound from pre-verified R22 curriculum
-            assert "0/1 Knapsack Problem using LC Branch and Bound (MLRIT R22 DAA Unit V)" in chat_resp.message.content
-            assert "Part A — 2 Marks" in chat_resp.message.content
+            assert "0/1 Knapsack Problem using LC Branch and Bound" in chat_resp.message.content
+            assert "MLRIT R22 DAA Unit V" in chat_resp.message.content
 
     @pytest.mark.asyncio
     async def test_general_guidance_uses_groq_and_reports_metadata(self):

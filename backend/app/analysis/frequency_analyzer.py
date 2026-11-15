@@ -80,11 +80,14 @@ class FrequencyAnalyzer:
     # Question frequency (repeated questions)
     # ------------------------------------------------------------------
 
-    def question_frequency(self) -> list[dict]:
+    def question_frequency(self, separate_mark_types: bool = True) -> list[dict]:
         """
         Groups questions by normalised-text similarity.
+        When separate_mark_types is True (mandatory 60-mark rule),
+        direct 10M questions and 5M subquestions are NOT mixed together.
+        
         Returns list sorted by count desc.
-        Each: {canonical_text, count, years[], appearances[{paper_id,year,marks,question_id}]}
+        Each: {canonical_text, count, marks, mark_type, years[], appearances[{paper_id,year,marks,question_id,part,question_number}]}
         """
         groups: dict[str, dict] = {}
 
@@ -94,27 +97,72 @@ class FrequencyAnalyzer:
             if not norm:
                 continue
 
-            if norm not in groups:
-                groups[norm] = {
+            marks = q.get("marks")
+            # Determine mark type: 1m, 10m_direct, 5m_sub, or other
+            if marks == 1:
+                mark_type = "1_mark"
+            elif marks == 10:
+                mark_type = "10_marks_direct"
+            elif marks == 5:
+                mark_type = "5_marks_sub"
+            else:
+                mark_type = f"{marks}_marks" if marks else "unspecified"
+
+            # In 60-mark evaluation, group key includes mark_type so 10M direct
+            # and 5M subquestions are NEVER conflated or mixed.
+            group_key = f"{norm}::{mark_type}" if separate_mark_types else norm
+
+            if group_key not in groups:
+                groups[group_key] = {
                     "canonical_text": text,
                     "count": 0,
+                    "marks": marks,
+                    "mark_type": mark_type,
                     "years": [],
                     "appearances": [],
+                    "source_papers": [],
                 }
-            entry = groups[norm]
+            entry = groups[group_key]
             entry["count"] += 1
             year = q.get("exam_year")
             if year and year not in entry["years"]:
                 entry["years"].append(year)
-            entry["appearances"].append({
-                "paper_id": q.get("paper_id"),
+            
+            paper_id = q.get("paper_id")
+            part = q.get("part") or q.get("section") or ("Part A" if marks == 1 else "Part B")
+            q_num = str(q.get("question_number") or "").strip()
+            p_title = q.get("paper_title") or q.get("title") or f"Paper {paper_id}"
+            
+            appearance_info = {
+                "paper_id": paper_id,
+                "paper_title": p_title,
                 "year": year,
-                "marks": q.get("marks"),
+                "marks": marks,
+                "mark_type": mark_type,
                 "question_id": q.get("id"),
-            })
+                "part": part,
+                "question_number": q_num,
+                "source_reference": f"{p_title} — {part} Q{q_num} ({marks}M)" if q_num else f"{p_title} — {part} ({marks}M)",
+            }
+            entry["appearances"].append(appearance_info)
+            entry["source_papers"].append(appearance_info)
 
         result = sorted(groups.values(), key=lambda x: x["count"], reverse=True)
         return result
+
+    def question_frequency_by_mark_type(self) -> dict[str, list[dict]]:
+        """
+        Returns segregated frequency distributions for:
+        - 1-mark questions (Part A)
+        - direct 10-mark questions (Part B)
+        - 5-mark subquestions (Part B)
+        """
+        all_freq = self.question_frequency(separate_mark_types=True)
+        return {
+            "one_mark": [q for q in all_freq if q["mark_type"] == "1_mark"],
+            "direct_10m": [q for q in all_freq if q["mark_type"] == "10_marks_direct"],
+            "subquestion_5m": [q for q in all_freq if q["mark_type"] == "5_marks_sub"],
+        }
 
     # ------------------------------------------------------------------
     # Unit distribution

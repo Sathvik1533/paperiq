@@ -3,7 +3,7 @@ Supabase Storage Download & View API
 
 Strictly adheres to the Official Document Rule:
 - /papers/{id}/download -> Original DOC/DOCX/PDF as attachment
-- /papers/{id}/view -> Viewable PDF inline
+- /papers/{id}/view -> Viewable PDF inline (or appropriate media type for DOCX/DOC)
 No on-the-fly archive extraction.
 """
 import uuid
@@ -12,6 +12,7 @@ from fastapi.responses import Response
 
 from app.database import get_db
 from app.logger import get_logger
+from app.intelligence.academic_question_intel import resolve_paper_id
 
 router = APIRouter()
 log = get_logger(__name__)
@@ -20,15 +21,22 @@ log = get_logger(__name__)
 async def download_paper(paper_id: str):
     """
     Downloads the EXACT original file uploaded by MLRIT (DOCX, DOC, or PDF).
+    Supports lookup whether paper_id is provided as UUID or slug.
     """
-    try:
-        uuid_obj = uuid.UUID(str(paper_id))
-    except ValueError:
+    canonical_id = resolve_paper_id(paper_id)
+    if not canonical_id:
         raise HTTPException(400, "Invalid paper ID format")
 
     db = get_db()
     
-    paper_result = db.table('papers').select('*').eq('id', paper_id).execute()
+    paper_result = db.table('papers').select('*').eq('id', canonical_id).execute()
+    if not paper_result.data and paper_id != canonical_id:
+        try:
+            uuid.UUID(str(paper_id))
+            paper_result = db.table('papers').select('*').eq('id', paper_id).execute()
+        except ValueError:
+            pass
+
     if not paper_result.data:
         raise HTTPException(404, "Paper not found")
     
@@ -50,10 +58,16 @@ async def download_paper(paper_id: str):
         raise HTTPException(503, "Failed to retrieve original document from storage.")
         
     media_type = "application/octet-stream"
-    if source_filename.lower().endswith(".doc") or source_filename.lower().endswith(".docx"):
+    if source_filename.lower().endswith(".docx"):
         media_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    elif source_filename.lower().endswith(".doc"):
+        media_type = "application/msword"
     elif source_filename.lower().endswith(".pdf"):
         media_type = "application/pdf"
+    elif file_bytes and file_bytes[:4] == b'%PDF':
+        media_type = "application/pdf"
+    elif file_bytes and file_bytes[:2] == b'PK':
+        media_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         
     return Response(
         content=file_bytes,
@@ -64,17 +78,24 @@ async def download_paper(paper_id: str):
 @router.get("/papers/{paper_id}/view")
 async def view_paper(paper_id: str):
     """
-    Views the browser-friendly PDF version of the paper.
-    If original was DOCX, this serves the server-converted PDF.
+    Views the browser-friendly PDF or DOCX version of the paper.
+    If original was DOCX, serves appropriate OpenXML document mime type or converted PDF.
+    Supports lookup whether paper_id is provided as UUID or slug.
     """
-    try:
-        uuid_obj = uuid.UUID(str(paper_id))
-    except ValueError:
+    canonical_id = resolve_paper_id(paper_id)
+    if not canonical_id:
         raise HTTPException(400, "Invalid paper ID format")
 
     db = get_db()
     
-    paper_result = db.table('papers').select('*').eq('id', paper_id).execute()
+    paper_result = db.table('papers').select('*').eq('id', canonical_id).execute()
+    if not paper_result.data and paper_id != canonical_id:
+        try:
+            uuid.UUID(str(paper_id))
+            paper_result = db.table('papers').select('*').eq('id', paper_id).execute()
+        except ValueError:
+            pass
+
     if not paper_result.data:
         raise HTTPException(404, "Paper not found")
     
@@ -95,8 +116,21 @@ async def view_paper(paper_id: str):
         log.error(f"Failed to download viewable document from storage: {e}")
         raise HTTPException(503, "Failed to retrieve viewable document from storage.")
         
+    media_type = "application/octet-stream"
+    if view_filename.lower().endswith(".pdf"):
+        media_type = "application/pdf"
+    elif view_filename.lower().endswith(".docx"):
+        media_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    elif view_filename.lower().endswith(".doc"):
+        media_type = "application/msword"
+    elif file_bytes and file_bytes[:4] == b'%PDF':
+        media_type = "application/pdf"
+    elif file_bytes and file_bytes[:2] == b'PK':
+        media_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+
     return Response(
         content=file_bytes,
-        media_type="application/pdf",
+        media_type=media_type,
         headers={"Content-Disposition": f'inline; filename="{view_filename}"'}
     )
+

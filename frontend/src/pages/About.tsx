@@ -314,21 +314,21 @@ export function About() {
                       },
                       {
                         icon: 'shield',
-                        title: 'Row-Level Security',
-                        desc: 'Every database query is scoped to the authenticated user via Supabase RLS. Your data is yours alone.',
+                        title: 'Private and Secure by Default',
+                        desc: 'Your study data and chats are completely private to you. No other student can see your activity.',
                         tag: 'Security'
                       },
                       {
                         icon: 'cached',
-                        title: 'Intelligent Caching',
-                        desc: 'React Query caches API responses for 5 minutes, reducing network traffic by 70%. Instant page switches.',
-                        tag: 'Performance'
+                        title: 'Instant Fast Loading',
+                        desc: 'Pages and question papers open instantly with smart local caching.',
+                        tag: 'Speed'
                       },
                       {
                         icon: 'unarchive',
-                        title: 'RAR → DOCX Extraction',
-                        desc: 'College papers come in .rar archives. Our backend extracts the original .docx files automatically — no manual work.',
-                        tag: 'Pipeline'
+                        title: 'Automatic Paper Processing',
+                        desc: 'Exam papers are extracted and organized automatically from official archives — no manual work.',
+                        tag: 'Reliability'
                       },
                       {
                         icon: 'route',
@@ -383,21 +383,21 @@ export function About() {
                       },
                       {
                         icon: 'shield',
-                        title: 'Row-Level Security',
-                        desc: 'Every database query is scoped to the authenticated user via Supabase RLS. Your data is yours alone.',
+                        title: 'Private and Secure by Default',
+                        desc: 'Your study data and chats are completely private to you. No other student can see your activity.',
                         tag: 'Security'
                       },
                       {
                         icon: 'cached',
-                        title: 'Intelligent Caching',
-                        desc: 'React Query caches API responses for 5 minutes, reducing network traffic by 70%. Instant page switches.',
-                        tag: 'Performance'
+                        title: 'Instant Fast Loading',
+                        desc: 'Pages and question papers open instantly with smart local caching.',
+                        tag: 'Speed'
                       },
                       {
                         icon: 'unarchive',
-                        title: 'RAR → DOCX Extraction',
-                        desc: 'College papers come in .rar archives. Our backend extracts the original .docx files automatically — no manual work.',
-                        tag: 'Pipeline'
+                        title: 'Automatic Paper Processing',
+                        desc: 'Exam papers are extracted and organized automatically from official archives — no manual work.',
+                        tag: 'Reliability'
                       },
                       {
                         icon: 'route',
@@ -621,9 +621,9 @@ export function About() {
                       <line x1="15%" y1="0" x2="85%" y2="0" stroke="rgba(249, 115, 22, 0.15)" strokeWidth="2" strokeDasharray="8 4" />
                     </svg>
                     {[
-                      { icon: 'layers', title: 'Frontend', tech: 'React · Tailwind · Vite' },
-                      { icon: 'settings_input_component', title: 'Backend', tech: 'FastAPI · Python' },
-                      { icon: 'database', title: 'Database', tech: 'Supabase · PostgreSQL' },
+                      { icon: 'layers', title: 'Student Interface', tech: 'Fast & responsive web app' },
+                      { icon: 'settings_input_component', title: 'Study Engine', tech: 'Exam analysis & smart tutor' },
+                      { icon: 'database', title: 'Academic Vault', tech: 'Safe, private exam storage' },
                     ].map((node) => (
                       <div key={node.title} className="z-10 w-full md:w-[180px] p-4 bg-surface-container border border-primary/20 rounded-xl text-center group transition-all hover:scale-105 hover:border-primary/50">
                         <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -651,9 +651,9 @@ export function About() {
                       <line x1="15%" y1="0" x2="85%" y2="0" stroke="rgba(249, 115, 22, 0.15)" strokeWidth="2" strokeDasharray="8 4" />
                     </svg>
                     {[
-                      { icon: 'layers', title: 'Frontend', tech: 'React · Tailwind · Vite' },
-                      { icon: 'settings_input_component', title: 'Backend', tech: 'FastAPI · Python' },
-                      { icon: 'database', title: 'Database', tech: 'Supabase · PostgreSQL' },
+                      { icon: 'layers', title: 'Student Interface', tech: 'Fast & responsive web app' },
+                      { icon: 'settings_input_component', title: 'Study Engine', tech: 'Exam analysis & smart tutor' },
+                      { icon: 'database', title: 'Academic Vault', tech: 'Safe, private exam storage' },
                     ].map((node) => (
                       <motion.div
                         key={node.title}

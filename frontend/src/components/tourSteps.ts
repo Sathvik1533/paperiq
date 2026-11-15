@@ -41,7 +41,7 @@ export const APP_TOUR_STEPS: TourStep[] = [
   {
     target: 'tour-papers-filters',      // <aside data-tour="tour-papers-filters"> in Papers.tsx:299
     title: 'Browse Past Papers',
-    description: 'Every question paper in our database is here. Filter by subject, semester, regulation, or exam type — and open any paper to read it.',
+    description: 'Every question paper in our collection is here. Filter by subject, semester, regulation, or exam type — and open any paper to read it.',
     position: 'right',
     route: '/papers',
     waitMs: 900,

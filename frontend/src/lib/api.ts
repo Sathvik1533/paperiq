@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { OFFICIAL_R22_3_1_SUBJECTS, filterTo31Subjects } from '../constants/r22_3_1'
 import type {
   College, Subject, AnalysisReport, StudyPlan, ReadinessScore,
   MockExam, ScrapeJob, Paper, Syllabus, SyllabusTopic, CoverageReport,
@@ -66,8 +67,14 @@ export async function getColleges(): Promise<College[]> {
 }
 
 export async function getSubjects(collegeId: string): Promise<Subject[]> {
-  const res = await fetchWithAuth<{ data: Subject[] } | Subject[]>(`/subjects?college=${collegeId}`)
-  return (res as any).data ?? (res as Subject[])
+  try {
+    const res = await fetchWithAuth<{ data: Subject[] } | Subject[]>(`/subjects?college=${collegeId}`)
+    const raw = (res as any).data ?? (res as Subject[])
+    const filtered = filterTo31Subjects(raw || [])
+    return filtered.length > 0 ? (filtered as unknown as Subject[]) : (OFFICIAL_R22_3_1_SUBJECTS as unknown as Subject[])
+  } catch {
+    return OFFICIAL_R22_3_1_SUBJECTS as unknown as Subject[]
+  }
 }
 
 export async function getBranches(collegeId: string): Promise<{ id: string; name: string; short_name: string }[]> {
@@ -347,22 +354,21 @@ export async function confirmHallTicketProfile(profile: {
 
 // ── Beta Student Experience ───────────────────────────────────────────────
 
-export async function getSubjectsForSemester(semester: number, regulation: string): Promise<Subject[]> {
-  // Map global semester (3 or 4) to B.Tech year/semester structure stored in DB
-  const dbSemester = semester === 3 ? 1 : semester === 4 ? 2 : semester
-  const dbYear = (semester === 3 || semester === 4) ? 2 : 1
-
-  const { data, error } = await supabase
-    .from('subjects')
-    .select('*')
-    .eq('year', dbYear)
-    .eq('semester', dbSemester)
-    .eq('regulation', regulation)
-    .order('code', { ascending: true })
-  if (error) {
-    throw error
+export async function getSubjectsForSemester(_semester: number, regulation: string = 'R22'): Promise<Subject[]> {
+  try {
+    const { data, error } = await supabase
+      .from('subjects')
+      .select('*')
+      .eq('regulation', regulation)
+      .order('code', { ascending: true })
+    if (error) {
+      throw error
+    }
+    const filtered = filterTo31Subjects(data || [])
+    return filtered.length > 0 ? (filtered as unknown as Subject[]) : (OFFICIAL_R22_3_1_SUBJECTS as unknown as Subject[])
+  } catch {
+    return OFFICIAL_R22_3_1_SUBJECTS as unknown as Subject[]
   }
-  return data || []
 }
 
 export async function generateAnalysis(
@@ -495,9 +501,14 @@ export async function deleteProfile(userId: string): Promise<void> {
 
 // ── Subjects (filtered) ──────────────────────────────────────────────────
 
-export async function getSubjectsByFilter(semester: number, regulation: string): Promise<Subject[]> {
-  const res = await fetchWithAuth<{ data: Subject[] }>(`/subjects/filter?semester=${semester}&regulation=${regulation}`)
-  return res.data ?? []
+export async function getSubjectsByFilter(_semester: number, _regulation: string): Promise<Subject[]> {
+  try {
+    const res = await fetchWithAuth<{ data: Subject[] }>(`/subjects/filter?semester=${_semester}&regulation=${_regulation}`)
+    const filtered = filterTo31Subjects(res.data ?? [])
+    return filtered.length > 0 ? (filtered as unknown as Subject[]) : (OFFICIAL_R22_3_1_SUBJECTS as unknown as Subject[])
+  } catch {
+    return OFFICIAL_R22_3_1_SUBJECTS as unknown as Subject[]
+  }
 }
 
 // ── Questions (batch) ────────────────────────────────────────────────────
@@ -535,6 +546,12 @@ export interface CompanionMessage {
   specialist?: string
   citations: Citation[]
   suggested_actions: SuggestedAction[]
+  answer_format?: string
+  is_verified_exam_question?: boolean
+  source_reference?: string
+  provider?: string
+  model_used?: string
+  is_fallback?: boolean
   created_at: string
 }
 
@@ -544,6 +561,9 @@ export interface CompanionConversation {
   title: string
   subject_code?: string
   regulation: string
+  answer_format?: string
+  tone_preference?: string
+  unit_number?: number
   created_at: string
   updated_at: string
   messages: CompanionMessage[]
@@ -554,6 +574,9 @@ export interface ConversationSummary {
   title: string
   subject_code?: string
   regulation: string
+  answer_format?: string
+  tone_preference?: string
+  unit_number?: number
   message_count: number
   last_message_preview?: string
   created_at: string
@@ -566,6 +589,15 @@ export interface ChatResponse {
   specialist_badge: string
   specialist_description: string
   suggested_actions: SuggestedAction[]
+  provider?: string
+  model_used?: string
+  is_fallback?: boolean
+  resolved_format?: string
+  resolved_tone?: string
+  is_verified_exam_question?: boolean
+  matched_exam_marks?: number
+  matched_exam_year?: number
+  source_reference?: string
 }
 
 export interface SpecialistCapabilityInfo {
@@ -581,6 +613,9 @@ export async function sendCompanionMessage(payload: {
   conversation_id?: string
   subject_code?: string
   regulation?: string
+  answer_format?: string
+  tone_preference?: string
+  unit_number?: number
 }): Promise<ChatResponse> {
   return fetchWithAuth<ChatResponse>('/companion/chat', {
     method: 'POST',

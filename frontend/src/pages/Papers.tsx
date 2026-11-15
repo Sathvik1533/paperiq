@@ -17,6 +17,7 @@ import { useAuthStore } from '../store/authStore'
 import { getUserProfile } from '../lib/api'
 import { usePapers } from '../lib/queries'
 import { supabase } from '../lib/supabase'
+import { OFFICIAL_R22_3_1_SUBJECTS, filterTo31Subjects } from '../constants/r22_3_1'
 
 interface Paper {
   id: string
@@ -59,22 +60,9 @@ export function Papers() {
   const [subjectDropPos, setSubjectDropPos] = useState({ top: 0, left: 0, width: 0 })
   const [semesterDropPos, setSemesterDropPos] = useState({ top: 0, left: 0, width: 0 })
   
-  // Hardcoded semester allocation matrix (THEORY SUBJECTS ONLY)
+  // Canonical 3-1 semester allocation matrix (MLRIT R22 Strict 3-1 only)
   const SEMESTER_SUBJECTS = {
-    '2-1': [
-      { code: 'A6CS05', name: 'Data Structures' },
-      { code: 'A6IT02', name: 'Object Oriented Programming through Java' },
-      { code: 'A6CS28', name: 'Digital Electronics and Computer Organization' },
-      { code: 'A6CS07', name: 'Software Engineering' },
-      { code: 'A6BS03', name: 'Computer Oriented Statistical Methods' },
-    ],
-    '2-2': [
-      { code: 'A6HS08', name: 'Business Economics and Financial Analysis' },
-      { code: 'A6CS08', name: 'Discrete Mathematics' },
-      { code: 'A6CS09', name: 'Database Management Systems' },
-      { code: 'A6CS11', name: 'Operating System' },
-      { code: 'A6CS13', name: 'Software Testing Fundamentals' },
-    ],
+    '3-1': OFFICIAL_R22_3_1_SUBJECTS.map((s) => ({ code: s.code, name: s.name })),
   }
 
   // Close dropdowns when clicking outside
@@ -117,7 +105,7 @@ export function Papers() {
 
   // Filters
   const [selectedSubject, setSelectedSubject] = useState(searchParams.get('subject') || '')
-  const [selectedSemester, setSelectedSemester] = useState<'2-1' | '2-2' | ''>('') // New semester filter
+  const [selectedSemester, setSelectedSemester] = useState<'3-1' | ''>('3-1') // Strict 3-1 filter
   const [selectedReg, setSelectedReg] = useState(searchParams.get('regulation') || '')
   const [selectedCats, setSelectedCats] = useState<string[]>([])
   const [yearRange, setYearRange] = useState(2025)
@@ -162,41 +150,25 @@ export function Papers() {
       const regulation = prof?.regulation || 'R22'
       if (!searchParams.get('regulation')) setSelectedReg(regulation)
 
-      // Load ALL subjects for this regulation (not filtered by semester number,
-      // because the DB may store semester as 3/4 for 2nd year subjects)
+      // Query DB for subjects and filter strictly to 3-1
       const { data: allSubs } = await supabase
         .from('subjects')
         .select('*')
         .eq('regulation', regulation)
         .order('code', { ascending: true })
 
-      // Canonical 10-subject list — THEORY SUBJECTS ONLY
-      // Ensures the dropdown always shows all subjects even if the DB query returns nothing
-      const ALL_SUBJECTS_CANONICAL = [
-        { id: 'A6CS05', name: 'Data Structures',                               code: 'A6CS05', semester: 1, regulation },
-        { id: 'A6IT02', name: 'Object Oriented Programming through Java',      code: 'A6IT02', semester: 1, regulation },
-        { id: 'A6CS28', name: 'Digital Electronics and Computer Organization', code: 'A6CS28', semester: 1, regulation },
-        { id: 'A6CS07', name: 'Software Engineering',                          code: 'A6CS07', semester: 1, regulation },
-        { id: 'A6BS03', name: 'Computer Oriented Statistical Methods',         code: 'A6BS03', semester: 1, regulation },
-        { id: 'A6HS08', name: 'Business Economics and Financial Analysis',     code: 'A6HS08', semester: 2, regulation },
-        { id: 'A6CS08', name: 'Discrete Mathematics',                          code: 'A6CS08', semester: 2, regulation },
-        { id: 'A6CS09', name: 'Database Management Systems',                   code: 'A6CS09', semester: 2, regulation },
-        { id: 'A6CS11', name: 'Operating System',                              code: 'A6CS11', semester: 2, regulation },
-        { id: 'A6CS13', name: 'Software Testing Fundamentals',                 code: 'A6CS13', semester: 2, regulation },
-      ]
+      const filteredLive = filterTo31Subjects(allSubs || [])
+      const dbByCode = new Map(filteredLive.map((s: any) => [s.code, s]))
 
-      // Merge DB subjects (real UUIDs) with canonical list
-      // DB subjects take priority — their UUIDs are used for paper filtering
-      const dbByCode = new Map((allSubs || []).map((s: any) => [s.code, s]))
-      const finalSubs = ALL_SUBJECTS_CANONICAL.map(f => {
+      const finalSubs = OFFICIAL_R22_3_1_SUBJECTS.map(f => {
         const live = dbByCode.get(f.code)
-        // Use DB record if found (preserves real UUID), otherwise use canonical fallback
-        return live ? { ...live, name: f.name } : f
+        return live ? { ...live, name: f.name } : { ...f, semester: 1, regulation }
       })
-      setSubjects(finalSubs)
+      setSubjects(finalSubs as any)
       setProfileReady(true)
     }).catch(() => {
       setSelectedReg('R22')
+      setSubjects(OFFICIAL_R22_3_1_SUBJECTS as any)
       setProfileReady(true)
     })
   }, [user])
@@ -243,28 +215,27 @@ export function Papers() {
   }
   
   // CRITICAL: Semester Segregation Filter
-  // ALWAYS restrict to our canonical 2nd-year subject codes — no 1st/3rd/4th year papers ever.
-  const ALL_ALLOWED_CODES = new Set([
-    ...SEMESTER_SUBJECTS['2-1'].map(s => s.code),
-    ...SEMESTER_SUBJECTS['2-2'].map(s => s.code),
-  ])
+  // ALWAYS restrict to our canonical 3-1 subject codes — no invalid papers ever.
+  const ALL_ALLOWED_CODES = new Set(
+    SEMESTER_SUBJECTS['3-1'].map(s => s.code)
+  )
 
   const semesterFilteredBase = finalPapers.filter(paper => {
     if (error) {
       if (debouncedSubject && paper.subject_id !== debouncedSubject) return false;
       if (debouncedSemester) {
-        const validCodes = SEMESTER_SUBJECTS[debouncedSemester as '2-1' | '2-2'].map(s => s.code);
+        const validCodes = (SEMESTER_SUBJECTS[debouncedSemester as keyof typeof SEMESTER_SUBJECTS] || []).map(s => s.code);
         if (!validCodes.includes(paper.subject_id)) return false;
       }
       return true;
     }
 
     const subject = subjects.find(s => s.id === paper.subject_id)
-    // Drop any paper whose subject isn't in our canonical 10-subject list
+    // Drop any paper whose subject isn't in our canonical list
     if (!subject || !ALL_ALLOWED_CODES.has(subject.code)) return false
     // If a specific semester is chosen, further restrict to that semester's subjects
     if (debouncedSemester) {
-      const semesterCodes = SEMESTER_SUBJECTS[debouncedSemester as '2-1' | '2-2'].map(s => s.code)
+      const semesterCodes = (SEMESTER_SUBJECTS[debouncedSemester as keyof typeof SEMESTER_SUBJECTS] || []).map(s => s.code)
       return semesterCodes.includes(subject.code)
     }
     if (debouncedSubject && subject.code !== debouncedSubject) return false
@@ -362,18 +333,7 @@ export function Papers() {
                 >
                   <span className={selectedSubject ? 'text-on-surface' : 'text-on-surface-variant'}>
                     {selectedSubject ? (
-                      [
-                        { code: "A6CS05", name: "Data Structures" },
-                        { code: "A6IT02", name: "Object Oriented Programming through Java" },
-                        { code: "A6CS28", name: "Digital Electronics and Computer Organization" },
-                        { code: "A6CS07", name: "Software Engineering" },
-                        { code: "A6BS03", name: "Computer Oriented Statistical Methods" },
-                        { code: "A6HS08", name: "Business Economics and Financial Analysis" },
-                        { code: "A6CS08", name: "Discrete Mathematics" },
-                        { code: "A6CS09", name: "Database Management Systems" },
-                        { code: "A6CS11", name: "Operating System" },
-                        { code: "A6CS13", name: "Software Testing Fundamentals" }
-                      ].find(s => s.code === selectedSubject)?.name || 'All Subjects'
+                      OFFICIAL_R22_3_1_SUBJECTS.find(s => s.code === selectedSubject)?.name || 'All Subjects'
                     ) : 'All Subjects'}
                   </span>
                   <span className={`material-symbols-outlined text-[18px] text-on-surface-variant transition-transform duration-200 ${subjectDropdownOpen ? 'rotate-180' : ''}`}>
@@ -384,7 +344,7 @@ export function Papers() {
                 {(() => {
                   const displaySubjects = selectedSemester 
                     ? subjects.filter(s => {
-                        // Match "1", "2" against "2-1", "2-2" etc.
+                        // Match semester number for 3-1 (Sem 1 in B.Tech 3rd year)
                         const semNum = selectedSemester.split('-')[1] || selectedSemester;
                         return String(s.semester) === semNum;
                       })
@@ -472,29 +432,17 @@ export function Papers() {
                     <span className={!selectedSemester ? '' : 'ml-6'}>All Semesters</span>
                   </button>
                   <div className="h-px bg-outline-variant/30" />
-                  {/* Semester 2-1 */}
+                  {/* Semester 3-1 */}
                   <button
-                    onClick={() => { setSelectedSemester('2-1'); setSemesterDropdownOpen(false) }}
+                    onClick={() => { setSelectedSemester('3-1'); setSemesterDropdownOpen(false) }}
                     className={`w-full text-left px-sm py-md text-body-sm transition-colors flex items-center gap-sm ${
-                      selectedSemester === '2-1'
+                      selectedSemester === '3-1'
                         ? 'bg-primary-container/10 text-[#ff6600]'
                         : 'text-on-surface hover:bg-surface-container-high'
                     }`}
                   >
-                    {selectedSemester === '2-1' && <span className="material-symbols-outlined text-[16px] text-[#ff6600]" style={{fontVariationSettings:"'FILL' 1"}}>check</span>}
-                    <span className={selectedSemester === '2-1' ? '' : 'ml-6'}>Semester 2-1</span>
-                  </button>
-                  {/* Semester 2-2 */}
-                  <button
-                    onClick={() => { setSelectedSemester('2-2'); setSemesterDropdownOpen(false) }}
-                    className={`w-full text-left px-sm py-md text-body-sm transition-colors flex items-center gap-sm ${
-                      selectedSemester === '2-2'
-                        ? 'bg-primary-container/10 text-[#ff6600]'
-                        : 'text-on-surface hover:bg-surface-container-high'
-                    }`}
-                  >
-                    {selectedSemester === '2-2' && <span className="material-symbols-outlined text-[16px] text-[#ff6600]" style={{fontVariationSettings:"'FILL' 1"}}>check</span>}
-                    <span className={selectedSemester === '2-2' ? '' : 'ml-6'}>Semester 2-2</span>
+                    {selectedSemester === '3-1' && <span className="material-symbols-outlined text-[16px] text-[#ff6600]" style={{fontVariationSettings:"'FILL' 1"}}>check</span>}
+                    <span className={selectedSemester === '3-1' ? '' : 'ml-6'}>Semester 3-1 (Sem 5)</span>
                   </button>
                 </motion.div>,
                 document.body

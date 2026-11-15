@@ -238,23 +238,23 @@ export function Vision() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-base mb-xxl">
               <div className="glass p-base rounded-xl">
                 <span className="material-symbols-outlined text-primary-container mb-2">key</span>
-                <h3 className="font-headline-md text-body-md font-bold">Authentication</h3>
-                <p className="text-body-sm text-on-surface-variant">Secure student access portal.</p>
+                <h3 className="font-headline-md text-body-md font-bold">Sign In & Accounts</h3>
+                <p className="text-body-sm text-on-surface-variant">Safe student login and account protection.</p>
               </div>
               <div className="glass p-base rounded-xl">
                 <span className="material-symbols-outlined text-primary-container mb-2">find_in_page</span>
                 <h3 className="font-headline-md text-body-md font-bold">Paper Discovery</h3>
-                <p className="text-body-sm text-on-surface-variant">Intelligent PYQ sourcing engine.</p>
+                <p className="text-body-sm text-on-surface-variant">Find previous exam question papers easily.</p>
               </div>
               <div className="glass p-base rounded-xl">
                 <span className="material-symbols-outlined text-primary-container mb-2">database</span>
-                <h3 className="font-headline-md text-body-md font-bold">Repository</h3>
-                <p className="text-body-sm text-on-surface-variant">Infinite cloud storage for materials.</p>
+                <h3 className="font-headline-md text-body-md font-bold">Question Bank</h3>
+                <p className="text-body-sm text-on-surface-variant">All your study materials saved safely.</p>
               </div>
               <div className="glass p-base rounded-xl">
                 <span className="material-symbols-outlined text-primary-container mb-2">data_object</span>
-                <h3 className="font-headline-md text-body-md font-bold">Parsing</h3>
-                <p className="text-body-sm text-on-surface-variant">Neural structure extraction.</p>
+                <h3 className="font-headline-md text-body-md font-bold">Question Reader</h3>
+                <p className="text-body-sm text-on-surface-variant">Reads and organizes questions automatically.</p>
               </div>
               <div className="glass p-base rounded-xl">
                 <span className="material-symbols-outlined text-primary-container mb-2">map</span>

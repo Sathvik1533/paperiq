@@ -15,11 +15,16 @@ def get_admin_db() -> Client:
     """Returns a Supabase client with SERVICE_ROLE key (bypasses RLS)."""
     global _admin_client
     if _admin_client is None:
-        if not settings.supabase_url or not settings.supabase_service_key:
-            raise RuntimeError("SUPABASE_URL and SUPABASE_SERVICE_KEY must be set in .env")
+        if not settings.supabase_url:
+            raise RuntimeError("SUPABASE_URL must be set in .env")
+        key = settings.supabase_service_key
+        if not key or "mock" in key or not key.startswith("eyJ"):
+            key = settings.supabase_anon_key
+        if not key:
+            raise RuntimeError("SUPABASE_SERVICE_KEY or SUPABASE_ANON_KEY must be set in .env")
         _admin_client = create_client(
             settings.supabase_url, 
-            settings.supabase_service_key,
+            key,
             options=ClientOptions(
                 headers={'Connection': 'keep-alive'},
                 schema='public'

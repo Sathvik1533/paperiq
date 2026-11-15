@@ -82,7 +82,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
         </div>
         <div className="flex flex-col items-center gap-2">
           <h2 className="text-xl font-bold tracking-tight text-white">PaperIQ</h2>
-          <p className="text-gray-400 text-sm animate-pulse">Hydrating workspace...</p>
+          <p className="text-gray-400 text-sm animate-pulse">Getting your study space ready...</p>
         </div>
       </div>
     </div>

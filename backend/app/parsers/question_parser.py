@@ -191,8 +191,8 @@ class QuestionParser:
         if all(c.upper() in ("OR", "") for c in cells):
             return None
 
-        # Skip page number rows
-        if any("page" in c.lower() for c in cells):
+        # Skip page number rows (e.g. "Page 1 of 2", not questions mentioning "page replacement" or "paging")
+        if any(re.match(r"^page\s*\d+(\s*of\s*\d+)?$", c.strip(), re.I) for c in cells):
             return None
 
         # Find the question text cell (longest non-numeric cell)
@@ -212,6 +212,7 @@ class QuestionParser:
 
         # Find longest substantive cell as question text
         best_len = 0
+        best_idx = -1
         for idx, cell in enumerate(cells):
             if idx == 0:
                 continue
@@ -227,17 +228,37 @@ class QuestionParser:
             if len(cell) > best_len and len(cell) > 4:
                 best_len = len(cell)
                 question_text = cell
+                best_idx = idx
 
         if not question_text or len(question_text) < 5:
             return None
 
-        # Extract marks from any cell
-        for cell in cells:
-            v, t = extract_marks(cell)
-            if v:
-                marks_val = v
-                marks_text_raw = t
-                break
+        # Extract marks:
+        # Priority 1: Check question text itself (e.g. if marks in text like "(5M)" or "[5]")
+        v, t = extract_marks(question_text)
+        if v:
+            marks_val = v
+            marks_text_raw = t
+        else:
+            # Priority 2: In MLRIT tables, marks column is located after question_text
+            for idx in range(best_idx + 1, len(cells)):
+                v, t = extract_marks(cells[idx])
+                if v:
+                    marks_val = v
+                    marks_text_raw = t
+                    break
+            # Priority 3: Check remaining non-zero cells before question_text (excluding cell 0 = question number)
+            if not marks_val:
+                for idx in range(1, best_idx):
+                    v, t = extract_marks(cells[idx])
+                    if v:
+                        marks_val = v
+                        marks_text_raw = t
+                        break
+
+        # Fallback: infer marks from section when not explicitly found in cells
+        if not marks_val and section != QuestionSection.UNKNOWN:
+            marks_val = infer_marks_from_section(section.value, q_num)
 
         # Extract CO/BL from question text if not found in cells
         if not co or not bl:
@@ -248,7 +269,7 @@ class QuestionParser:
         # Infer section from marks — always override UNKNOWN, also override wrong inference
         if marks_val and marks_val <= 2:
             section = QuestionSection.PART_A
-        elif marks_val and marks_val >= 5 and section == QuestionSection.UNKNOWN:
+        elif marks_val and marks_val >= 5:
             section = QuestionSection.PART_B
 
         qt, conf = classify_question_type(question_text)

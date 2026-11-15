@@ -121,7 +121,7 @@ export function Onboarding() {
                 </div>
               ) : colleges.length === 0 ? (
                 <div className="w-full bg-gray-700 rounded-lg px-3 py-2 text-sm text-yellow-400 border border-yellow-700">
-                  No colleges found — make sure the backend is running
+                  No colleges found. Please check your connection and try again.
                 </div>
               ) : (
                 <select className={inputCls} value={form.college_id} onChange={e => set('college_id', e.target.value)}>

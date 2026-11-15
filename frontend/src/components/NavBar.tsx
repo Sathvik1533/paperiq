@@ -14,17 +14,17 @@ import { Icon } from './Icon'
 import { Tooltip } from './ui/Tooltip'
 import { hoverScale, tapScale, SPRING_SNAPPY } from '../lib/motion'
 
-/** Tooltip descriptions for each nav link */
+/** Tooltip descriptions for each nav link in simple, everyday English */
 const navTooltips: Record<string, string> = {
-  dashboard: 'Your study command center \u2014 subjects, progress, and quick actions',
-  companion: 'PaperIQ AI Companion \u2014 unified academic tutor and exam intelligence',
-  analysis:  'AI-powered exam pattern analysis across 10+ years of papers',
-  planner:   'Plan your daily study schedule and track exam readiness',
-  papers:    'Browse, search, and download 80+ past exam papers',
-  about:     'The story behind PaperIQ and the developer',
-  profile:   'Your learning goals, preferences, and academic profile',
-  settings:  'Customize your PaperIQ experience',
-  vision:    'The future roadmap of PaperIQ',
+  dashboard: 'Your study home — subjects, progress, and quick actions',
+  companion: 'Study Assistant — get clear answers, past questions, and exam help',
+  analysis:  'Exam trends and high-frequency topics from previous papers',
+  planner:   'Plan your daily study schedule and track your exam readiness',
+  papers:    'Browse, search, and download previous exam papers',
+  about:     'The story behind PaperIQ and the creator',
+  profile:   'Your subjects, study goals, and account details',
+  settings:  'Customize your PaperIQ preferences',
+  vision:    'The future of PaperIQ',
 }
 
 interface NavBarProps {
@@ -94,12 +94,12 @@ export function NavBar({ activeTab }: NavBarProps) {
 
   return (
     <header className="fixed top-0 left-0 w-full z-[100] bg-background/80 backdrop-blur-xl border-b border-outline-variant">
-      <div className="max-w-[1200px] mx-auto flex justify-between items-center px-base md:px-xl h-20 gap-xl">
-        {/* Logo */}
-        <div className="flex items-center gap-huge">
+      <div className="max-w-[1280px] mx-auto flex justify-between items-center px-base md:px-lg lg:px-xl h-20 gap-base lg:gap-lg">
+        {/* Logo and Nav links */}
+        <div className="flex items-center gap-6 lg:gap-8 xl:gap-10 shrink-0">
           <Tooltip content="Go to Dashboard" placement="bottom">
             {shouldReduceMotion ? (
-              <Link to="/dashboard" className="font-headline text-headline-md font-bold text-on-surface tracking-tight">
+              <Link to="/dashboard" className="font-headline text-headline-md font-bold text-on-surface tracking-tight shrink-0">
                 Paper<span className="text-primary-container">IQ</span>
               </Link>
             ) : (
@@ -107,6 +107,7 @@ export function NavBar({ activeTab }: NavBarProps) {
                 whileHover={{ scale: 1.04 }}
                 whileTap={{ scale: 0.96 }}
                 transition={SPRING_SNAPPY}
+                className="shrink-0"
               >
                 <Link to="/dashboard" className="font-headline text-headline-md font-bold text-on-surface tracking-tight">
                   Paper<span className="text-primary-container">IQ</span>
@@ -116,7 +117,7 @@ export function NavBar({ activeTab }: NavBarProps) {
           </Tooltip>
 
           {/* Desktop nav */}
-          <nav className="hidden md:flex gap-xl">
+          <nav className="hidden md:flex items-center gap-3 lg:gap-5 xl:gap-7">
             {navLinks.map(link => {
               const isBeam = (hoveredKey ?? active) === link.key
               const NavLink = shouldReduceMotion ? Link : motion(Link)
@@ -128,7 +129,7 @@ export function NavBar({ activeTab }: NavBarProps) {
                     data-tour={link.tourAttr}
                     onMouseEnter={() => setHoveredKey(link.key)}
                     onMouseLeave={() => setHoveredKey(null)}
-                    className={`relative font-body-md text-body-md transition-colors duration-200 pb-1 ${
+                    className={`relative font-body-md text-body-md whitespace-nowrap transition-colors duration-200 pb-1 ${
                       isBeam
                         ? 'text-primary-container font-bold'
                         : 'text-on-surface-variant hover:text-primary-container'
@@ -155,23 +156,14 @@ export function NavBar({ activeTab }: NavBarProps) {
         </div>
 
         {/* Right side */}
-        <div className="flex items-center gap-base">
-          {/* Mobile menu button */}
-          <button
-            onClick={() => setMobileOpen(!mobileOpen)}
-            className="md:hidden p-2 text-on-surface hover:text-primary-container transition-colors"
-            aria-label="Menu"
-          >
-            <Icon name={mobileOpen ? 'close' : 'menu'} size={24} />
-          </button>
-
+        <div className="flex items-center gap-sm md:gap-base shrink-0">
           {/* Search / Command Palette trigger */}
           <div className="relative hidden sm:block">
             <Tooltip content="Search papers, subjects, and more (⌘K)" placement="bottom">
               {shouldReduceMotion ? (
                 <button
                   onClick={() => window.dispatchEvent(new Event('cmd-palette:open'))}
-                  className="flex items-center gap-sm bg-surface border border-outline-variant rounded-xl pl-3 pr-4 py-2 text-body-sm text-on-surface-variant hover:border-primary-container/60 hover:text-on-surface transition-all w-48 group"
+                  className="flex items-center gap-sm bg-surface border border-outline-variant rounded-xl pl-3 pr-3 lg:pr-4 py-2 text-body-sm text-on-surface-variant hover:border-primary-container/60 hover:text-on-surface transition-all w-36 lg:w-48 group"
                   aria-label="Search (⌘K)"
                 >
                   <Icon name="search" size={20} />
@@ -181,7 +173,7 @@ export function NavBar({ activeTab }: NavBarProps) {
               ) : (
                 <motion.button
                   onClick={() => window.dispatchEvent(new Event('cmd-palette:open'))}
-                  className="flex items-center gap-sm bg-surface border border-outline-variant rounded-xl pl-3 pr-4 py-2 text-body-sm text-on-surface-variant hover:border-primary-container/60 hover:text-on-surface transition-all w-48 group"
+                  className="flex items-center gap-sm bg-surface border border-outline-variant rounded-xl pl-3 pr-3 lg:pr-4 py-2 text-body-sm text-on-surface-variant hover:border-primary-container/60 hover:text-on-surface transition-all w-36 lg:w-48 group"
                   aria-label="Search (⌘K)"
                   whileHover={{ scale: 1.02, boxShadow: '0 0 16px rgba(255,102,0,0.10)' }}
                   whileTap={{ scale: 0.97 }}
@@ -200,7 +192,7 @@ export function NavBar({ activeTab }: NavBarProps) {
             <button
               data-tour="tour-run-analysis-cta"
               onClick={() => navigate('/analysis?reset=1')}
-              className="hidden md:flex items-center gap-sm bg-primary-container text-on-primary-container font-bold px-base py-2 rounded-xl text-body-sm hover:brightness-110 transition-all active:scale-95 glow-orange"
+              className="hidden md:flex items-center gap-sm bg-primary-container text-on-primary-container font-bold px-base py-2 rounded-xl text-body-sm hover:brightness-110 transition-all active:scale-95 glow-orange whitespace-nowrap"
             >
               <Icon name="add" size={18} />
               Run New Analysis
@@ -209,7 +201,7 @@ export function NavBar({ activeTab }: NavBarProps) {
             <motion.button
               data-tour="tour-run-analysis-cta"
               onClick={() => navigate('/analysis?reset=1')}
-              className="hidden md:flex items-center gap-sm bg-primary-container text-on-primary-container font-bold px-base py-2 rounded-xl text-body-sm hover:brightness-110 transition-all glow-orange"
+              className="hidden md:flex items-center gap-sm bg-primary-container text-on-primary-container font-bold px-base py-2 rounded-xl text-body-sm hover:brightness-110 transition-all glow-orange whitespace-nowrap"
               whileHover={{ ...hoverScale, boxShadow: "0 0 20px rgba(249, 115, 22, 0.4)" }}
               whileTap={tapScale}
               transition={SPRING_SNAPPY}
@@ -231,6 +223,7 @@ export function NavBar({ activeTab }: NavBarProps) {
                       ? 'border-primary-container shadow-[0_0_16px_rgba(249,115,22,0.4)]'
                       : 'border-neutral-700 hover:border-primary-container'
                   }`}
+                  aria-label="User profile menu"
                 >
                   {initials}
                 </button>
@@ -242,6 +235,7 @@ export function NavBar({ activeTab }: NavBarProps) {
                       ? 'border-primary-container shadow-[0_0_16px_rgba(249,115,22,0.4)]'
                       : 'border-neutral-700 hover:border-primary-container'
                   }`}
+                  aria-label="User profile menu"
                   whileHover={{ scale: 1.1, boxShadow: '0 0 20px rgba(249,115,22,0.35)' }}
                   whileTap={{ scale: 0.93 }}
                   transition={SPRING_SNAPPY}
@@ -357,19 +351,20 @@ export function NavBar({ activeTab }: NavBarProps) {
 
           {/* Mobile: search icon → open command palette */}
           <button
-            className="sm:hidden material-symbols-outlined text-on-surface-variant hover:text-on-surface transition-colors"
+            className="sm:hidden p-2 rounded-lg text-on-surface-variant hover:text-primary-container transition-colors"
             onClick={() => window.dispatchEvent(new Event('cmd-palette:open'))}
-            aria-label="Search"
+            aria-label="Search papers and subjects"
           >
-            search
+            <Icon name="search" size={20} />
           </button>
 
           {/* Mobile menu toggle */}
           <button
-            className="md:hidden material-symbols-outlined text-on-surface"
+            className="md:hidden p-2 rounded-lg text-on-surface hover:text-primary-container transition-colors"
             onClick={() => setMobileOpen(o => !o)}
+            aria-label={mobileOpen ? "Close menu" : "Open menu"}
           >
-            {mobileOpen ? 'close' : 'menu'}
+            <Icon name={mobileOpen ? 'close' : 'menu'} size={24} />
           </button>
         </div>
       </div>

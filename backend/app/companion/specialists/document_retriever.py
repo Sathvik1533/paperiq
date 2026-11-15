@@ -40,14 +40,12 @@ class DocumentRetrieverSpecialist(BaseSpecialist):
 
 No question papers or exam documents match course code **`{queried_code}`** in the MLRIT Autonomous examination repository.
 
-Please verify the course code. Supported R22 Semester 3-1 & 3-2 CSE courses include:
+Please verify the course code. Supported MLRIT R22 Semester 3-1 CSE courses include:
 - **`A6CS15`**: Design and Analysis of Algorithms (DAA)
 - **`A6IT13`**: Cloud and DevOps (CD)
 - **`A6CS18`**: Computer Networks (CN)
 - **`A6IT26`**: Information Retrieval Systems (IRS)
 - **`A6AI14`**: Natural Language Processing (NLP)
-- **`A6CS09`**: Operating Systems (OS)
-- **`A6CS07`**: Database Management Systems (DBMS)
 """
                 return error_msg, [], [
                     SuggestedAction(label="Browse All Question Papers", action_type="navigate", payload="/papers"),

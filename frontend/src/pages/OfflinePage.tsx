@@ -60,9 +60,9 @@ export function OfflinePage() {
             </div>
             <div className="space-y-sm">
               {[
-                { label: 'Network', status: 'Unavailable', ok: false },
-                { label: 'Backend API', status: 'Unreachable', ok: false },
-                { label: 'Local Cache', status: 'Available', ok: true },
+                { label: 'Internet Connection', status: 'Unavailable', ok: false },
+                { label: 'PaperIQ Service', status: 'Disconnected', ok: false },
+                { label: 'Saved Offline Papers', status: 'Available', ok: true },
               ].map(item => (
                 <div key={item.label} className="flex justify-between items-center py-xs border-b border-outline-variant last:border-0">
                   <span className="font-data-label text-data-label text-on-surface-variant">{item.label}</span>

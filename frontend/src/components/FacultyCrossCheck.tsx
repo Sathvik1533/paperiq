@@ -8,10 +8,10 @@ interface PriorityResult {
 }
 
 const ANALYSIS_STEPS = [
-  { icon: 'upload_file', label: 'Extracting text from document…' },
-  { icon: 'database', label: 'Fetching PYQ data from database…' },
-  { icon: 'psychology', label: 'AI cross-referencing questions…' },
-  { icon: 'check_circle', label: 'Building your priority list…' },
+  { icon: 'upload_file', label: 'Reading your document…' },
+  { icon: 'description', label: 'Matching previous exam papers…' },
+  { icon: 'psychology', label: 'Finding the most important questions…' },
+  { icon: 'check_circle', label: 'Building your study priority list…' },
 ];
 
 export const FacultyCrossCheck: React.FC<{ subjectId: string }> = ({ subjectId }) => {

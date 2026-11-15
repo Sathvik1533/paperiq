@@ -12,6 +12,7 @@ import { motion, useReducedMotion } from 'framer-motion'
 import { useAuthStore } from '../store/authStore'
 import { useAppStore } from '../store/useAppStore'
 import { getUserProfile, getSubjectsForSemester, generateAnalysis } from '../lib/api'
+import { OFFICIAL_R22_3_1_SUBJECTS, filterTo31Subjects } from '../constants/r22_3_1'
 import { NavBar } from '../components/NavBar'
 import { Footer } from '../components/Footer'
 import { MarksBreakdown } from '../components/MarksBreakdown'
@@ -36,23 +37,10 @@ const FILTERS: { value: Filter; label: string }[] = [
 // Used when Supabase returns fewer subjects than expected (DB gap / semester
 // number mismatch). Keyed by "semester-regulation". These are the canonical
 // MLRIT R22 CSE subject lists so the UI is never broken by missing DB rows.
+// MLRIT Autonomous R22 — 3-1 canonical subjects allowlist
 const SUBJECT_FALLBACK: Record<string, Array<{ id: string; name: string; code: string; semester: number; regulation: string }>> = {
-  // Semester 1 in the profile = 2nd-year Sem 1 (shown as "Semester 1 · R22")
-  '1-R22': [
-    { id: 'A6CS05', name: 'Data Structures',                                    code: 'A6CS05', semester: 1, regulation: 'R22' },
-    { id: 'A6IT02', name: 'Object Oriented Programming through Java',           code: 'A6IT02', semester: 1, regulation: 'R22' },
-    { id: 'A6CS28', name: 'Digital Electronics and Computer Organization',      code: 'A6CS28', semester: 1, regulation: 'R22' },
-    { id: 'A6CS07', name: 'Software Engineering',                               code: 'A6CS07', semester: 1, regulation: 'R22' },
-    { id: 'A6BS03', name: 'Computer Oriented Statistical Methods',              code: 'A6BS03', semester: 1, regulation: 'R22' },
-  ],
-  // Semester 2 in the profile = 2nd-year Sem 2 (shown as "Semester 2 · R22")
-  '2-R22': [
-    { id: 'A6HS08', name: 'Business Economics and Financial Analysis',          code: 'A6HS08', semester: 2, regulation: 'R22' },
-    { id: 'A6CS08', name: 'Discrete Mathematics',                               code: 'A6CS08', semester: 2, regulation: 'R22' },
-    { id: 'A6CS09', name: 'Database Management Systems',                        code: 'A6CS09', semester: 2, regulation: 'R22' },
-    { id: 'A6CS11', name: 'Operating System',                                   code: 'A6CS11', semester: 2, regulation: 'R22' },
-    { id: 'A6CS13', name: 'Software Testing Fundamentals',                      code: 'A6CS13', semester: 2, regulation: 'R22' },
-  ],
+  '1-R22': OFFICIAL_R22_3_1_SUBJECTS.map((s) => ({ id: s.id, name: s.name, code: s.code, semester: 1, regulation: 'R22' })),
+  '3-1-R22': OFFICIAL_R22_3_1_SUBJECTS.map((s) => ({ id: s.id, name: s.name, code: s.code, semester: 1, regulation: 'R22' })),
 }
 
 // ── Priority card ────────────────────────────────────────────────────────────
@@ -151,11 +139,18 @@ export function Analysis() {
   const [error, setError] = useState('')
   const [loadingComplete, setLoadingComplete] = useState(false)
   const [showAllQ, setShowAllQ] = useState(false)
+  const [repeatedMarkFilter, setRepeatedMarkFilter] = useState<'all' | '10m_direct' | '5m_sub' | '1m'>('all')
 
   // Load profile + subjects (profile is optional now)
   useEffect(() => {
-    // Load all R22 subjects by default (no profile required)
-    const allR22Subjects = [...SUBJECT_FALLBACK['1-R22'], ...SUBJECT_FALLBACK['2-R22']]
+    // Load strict 3-1 R22 subjects by default (no profile required)
+    const allR22Subjects = OFFICIAL_R22_3_1_SUBJECTS.map((s) => ({
+      id: s.id,
+      name: s.name,
+      code: s.code,
+      semester: 1,
+      regulation: 'R22',
+    }))
     setSubjects(allR22Subjects)
     setProfileLoading(false)
     
@@ -163,24 +158,11 @@ export function Analysis() {
     if (user) {
       getUserProfile(user.id).then(async prof => {
         setProfile(prof)
-        if (prof?.current_semester && prof?.regulation) {
-          const subs = await getSubjectsForSemester(prof.current_semester, prof.regulation)
-          const fallbackKey = `${prof.current_semester}-${prof.regulation}`
-          const fallback = SUBJECT_FALLBACK[fallbackKey]
-          let finalSubs = subs || []
-
-          if (fallback) {
-            const dbByCode = new Map(finalSubs.map(s => [s.code, s]))
-            finalSubs = fallback.map(f => {
-              const live = dbByCode.get(f.code)
-              if (live) {
-                return { ...live, name: f.name }
-              }
-              return f
-            })
-          }
-
-          setSubjects(finalSubs)
+        if (prof?.regulation) {
+          const rawSubs = await getSubjectsForSemester(1, prof.regulation)
+          const filtered = filterTo31Subjects(rawSubs || [])
+          const finalSubs = filtered.length > 0 ? filtered : allR22Subjects
+          setSubjects(finalSubs as any)
         }
       }).catch(err => {
         // Profile load failed, but that's okay - we have fallback subjects
@@ -217,8 +199,8 @@ export function Analysis() {
       setAnalysis(report)
     } catch (e: any) {
       setError(e.message?.includes('fetch') || e.message?.includes('connect')
-        ? 'Backend not running. Start with: cd backend && uvicorn app.main:app --reload --port 8000'
-        : e.message || 'Analysis failed')
+        ? 'Unable to connect to PaperIQ right now. Please check your connection or try again shortly.'
+        : 'We could not complete your analysis right now. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -615,39 +597,124 @@ export function Analysis() {
                 </motion.section>
               )}
 
-              {/* Repeated questions */}
-              {(analysis.repeated_questions || []).length > 0 && (
-                <motion.section
-                  initial={shouldReduceMotion ? false : { opacity: 0, y: 16 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ ...SPRING_SNAPPY, delay: 5 * 0.07 }}
-                >
-                  <div className="glass-card rounded-2xl p-6">
-                    <div className="flex items-center justify-between mb-5">
-                      <h2 className="font-headline text-xl font-bold flex items-center gap-2">
-                        <span className="text-primary-container">🔁</span> Repeated Questions
-                      </h2>
-                      <button onClick={() => setShowAllQ(!showAllQ)} className="text-sm text-primary-container hover:text-primary transition-colors font-medium">
-                        {showAllQ ? 'Show less' : `View all ${analysis.repeated_questions.length}`}
-                      </button>
-                    </div>
-                    <div className="space-y-3">
-                      {(analysis.repeated_questions || []).slice(0, showAllQ ? undefined : 5).map((q: any, idx: number) => (
-                        <div key={idx} className="flex gap-3 p-4 bg-white/[0.04] rounded-xl">
-                          <div className="w-9 h-9 rounded-xl bg-red-500/20 border border-red-500/30 text-red-400 flex items-center justify-center text-xs font-bold shrink-0">
-                            {q.frequency}×
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-gray-200 text-sm leading-relaxed">{q.question_text}</p>
-                            <p className="text-gray-500 text-xs mt-1">{(q.paper_ids || []).length} papers</p>
-                          </div>
+              {/* Repeated questions — 60-Mark Exam Intelligence */}
+              {((analysis.repeated_questions_60m && analysis.repeated_questions_60m.length > 0) || (analysis.repeated_questions && analysis.repeated_questions.length > 0)) && (() => {
+                const rawRepeated = (analysis.repeated_questions_60m && analysis.repeated_questions_60m.length > 0) 
+                  ? analysis.repeated_questions_60m 
+                  : (analysis.repeated_questions || []).map((q: any) => ({
+                      ...q,
+                      mark_type: q.marks === 10 ? '10m_direct' : q.marks === 5 ? '5m_sub' : q.marks === 1 ? '1m' : 'other',
+                      canonical_text: q.canonical_text || q.question_text
+                    }));
+                
+                const filteredRepeated = rawRepeated.filter((q: any) => {
+                  if (repeatedMarkFilter === 'all') return true;
+                  return q.mark_type === repeatedMarkFilter;
+                });
+
+                return (
+                  <motion.section
+                    initial={shouldReduceMotion ? false : { opacity: 0, y: 16 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ ...SPRING_SNAPPY, delay: 5 * 0.07 }}
+                  >
+                    <div className="glass-card rounded-2xl p-6">
+                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5">
+                        <div>
+                          <h2 className="font-headline text-xl font-bold flex items-center gap-2">
+                            <span className="text-primary-container">🔁</span> High-Frequency Repeated Questions
+                          </h2>
+                          <p className="text-xs text-on-surface-variant mt-1 font-mono">
+                            MLRIT R22 60M Pattern · Direct 10M and 5M subquestions calculated separately
+                          </p>
                         </div>
-                      ))}
+                        <button onClick={() => setShowAllQ(!showAllQ)} className="text-sm text-primary-container hover:text-primary transition-colors font-medium self-start md:self-auto">
+                          {showAllQ ? 'Show less' : `View all ${filteredRepeated.length}`}
+                        </button>
+                      </div>
+
+                      {/* Filter Chips for Mark Types */}
+                      <div className="flex flex-wrap items-center gap-2 mb-4 p-2 bg-white/[0.02] rounded-xl border border-white/5">
+                        <span className="text-xs font-mono uppercase tracking-wider text-on-surface-variant mr-1">Filter by Marks:</span>
+                        {[
+                          { id: 'all', label: `All (${rawRepeated.length})` },
+                          { id: '10m_direct', label: `Direct 10M (${rawRepeated.filter((q: any) => q.mark_type === '10m_direct').length})` },
+                          { id: '5m_sub', label: `5M Subquestions (${rawRepeated.filter((q: any) => q.mark_type === '5m_sub').length})` },
+                          { id: '1m', label: `1M Short (${rawRepeated.filter((q: any) => q.mark_type === '1m').length})` },
+                        ].map(f => (
+                          <button
+                            key={f.id}
+                            onClick={() => setRepeatedMarkFilter(f.id as any)}
+                            className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                              repeatedMarkFilter === f.id
+                                ? 'bg-primary-container text-on-primary-container shadow'
+                                : 'bg-white/5 text-on-surface-variant hover:bg-white/10 hover:text-white'
+                            }`}
+                          >
+                            {f.label}
+                          </button>
+                        ))}
+                      </div>
+
+                      <div className="space-y-3">
+                        {filteredRepeated.slice(0, showAllQ ? undefined : 6).map((q: any, idx: number) => (
+                          <div key={idx} className="flex flex-col gap-2 p-4 bg-white/[0.04] rounded-xl hover:border-white/10 border border-transparent transition-all">
+                            <div className="flex gap-3 items-start">
+                              <div className="w-9 h-9 rounded-xl bg-orange-500/20 border border-orange-500/30 text-orange-400 flex items-center justify-center text-xs font-bold shrink-0">
+                                {q.frequency || q.count}×
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex flex-wrap items-center gap-2 mb-1">
+                                  {q.mark_type === '10m_direct' && (
+                                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-orange-500/10 text-orange-400 border border-orange-500/30">
+                                      Direct 10M Question
+                                    </span>
+                                  )}
+                                  {q.mark_type === '5m_sub' && (
+                                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-300 border border-amber-500/30">
+                                      5M Subquestion
+                                    </span>
+                                  )}
+                                  {q.mark_type === '1m' && (
+                                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/30">
+                                      1M Part A
+                                    </span>
+                                  )}
+                                  <span className="text-gray-500 text-xs font-mono">
+                                    {(q.source_papers || q.appearances || []).length} paper occurrence(s)
+                                  </span>
+                                </div>
+                                <p className="text-gray-200 text-sm leading-relaxed">{q.canonical_text || q.question_text}</p>
+                              </div>
+                            </div>
+
+                            {/* Exact Source Papers */}
+                            {(q.source_papers || q.appearances) && (q.source_papers || q.appearances).length > 0 && (
+                              <div className="ml-12 pl-2 border-l-2 border-white/10 text-xs text-gray-400 space-y-1">
+                                <span className="text-[11px] font-mono uppercase tracking-wider text-gray-500">Source Papers:</span>
+                                <div className="flex flex-wrap gap-2">
+                                  {(q.source_papers || q.appearances).map((src: any, sIdx: number) => (
+                                    <span key={sIdx} className="bg-white/5 px-2 py-0.5 rounded border border-white/5 font-mono text-[11px] text-gray-300">
+                                      {src.source_reference || `${src.paper_title || src.paper_id} · ${src.part || ''} Q${src.question_number || ''} (${src.marks || ''}M)`}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+
+                        {filteredRepeated.length === 0 && (
+                          <div className="p-6 text-center text-on-surface-variant text-sm">
+                            No repeated questions found in this category.
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </motion.section>
-              )}
+                  </motion.section>
+                );
+              })()}
             </div>
           )}
 

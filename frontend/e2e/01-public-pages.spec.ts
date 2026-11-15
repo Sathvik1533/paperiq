@@ -45,7 +45,7 @@ test.describe('Public Pages', () => {
     expect(content).toBeTruthy();
     
     // Check navigation works
-    await expect(page.locator('nav, header')).toBeVisible();
+    await expect(page.locator('nav, header').first()).toBeVisible();
   });
 
   test('Vision page loads correctly', async ({ page }) => {

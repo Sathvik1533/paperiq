@@ -67,27 +67,28 @@ I am your dedicated academic co-pilot for MLRIT autonomous examinations (R22 reg
 
 1. **AI Academic Tutor** (`academic_tutor`):
    - *"Explain Banker's Algorithm with an example."*
+   - *"Explain 0/1 Knapsack using Branch and Bound with state-space tree."*
    - *"Derive the time complexity of Kruskal's Algorithm."*
-   - *"Give me a Part A (2M) definition of paging."*
+   - *"Give me a Part A (1M) definition of greedy choice property."*
 
 2. **Syllabus & Curriculum Intelligence** (`syllabus_intelligence`):
-   - *"What topics are in Operating Systems Unit 2?"*
-   - *"Show me all R22 2-2 semester subjects."*
-   - *"What are the Course Outcomes for Java OOPS?"*
+   - *"What topics are in Design and Analysis of Algorithms Unit 2?"*
+   - *"Show me all R22 3-1 semester subjects."*
+   - *"What are the Course Outcomes for Computer Networks?"*
 
 3. **Exam Pattern Analyst** (`exam_prep_analyst`):
-   - *"What are the most repeated questions in DBMS?"*
-   - *"Which topics have the highest probability for Mid-1?"*
+   - *"What are the most repeated questions in DAA?"*
+   - *"Which topics have the highest frequency in 3-1 Regular exams?"*
    - *"Show me the marks distribution between Part A and Part B."*
 
 4. **Study Planner Coach** (`planner_coach`):
-   - *"I have my OS exam in 5 days, plan my study schedule."*
+   - *"I have my DAA exam in 5 days, plan my study schedule."*
    - *"How can I improve my Exam Readiness Score to 85%?"*
-   - *"Which units should I prioritize first?"*
+   - *"Which units in Cloud & DevOps should I prioritize first?"*
 
 5. **Document Retriever** (`document_retriever`):
-   - *"Find the 2024 Semester paper for Operating Systems."*
-   - *"Where can I download past question papers for DBMS?"*
+   - *"Find the 2024 Regular 60-mark paper for DAA."*
+   - *"Where can I download past question papers for Computer Networks?"*
 
 ---
 *Type any question above or choose a quick action below to get started!*
@@ -95,9 +96,9 @@ I am your dedicated academic co-pilot for MLRIT autonomous examinations (R22 reg
 
         citations = []
         suggested_actions = [
-            SuggestedAction(label="Repeated Questions in OS", action_type="query", payload="What are the repeated questions in Operating Systems?"),
-            SuggestedAction(label="7-Day Study Plan", action_type="query", payload="Create a 7-day study plan for my upcoming exam"),
-            SuggestedAction(label="Explain Deadlock Avoidance", action_type="query", payload="Explain Deadlock avoidance and Banker's Algorithm with an example"),
+            SuggestedAction(label="Repeated Questions in DAA", action_type="query", payload="What are the repeated questions in Design and Analysis of Algorithms?"),
+            SuggestedAction(label="7-Day Study Plan (DAA)", action_type="query", payload="Create a 7-day study plan for DAA"),
+            SuggestedAction(label="0/1 Knapsack LCBB Trace", action_type="query", payload="Explain 0/1 Knapsack using LC Branch and Bound with state-space tree"),
             SuggestedAction(label="Browse Past Papers", action_type="navigate", payload="/papers"),
         ]
 

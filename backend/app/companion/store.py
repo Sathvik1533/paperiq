@@ -58,6 +58,9 @@ class CompanionStore:
         subject_code: Optional[str] = None,
         regulation: str = "R22",
         title: Optional[str] = None,
+        answer_format: Optional[str] = None,
+        tone_preference: Optional[str] = None,
+        unit_number: Optional[int] = None,
     ) -> CompanionConversation:
         if conversation_id:
             # 1. First check in-memory store
@@ -66,6 +69,12 @@ class CompanionStore:
                     conv = _memory_conversations[user_id][conversation_id]
                     if subject_code and not conv.subject_code:
                         conv.subject_code = subject_code
+                    if answer_format:
+                        conv.answer_format = answer_format
+                    if tone_preference:
+                        conv.tone_preference = tone_preference
+                    if unit_number is not None:
+                        conv.unit_number = unit_number
                     return conv
 
                 # Cross-tenant check: if conversation belongs to another user, forbid access
@@ -104,6 +113,9 @@ class CompanionStore:
                                     specialist=SpecialistType(m["specialist"]) if m.get("specialist") else None,
                                     citations=[Citation(**c) for c in (m.get("citations") or [])],
                                     suggested_actions=[SuggestedAction(**a) for a in (m.get("suggested_actions") or [])],
+                                    answer_format=m.get("answer_format"),
+                                    is_verified_exam_question=m.get("is_verified_exam_question", False),
+                                    source_reference=m.get("source_reference"),
                                     created_at=m["created_at"],
                                 ) for m in (msg_res.data or [])
                             ]
@@ -113,6 +125,9 @@ class CompanionStore:
                                 title=row.get("title") or "Study Session",
                                 subject_code=row.get("subject_code"),
                                 regulation=row.get("regulation") or "R22",
+                                answer_format=answer_format or row.get("answer_format") or "auto",
+                                tone_preference=tone_preference or row.get("tone_preference") or "exam_ready",
+                                unit_number=unit_number if unit_number is not None else row.get("unit_number"),
                                 created_at=row["created_at"],
                                 updated_at=row["updated_at"],
                                 messages=messages,
@@ -143,6 +158,9 @@ class CompanionStore:
             title=initial_title,
             subject_code=subject_code,
             regulation=regulation,
+            answer_format=answer_format or "auto",
+            tone_preference=tone_preference or "exam_ready",
+            unit_number=unit_number,
             created_at=now_str,
             updated_at=now_str,
             messages=[],
@@ -198,8 +216,8 @@ class CompanionStore:
                     "content": message.content,
                     "intent": message.intent.value if message.intent else None,
                     "specialist": message.specialist.value if message.specialist else None,
-                    "citations": [c.dict() for c in message.citations],
-                    "suggested_actions": [a.dict() for a in message.suggested_actions],
+                    "citations": [c.model_dump() if hasattr(c, "model_dump") else c.dict() for c in message.citations],
+                    "suggested_actions": [a.model_dump() if hasattr(a, "model_dump") else a.dict() for a in message.suggested_actions],
                     "created_at": message.created_at,
                 }).execute()
 
@@ -290,6 +308,9 @@ class CompanionStore:
                     title=conv.title,
                     subject_code=conv.subject_code,
                     regulation=conv.regulation,
+                    answer_format=getattr(conv, 'answer_format', 'auto'),
+                    tone_preference=getattr(conv, 'tone_preference', 'exam_ready'),
+                    unit_number=getattr(conv, 'unit_number', None),
                     message_count=len(conv.messages),
                     last_message_preview=last_msg[:60] if last_msg else None,
                     created_at=conv.created_at,

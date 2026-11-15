@@ -61,6 +61,7 @@ export type IconName =
   | 'refresh'
   | 'filter_list'
   | 'sort'
+  | 'content_copy'
   | 'visibility'
   | 'visibility_off'
   | 'lock'
@@ -117,6 +118,7 @@ export type IconName =
   | 'database'
   | 'psychology'
   | 'science'
+  | 'router'
   | 'lightbulb'
   
   // Performance & Achievement

@@ -571,7 +571,7 @@ export function Settings() {
                       : 'bg-yellow-500 animate-pulse'
                     }`} />
                     <span className="text-body-sm text-on-surface-variant">
-                      Backend API: {apiStatus === 'healthy' ? 'Healthy' : apiStatus === 'down' ? 'Unreachable' : 'Checking...'}
+                      Service Status: {apiStatus === 'healthy' ? 'Online' : apiStatus === 'down' ? 'Temporarily Unavailable' : 'Checking...'}
                     </span>
                   </div>
                   <div className="flex gap-md">

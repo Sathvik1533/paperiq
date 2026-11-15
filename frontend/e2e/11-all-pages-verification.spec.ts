@@ -83,7 +83,7 @@ test.describe('All Pages Verification - Systematic Check', () => {
       await expect(page.locator('body')).toBeVisible();
       
       // Navigation visible
-      const nav = page.locator('nav, header');
+      const nav = page.locator('nav, header').first();
       await expect(nav.first()).toBeVisible();
       
       console.log(`✓ ${viewport.name} (${viewport.width}x${viewport.height}) - OK`);

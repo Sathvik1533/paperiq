@@ -5,7 +5,10 @@ from pathlib import Path
 
 import pytest
 
-from backend.app.utils.extraction import extract_file
+try:
+    from app.utils.extraction import extract_file
+except ImportError:
+    from backend.app.utils.extraction import extract_file
 
 def test_extract_file_single_docx():
     # Create a temporary zip archive with a single DOCX file

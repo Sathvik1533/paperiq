@@ -29,6 +29,53 @@ export function UnitQuestions() {
   const [papers, setPapers]           = useState<any[]>([])
   const [loading, setLoading]         = useState(true)
   const [error, setError]             = useState('')
+  const [markFilter, setMarkFilter]   = useState<'all' | '1m' | '10m_direct' | '5m_sub' | 'repeated'>('all')
+  const [yearFilter, setYearFilter]   = useState<'all' | '2024' | '2025'>('all')
+
+  // Revision & Completion state (persisted to localStorage)
+  const [savedQuestions, setSavedQuestions] = useState<Set<string>>(() => {
+    try {
+      const raw = localStorage.getItem('paperiq_saved_questions')
+      return raw ? new Set(JSON.parse(raw)) : new Set()
+    } catch {
+      return new Set()
+    }
+  })
+
+  const [completedQuestions, setCompletedQuestions] = useState<Set<string>>(() => {
+    try {
+      const raw = localStorage.getItem('paperiq_completed_questions')
+      return raw ? new Set(JSON.parse(raw)) : new Set()
+    } catch {
+      return new Set()
+    }
+  })
+
+  const toggleSaveQuestion = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setSavedQuestions((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      try {
+        localStorage.setItem('paperiq_saved_questions', JSON.stringify([...next]))
+      } catch {}
+      return next
+    })
+  }
+
+  const toggleCompleteQuestion = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setCompletedQuestions((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      try {
+        localStorage.setItem('paperiq_completed_questions', JSON.stringify([...next]))
+      } catch {}
+      return next
+    })
+  }
 
   const unitLabel = decodeURIComponent(unitId || '')
 
@@ -68,49 +115,128 @@ export function UnitQuestions() {
       }
       // If no cache: unitData stays null — page still shows questions, just without priority rank
 
-      // Get actual questions for this unit
-      const { data: qs } = await supabase
-        .from('questions')
-        .select('id, question_text, unit_name, topic_name, marks, question_hash, paper_id')
-        .eq('subject_id', subjectId)
-        .ilike('unit_name', `%${unitLabel}%`)
-        .order('marks', { ascending: false, nullsFirst: false })
-        .limit(100)
-
-      // Count occurrences of each unique question by hash
-      const hashCount: Record<string, number> = {}
-      for (const q of qs || []) {
-        if (q.question_hash) hashCount[q.question_hash] = (hashCount[q.question_hash] || 0) + 1
-      }
-      // Deduplicate — keep highest-marks version, attach frequency
-      const seen = new Set<string>()
-      const deduped = (qs || [])
-        .map((q: any) => ({ ...q, frequency: q.question_hash ? hashCount[q.question_hash] : 1 }))
-        .filter((q: any) => {
-          if (!q.question_hash) return true
-          if (seen.has(q.question_hash)) return false
-          seen.add(q.question_hash)
-          return true
-        })
-        .sort((a: any, b: any) => (b.frequency || 1) - (a.frequency || 1))
-
-      setQuestions(deduped)
-
-      // Get related papers
+      // Get eligible regular papers (2024 and 2025)
       const { data: ps } = await supabase
         .from('papers')
         .select('id, title, exam_type, exam_year, exam_category, regulation')
         .eq('subject_id', subjectId)
         .order('exam_year', { ascending: false })
-        .limit(6)
+        .limit(20)
 
-      setPapers(ps || [])
+      const paperMap: Record<string, any> = {}
+      for (const p of ps || []) {
+        paperMap[p.id] = p
+      }
+      // Show eligible 2024-2025 regular papers
+      const eligiblePapers = (ps || []).filter((p: any) => 
+        (p.exam_type || 'Regular').toLowerCase() === 'regular' &&
+        (p.exam_year === 2024 || p.exam_year === 2025)
+      )
+      setPapers(eligiblePapers.length > 0 ? eligiblePapers.slice(0, 6) : (ps || []).slice(0, 6))
+
+      // Get actual questions for this unit
+      const { data: qs } = await supabase
+        .from('questions')
+        .select('id, question_text, unit_name, topic_name, marks, question_hash, paper_id, part, question_number, exam_year')
+        .eq('subject_id', subjectId)
+        .ilike('unit_name', `%${unitLabel}%`)
+        .order('marks', { ascending: false, nullsFirst: false })
+        .limit(150)
+
+      const eligiblePaperIds = new Set(eligiblePapers.map((p: any) => p.id))
+      // Strictly restrict questions to eligible 60-mark regular papers (2024–2025)
+      const validQs = (qs || []).filter((q: any) => {
+        // Exclude questions from non-eligible papers if paper_id exists
+        if (q.paper_id && eligiblePaperIds.size > 0 && !eligiblePaperIds.has(q.paper_id)) {
+          return false
+        }
+        // Exclude legacy 70M paper questions (Part A with 2M)
+        if (q.marks === 2 && String(q.part || '').toLowerCase().includes('part a')) {
+          return false
+        }
+        // Exclude pre-2024 years
+        if (q.exam_year && q.exam_year < 2024) {
+          return false
+        }
+        return true
+      })
+
+      // Segregate mark types: 1m, 10m_direct, 5m_sub
+      // Calculate frequency per mark type so 10M direct and 5M subquestions are NEVER mixed
+      const markTypeHashCount: Record<string, number> = {}
+      const markTypePaperSources: Record<string, any[]> = {}
+
+      for (const q of validQs) {
+        const marks = q.marks
+        const mtype = marks === 1 ? '1m' : marks === 10 ? '10m_direct' : marks === 5 ? '5m_sub' : 'other'
+        const key = `${q.question_hash || q.question_text}::${mtype}`
+        markTypeHashCount[key] = (markTypeHashCount[key] || 0) + 1
+
+        const p = paperMap[q.paper_id]
+        const pTitle = p?.title || `MLRIT R22 Paper ${q.exam_year || ''}`
+        const sec = q.part || (marks === 1 ? 'Part A' : 'Part B')
+        const qNum = q.question_number ? `Q${q.question_number}` : ''
+        const srcRef = `${pTitle} · ${sec} ${qNum} (${marks || '?'}M)`.trim()
+
+        if (!markTypePaperSources[key]) markTypePaperSources[key] = []
+        markTypePaperSources[key].push({
+          paper_id: q.paper_id,
+          paper_title: pTitle,
+          year: q.exam_year || p?.exam_year,
+          source_reference: srcRef
+        })
+      }
+
+      // Deduplicate within same mark type, attach frequency and exact source papers
+      const seen = new Set<string>()
+      const processed = validQs
+        .map((q: any) => {
+          const marks = q.marks
+          const mtype = marks === 1 ? '1m' : marks === 10 ? '10m_direct' : marks === 5 ? '5m_sub' : 'other'
+          const key = `${q.question_hash || q.question_text}::${mtype}`
+          const p = paperMap[q.paper_id]
+          const pTitle = p?.title || `MLRIT R22 Paper ${q.exam_year || ''}`
+          const sec = q.part || (marks === 1 ? 'Part A' : 'Part B')
+          const qNum = q.question_number ? `Q${q.question_number}` : ''
+          const srcRef = `${pTitle} · ${sec} ${qNum} (${marks || '?'}M)`.trim()
+
+          return {
+            ...q,
+            mark_type: mtype,
+            frequency: markTypeHashCount[key] || 1,
+            source_reference: srcRef,
+            source_papers: markTypePaperSources[key] || [],
+            exam_year: q.exam_year || p?.exam_year || 2024,
+          }
+        })
+        .filter((q: any) => {
+          const key = `${q.question_hash || q.question_text}::${q.mark_type}`
+          if (seen.has(key)) return false
+          seen.add(key)
+          return true
+        })
+        .sort((a: any, b: any) => (b.frequency || 1) - (a.frequency || 1))
+
+      setQuestions(processed)
     } catch (err: any) {
       setError(err.message || 'Failed to load unit data')
     } finally {
       setLoading(false)
     }
   }
+
+  const filteredQuestions = questions.filter((q: any) => {
+    // Year filter (2024 or 2025)
+    if (yearFilter !== 'all' && String(q.exam_year) !== yearFilter) {
+      return false
+    }
+    // Mark structure filter: 1M Part A, Direct 10M Part B, 5M subquestion Part B, Repeated only
+    if (markFilter === '1m') return q.mark_type === '1m'
+    if (markFilter === '10m_direct') return q.mark_type === '10m_direct'
+    if (markFilter === '5m_sub') return q.mark_type === '5m_sub'
+    if (markFilter === 'repeated') return (q.frequency || 0) > 1
+    return true
+  })
 
   if (loading) {
     return (
@@ -261,13 +387,65 @@ export function UnitQuestions() {
 
           {/* High priority questions */}
           <section className="mb-huge">
-            <h2 className="font-headline text-on-surface mb-lg flex items-center gap-sm">
-              <span className="material-symbols-outlined text-primary text-[22px]" style={{fontVariationSettings:"'FILL' 1"}}>target</span>
-              Important Questions
-            </h2>
-            {questions.length > 0 ? (
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-md mb-lg">
+              <h2 className="font-headline text-on-surface flex items-center gap-sm">
+                <span className="material-symbols-outlined text-primary text-[22px]" style={{fontVariationSettings:"'FILL' 1"}}>target</span>
+                Important Questions ({filteredQuestions.length})
+              </h2>
+              <div className="text-xs text-primary font-mono bg-primary/10 border border-primary/20 px-3 py-1 rounded-full">
+                MLRIT R22 · 60-Mark Regular Pattern
+              </div>
+            </div>
+
+            {/* Student-facing 60-mark filter bar */}
+            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-md mb-lg p-md bg-surface-container rounded-xl border border-outline-variant">
+              <div className="flex flex-wrap items-center gap-xs">
+                <span className="text-xs font-mono uppercase tracking-wider text-on-surface-variant mr-1">Structure:</span>
+                {[
+                  { id: 'all', label: 'All Questions' },
+                  { id: '1m', label: '1M (Part A)' },
+                  { id: '10m_direct', label: 'Direct 10M (Part B)' },
+                  { id: '5m_sub', label: '5M Subquestions (Part B)' },
+                  { id: 'repeated', label: 'Repeated Only (2×+)' },
+                ].map(f => (
+                  <button
+                    key={f.id}
+                    onClick={() => setMarkFilter(f.id as any)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                      markFilter === f.id
+                        ? 'bg-primary-container text-on-primary-container shadow'
+                        : 'bg-white/5 text-on-surface-variant hover:bg-white/10 hover:text-white'
+                    }`}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+              <div className="flex flex-wrap items-center gap-xs">
+                <span className="text-xs font-mono uppercase tracking-wider text-on-surface-variant mr-1">Regular Exam:</span>
+                {[
+                  { id: 'all', label: '2024 & 2025' },
+                  { id: '2024', label: '2024 Regular' },
+                  { id: '2025', label: '2025 Regular' },
+                ].map(y => (
+                  <button
+                    key={y.id}
+                    onClick={() => setYearFilter(y.id as any)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                      yearFilter === y.id
+                        ? 'bg-primary/20 text-primary border border-primary/40'
+                        : 'bg-white/5 text-on-surface-variant hover:bg-white/10 hover:text-white'
+                    }`}
+                  >
+                    {y.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {filteredQuestions.length > 0 ? (
               <div className="space-y-base">
-                {questions.map((q, i) => (
+                {filteredQuestions.map((q, i) => (
                   <motion.div 
                     key={q.id || i} 
                     className="bg-surface-container border border-outline-variant rounded-xl p-lg hover:border-primary/50 transition-all cursor-pointer"
@@ -278,20 +456,110 @@ export function UnitQuestions() {
                     whileTap={{ scale: 0.99 }}
                   >
                     <div className="flex flex-col md:flex-row justify-between gap-md mb-md">
-                      <h3 className="font-headline text-on-surface max-w-2xl leading-snug">{q.question_text}</h3>
-                      <div className="flex flex-wrap gap-xs h-fit shrink-0">
+                      <h3 className={`font-headline max-w-2xl leading-snug transition-colors ${completedQuestions.has(q.id) ? 'line-through text-gray-500' : 'text-on-surface'}`}>{q.question_text}</h3>
+                      <div className="flex flex-wrap gap-xs h-fit shrink-0 items-center">
+                        {q.mark_type === '10m_direct' && (
+                          <span className="bg-orange-500/10 text-orange-400 border border-orange-500/30 px-2.5 py-1 rounded-md text-[11px] font-bold">
+                            Direct 10M Question
+                          </span>
+                        )}
+                        {q.mark_type === '5m_sub' && (
+                          <span className="bg-amber-500/10 text-amber-300 border border-amber-500/30 px-2.5 py-1 rounded-md text-[11px] font-bold">
+                            5M Subquestion
+                          </span>
+                        )}
+                        {q.mark_type === '1m' && (
+                          <span className="bg-blue-500/10 text-blue-400 border border-blue-500/30 px-2.5 py-1 rounded-md text-[11px] font-bold">
+                            1M Short Answer (Part A)
+                          </span>
+                        )}
                         {(q.frequency || 0) > 1 && (
-                          <span className="bg-primary/10 text-primary px-sm py-1 rounded text-[10px] font-bold uppercase border border-primary/20">
-                            Appeared {q.frequency}× Times
+                          <span className="bg-primary/20 text-primary px-sm py-1 rounded text-[10px] font-bold uppercase border border-primary/30">
+                            Repeated {q.frequency}×
                           </span>
                         )}
                       </div>
                     </div>
+
                     <div className="flex flex-wrap items-center gap-md">
                       {q.topic_name && (
                         <span className="bg-white/5 text-on-surface-variant px-sm py-1 rounded-lg text-xs font-data-label border border-white/10 break-words whitespace-normal line-clamp-2 md:line-clamp-none max-w-full">{q.topic_name}</span>
                       )}
                       {q.marks && <span className="text-primary font-bold text-sm shrink-0">{q.marks} Marks</span>}
+                      {q.source_reference && (
+                        <span className="text-xs text-on-surface-variant/80 font-mono flex items-center gap-1">
+                          <span className="material-symbols-outlined text-[14px] text-primary">description</span>
+                          {q.source_reference}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Exact source papers for repeated questions */}
+                    {(q.source_papers || []).length > 1 && (
+                      <div className="mt-3 pt-3 border-t border-white/5 text-xs text-on-surface-variant">
+                        <span className="text-gray-400 font-bold block mb-1">Source Papers:</span>
+                        <div className="flex flex-wrap gap-2">
+                          {(q.source_papers || []).map((src: any, sIdx: number) => (
+                            <span key={sIdx} className="bg-white/5 px-2 py-0.5 rounded border border-white/10 font-mono text-[11px]">
+                              {src.source_reference}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Action buttons: AI Tutor Answer, Open Paper, Save for Revision, Mark Completed */}
+                    <div className="mt-4 pt-3 border-t border-white/5 flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            navigate(`/companion?query=${encodeURIComponent(q.question_text)}&marks=${q.marks || 10}&subject=${encodeURIComponent(subjectName)}`)
+                          }}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 rounded-lg text-xs font-bold transition-all"
+                        >
+                          <span className="material-symbols-outlined text-[16px]">psychology</span>
+                          Read AI Answer
+                        </button>
+                        {q.paper_id && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              navigate(`/papers/${q.paper_id}`)
+                            }}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 text-on-surface-variant hover:text-white border border-white/10 rounded-lg text-xs font-medium transition-all"
+                          >
+                            <span className="material-symbols-outlined text-[16px]">picture_as_pdf</span>
+                            Original Paper
+                          </button>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={(e) => toggleSaveQuestion(q.id, e)}
+                          className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+                            savedQuestions.has(q.id)
+                              ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                              : 'bg-white/5 text-on-surface-variant hover:text-white border-white/10'
+                          }`}
+                          title="Save for Revision"
+                        >
+                          <span className="material-symbols-outlined text-[16px]" style={{ fontVariationSettings: savedQuestions.has(q.id) ? "'FILL' 1" : "'FILL' 0" }}>bookmark</span>
+                          {savedQuestions.has(q.id) ? 'Saved' : 'Save'}
+                        </button>
+                        <button
+                          onClick={(e) => toggleCompleteQuestion(q.id, e)}
+                          className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+                            completedQuestions.has(q.id)
+                              ? 'bg-green-500/20 text-green-300 border-green-500/40'
+                              : 'bg-white/5 text-on-surface-variant hover:text-white border-white/10'
+                          }`}
+                          title="Mark as Completed"
+                        >
+                          <span className="material-symbols-outlined text-[16px]" style={{ fontVariationSettings: completedQuestions.has(q.id) ? "'FILL' 1" : "'FILL' 0" }}>check_circle</span>
+                          {completedQuestions.has(q.id) ? 'Completed' : 'Mark Done'}
+                        </button>
+                      </div>
                     </div>
                   </motion.div>
                 ))}
@@ -299,7 +567,7 @@ export function UnitQuestions() {
             ) : (
               <div className="glass-card p-xl text-center rounded-xl">
                 <span className="material-symbols-outlined text-[48px] text-on-surface-variant mb-base block">quiz</span>
-                <p className="text-on-surface-variant text-body-md">No questions found for this unit yet. Classification may be in progress.</p>
+                <p className="text-on-surface-variant text-body-md">No questions found matching the selected filter.</p>
               </div>
             )}
           </section>

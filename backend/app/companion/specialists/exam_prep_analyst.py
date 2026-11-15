@@ -63,12 +63,13 @@ class ExamPrepAnalystSpecialist(BaseSpecialist):
                 ("Asymptotic Notations (Big-Oh, Omega, Theta) & Master Theorem", "78% Frequency", "Frequent Part A 2M definitions and Part B recurrence relations solved via Master Theorem."),
                 ("Cook's Theorem & NP-Completeness Proofs", "74% Frequency", "Unit V theory question on polynomial-time reductions, NP-Hard vs NP-Complete classes, and satisfiability proofs."),
             ],
-            "A6CS09": [
-                ("Process Scheduling & Synchronization", "94% Frequency", "Appears in every semester exam since 2021. Banker's Algorithm and Semaphores are guaranteed Part B questions."),
-                ("Page Replacement Algorithms (LRU & Optimal)", "88% Frequency", "Numerical calculation questions repeated across 4 out of 5 historical papers."),
-                ("Deadlock Avoidance & Prevention", "85% Frequency", "Standard 10M long question. Tracing resource-allocation graphs."),
-                ("Disk Scheduling (SCAN & C-SCAN)", "78% Frequency", "Common Part B question calculating total head movement tracks."),
-                ("System Calls & Dual-Mode Operations", "72% Frequency", "Frequent Part A 2M definitions and Part B comparative questions."),
+            "A6CS18": [
+                ("Routing Algorithms (Dijkstra Link State vs Distance Vector)", "94% Frequency", "Appeared in 2024 and 2025 Regular papers. Routing table update traces and count-to-infinity problem analysis (10M Part B)."),
+                ("Error Detection & Framing (CRC Polynomial & Checksum)", "90% Frequency", "Guaranteed Unit II question. Step-by-step bit-level CRC division trace for 5M/10M."),
+                ("Flow Control Protocols (Go-Back-N vs Selective Repeat)", "86% Frequency", "Window size calculations, sequence numbers, and transmission efficiency comparison (10M Part B)."),
+                ("IPv4 Subnetting & Addressing Calculations", "84% Frequency", "Subnet mask, network ID, broadcast address, and host range numerical calculations (5M/10M)."),
+                ("TCP 3-Way Handshake & Congestion Control (AIMD)", "80% Frequency", "Connection management, sequence numbers, Slow Start and congestion avoidance phases (10M Part B)."),
+                ("OSI vs TCP/IP Reference Models", "75% Frequency", "Layer comparison, responsibilities, and PDU data units (Part A 1M & Part B 5M)."),
             ]
         }
 
@@ -76,7 +77,7 @@ class ExamPrepAnalystSpecialist(BaseSpecialist):
             ("Core Architectural Mechanisms & Proofs", "90% Frequency", "Fundamental principle evaluated across multiple exam cycles."),
             ("Algorithmic Optimization & Trade-off Analysis", "85% Frequency", "Comparative analysis between brute-force and optimized representations."),
             ("State Transitions & Problem Tracing", "80% Frequency", "Comprehensive 10M long-answer question with tabular trace."),
-            ("Edge Case & Boundary Condition Analysis", "75% Frequency", "Standard Part A 2M definitions and Part B derivations."),
+            ("Edge Case & Boundary Condition Analysis", "75% Frequency", "Standard Part A 1M definitions and Part B derivations."),
         ])
 
         topics_markdown = ""
@@ -85,9 +86,9 @@ class ExamPrepAnalystSpecialist(BaseSpecialist):
 
         response_text = f"""### 📊 Frequently Repeated Exam Questions & Predictions: {subject_info['name']} (`{subject_code}`)
 
-**Exam Pattern**: Autonomous R22 SEE (60 Marks Total)  
-- **Part A**: 5 Compulsory Short-Answer Questions (5 × 2M = 10 Marks) — Tests definitions & core statements.  
-- **Part B**: 5 Long-Answer Questions with Internal Choice (5 × 10M = 50 Marks) — Tests derivations, numericals, and algorithm traces.
+**Exam Pattern**: Autonomous R22 SEE (60 Marks Total — 2024–2025 Regular)  
+- **Part A**: 10 Compulsory Short-Answer Questions (10 × 1M = 10 Marks) — Tests definitions & core statements.  
+- **Part B**: 5 Units of Questions with Internal Choice (50 Marks Total) — Direct 10M questions and 5M subquestions (e.g. 5M + 5M) testing derivations, numericals, and algorithm traces.
 
 ---
 

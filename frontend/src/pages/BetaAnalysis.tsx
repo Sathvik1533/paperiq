@@ -4,6 +4,7 @@ import { useAuthStore } from '../store/authStore'
 import { usePrefsStore } from '../store/prefsStore'
 import { getUserProfile, getSubjectsForSemester, generateAnalysis } from '../lib/api'
 import { supabase } from '../lib/supabase'
+import { OFFICIAL_R22_3_1_SUBJECTS, filterTo31Subjects } from '../constants/r22_3_1'
 import { NavBar } from '../components/NavBar'
 import { Footer } from '../components/Footer'
 import { AnalysisLoadingState } from '../components/AnalysisLoadingState'
@@ -77,37 +78,21 @@ export function BetaAnalysis() {
       if (prof?.current_semester && prof?.regulation) {
         const subs = await getSubjectsForSemester(prof.current_semester, prof.regulation)
 
-        // ── Canonical subject guarantee - THEORY SUBJECTS ONLY ────────────────────
-        const CANONICAL: Record<string, Array<{ id: string; name: string; code: string; semester: number; regulation: string }>> = {
-          '3-R22': [
-            { id: 'A6CS05', name: 'Data Structures', code: 'A6CS05', semester: 3, regulation: 'R22' },
-            { id: 'A6IT02', name: 'Object Oriented Programming through Java', code: 'A6IT02', semester: 3, regulation: 'R22' },
-            { id: 'A6CS28', name: 'Digital Electronics and Computer Organization', code: 'A6CS28', semester: 3, regulation: 'R22' },
-            { id: 'A6CS07', name: 'Software Engineering', code: 'A6CS07', semester: 3, regulation: 'R22' },
-            { id: 'A6BS03', name: 'Computer Oriented Statistical Methods', code: 'A6BS03', semester: 3, regulation: 'R22' },
-          ],
-          '4-R22': [
-            { id: 'A6HS08', name: 'Business Economics and Financial Analysis', code: 'A6HS08', semester: 4, regulation: 'R22' },
-            { id: 'A6CS08', name: 'Discrete Mathematics', code: 'A6CS08', semester: 4, regulation: 'R22' },
-            { id: 'A6CS09', name: 'Database Management Systems', code: 'A6CS09', semester: 4, regulation: 'R22' },
-            { id: 'A6CS11', name: 'Operating System', code: 'A6CS11', semester: 4, regulation: 'R22' },
-            { id: 'A6CS13', name: 'Software Testing Fundamentals', code: 'A6CS13', semester: 4, regulation: 'R22' },
-          ],
-        }
+        // ── Canonical subject guarantee - Strict MLRIT R22 3-1 ONLY ──────────────
+        const CANONICAL = OFFICIAL_R22_3_1_SUBJECTS.map((s) => ({
+          id: s.id,
+          name: s.name,
+          code: s.code,
+          semester: 1,
+          regulation: 'R22',
+        }))
 
-        const fallbackKey = `${prof.current_semester}-${prof.regulation}`
-        const canonical = CANONICAL[fallbackKey]
-        let finalSubs = subs || []
-
-        if (canonical) {
-          // Merge: DB UUIDs take priority, canonical fills any gaps
-          const dbByCode = new Map(finalSubs.map(s => [s.code, s]))
-          finalSubs = canonical.map(f => {
-            const live = dbByCode.get(f.code)
-            // Use real DB row (preserves UUID needed for API calls) + canonical name
-            return live ? { ...live, name: f.name } : f
-          })
-        }
+        const filteredLive = filterTo31Subjects(subs || [])
+        const dbByCode = new Map(filteredLive.map(s => [s.code, s]))
+        const finalSubs = CANONICAL.map(f => {
+          const live = dbByCode.get(f.code)
+          return live ? { ...live, name: f.name } : f
+        })
 
         setSubjects(finalSubs as unknown as Subject[])
       }
@@ -261,12 +246,7 @@ export function BetaAnalysis() {
             <div>
               <label className="font-data-label text-data-label text-on-surface-variant uppercase tracking-wider block mb-sm">Semester</label>
               <div className="px-md py-md bg-surface-container border border-outline-variant rounded-xl text-on-surface font-body-md">
-                {profile.current_semester === 3
-                  ? '2-1 (Sem 3)'
-                  : profile.current_semester === 4
-                  ? '2-2 (Sem 4)'
-                  : `Semester ${profile.current_semester}`
-                } · {profile.regulation}
+                3-1 (Sem 5) · {profile.regulation || 'R22'}
               </div>
             </div>
             <div>
